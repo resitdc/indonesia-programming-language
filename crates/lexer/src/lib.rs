@@ -80,7 +80,68 @@ impl Lexer {
                     }
                 }
                 '%' => { self.advance(); Token::Mod }
-                '=' => { self.advance(); Token::Assign }
+                '=' => {
+                    self.advance();
+                    if self.current_char() == Some('=') {
+                        self.advance();
+                        Token::SamaDengan
+                    } else {
+                        Token::Assign
+                    }
+                }
+                '!' => {
+                    self.advance();
+                    if self.current_char() == Some('=') {
+                        self.advance();
+                        Token::TidakSamaDengan
+                    } else {
+                        Token::Bukan
+                    }
+                }
+                '>' => {
+                    self.advance();
+                    if self.current_char() == Some('=') {
+                        self.advance();
+                        Token::Minimal
+                    } else {
+                        Token::LebihDari
+                    }
+                }
+                '<' => {
+                    self.advance();
+                    if self.current_char() == Some('=') {
+                        self.advance();
+                        Token::Maksimal
+                    } else {
+                        Token::KurangDari
+                    }
+                }
+                '&' => {
+                    self.advance();
+                    if self.current_char() == Some('&') {
+                        self.advance();
+                        Token::Dan
+                    } else {
+                        return Err(IplError::Sintaks {
+                            pesan: "Diharapkan '&&' untuk DAN.".to_string(),
+                            lokasi: lokasi_awal,
+                            saran: None,
+                        });
+                    }
+                }
+                '|' => {
+                    self.advance();
+                    if self.current_char() == Some('|') {
+                        self.advance();
+                        Token::Atau
+                    } else {
+                        return Err(IplError::Sintaks {
+                            pesan: "Diharapkan '||' untuk ATAU.".to_string(),
+                            lokasi: lokasi_awal,
+                            saran: None,
+                        });
+                    }
+                }
                 ';' => { self.advance(); Token::TitikKoma }
                 ',' => { self.advance(); Token::Koma }
                 ':' => { self.advance(); Token::TitikDua }

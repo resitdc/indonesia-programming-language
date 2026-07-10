@@ -1,6 +1,10 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use anyhow::Result;
+use std::fs;
+use anyhow::{Context, Result};
+use lexer::Lexer;
+use parser::Parser as IplParser;
+use interpreter::Interpreter;
 
 #[derive(Parser)]
 #[command(name = "ipl")]
@@ -31,7 +35,33 @@ fn main() -> Result<()> {
 
     match &cli.command {
         Commands::Run { file } => {
-            println!("Menjalankan file: {}", file.display());
+            let kode_sumber = fs::read_to_string(file)
+                .with_context(|| format!("Gagal membaca file: {}", file.display()))?;
+
+            let mut lexer = Lexer::new(&kode_sumber);
+            let tokens = lexer.tokenize().unwrap_or_else(|e| {
+                eprintln!("{}", e.tampilkan(&kode_sumber));
+                std::process::exit(1);
+            });
+
+            let mut parser = IplParser::new(tokens);
+            let program = parser.parse_program().unwrap_or_else(|e| {
+                eprintln!("{}", e.tampilkan(&kode_sumber));
+                std::process::exit(1);
+            });
+
+            let mut interpreter = Interpreter::baru();
+            match interpreter.eval_program(program) {
+                Ok(hasil) => {
+                    if hasil != interpreter::objek::Objek::Kosong {
+                        println!("{}", hasil);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{}", e.tampilkan(&kode_sumber));
+                    std::process::exit(1);
+                }
+            }
         }
         Commands::Repl => {
             println!("Memulai sesi REPL IPL. Ketik 'berhenti' untuk keluar.");

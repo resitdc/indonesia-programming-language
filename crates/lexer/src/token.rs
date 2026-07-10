@@ -17,6 +17,8 @@ pub enum Token {
     Benar,      // benar
     Salah,      // salah
     Kosong,     // kosong
+    Maka,       // maka
+    Selesai,    // selesai
 
     LebihDari,       // lebih dari
     KurangDari,      // kurang dari
@@ -68,6 +70,8 @@ impl Token {
             "benar" => Some(Token::Benar),
             "salah" => Some(Token::Salah),
             "kosong" => Some(Token::Kosong),
+            "maka" => Some(Token::Maka),
+            "selesai" => Some(Token::Selesai),
             "minimal" => Some(Token::Minimal),
             "maksimal" => Some(Token::Maksimal),
             "dan" => Some(Token::Dan),

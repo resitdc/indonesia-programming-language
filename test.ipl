@@ -1,0 +1,19 @@
+fungsi salam(nama) maka
+    tampilkan "Halo, selamat datang ", nama
+selesai
+
+fungsi tambah_dua_angka(a, b) maka
+    kembalikan a + b
+selesai
+
+buat hasil = tambah_dua_angka(10, 5)
+
+tampilkan "Hasil penjumlahan adalah: ", hasil
+
+jika hasil == 15 maka
+    salam("Pengguna Baru")
+selesai
+
+jika hasil > 10 {
+    tampilkan "Dan ini pakai kurawal, hasil > 10!"
+}
