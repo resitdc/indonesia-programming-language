@@ -1,0 +1,93 @@
+use thiserror::Error;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Lokasi {
+    pub baris: usize,
+    pub kolom: usize,
+}
+
+impl Lokasi {
+    pub fn new(baris: usize, kolom: usize) -> Self {
+        Self { baris, kolom }
+    }
+}
+
+#[derive(Error, Debug)]
+pub enum IplError {
+    #[error("Sintaks tidak valid: {pesan}")]
+    Sintaks {
+        pesan: String,
+        lokasi: Lokasi,
+        saran: Option<String>,
+    },
+
+    #[error("Variabel '{nama}' belum dibuat.")]
+    VariabelTidakDitemukan {
+        nama: String,
+        lokasi: Lokasi,
+        saran: Option<String>,
+    },
+
+    #[error("Fungsi '{nama}' tidak ditemukan.")]
+    FungsiTidakDitemukan {
+        nama: String,
+        lokasi: Lokasi,
+        saran: Option<String>,
+    },
+
+    #[error("Tipe data tidak cocok: {pesan}")]
+    TipeData {
+        pesan: String,
+        lokasi: Lokasi,
+        saran: Option<String>,
+    },
+    
+    #[error("Error internal: {pesan}")]
+    Internal {
+        pesan: String,
+    },
+}
+
+impl IplError {
+    pub fn tampilkan(&self, source_code: &str) -> String {
+        match self {
+            IplError::Sintaks { pesan, lokasi, saran } => {
+                format_error(pesan, lokasi, saran, source_code)
+            }
+            IplError::VariabelTidakDitemukan { lokasi, saran, .. } => {
+                format_error(&self.to_string(), lokasi, saran, source_code)
+            }
+            IplError::FungsiTidakDitemukan { lokasi, saran, .. } => {
+                format_error(&self.to_string(), lokasi, saran, source_code)
+            }
+            IplError::TipeData { pesan, lokasi, saran } => {
+                format_error(&format!("Tipe data tidak cocok: {}", pesan), lokasi, saran, source_code)
+            }
+            IplError::Internal { pesan } => {
+                format!("Kesalahan sistem internal: {}", pesan)
+            }
+        }
+    }
+}
+
+fn format_error(pesan: &str, lokasi: &Lokasi, saran: &Option<String>, source_code: &str) -> String {
+    let baris_teks = source_code.lines().nth(lokasi.baris.saturating_sub(1)).unwrap_or("");
+    let pointer = " ".repeat(lokasi.kolom.saturating_sub(1)) + "^";
+
+    let mut output = format!(
+        "Error di baris {}, kolom {}:\n{}\n\n  {} | {}\n  {} | {}",
+        lokasi.baris,
+        lokasi.kolom,
+        pesan,
+        lokasi.baris,
+        baris_teks,
+        " ".repeat(lokasi.baris.to_string().len()),
+        pointer
+    );
+
+    if let Some(s) = saran {
+        output.push_str(&format!("\n\nSaran: {}", s));
+    }
+
+    output
+}
