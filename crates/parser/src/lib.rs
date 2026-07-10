@@ -12,6 +12,7 @@ enum Precedence {
     Product,     // *, /, %
     Prefix,      // -X, bukan X
     Call,        // fungsi(X)
+    Property,    // modul.fungsi
 }
 
 fn token_precedence(token: &Token) -> Precedence {
@@ -22,6 +23,7 @@ fn token_precedence(token: &Token) -> Precedence {
         Token::Tambah | Token::Kurang => Precedence::Sum,
         Token::Kali | Token::Bagi | Token::Mod => Precedence::Product,
         Token::KurungBuka => Precedence::Call,
+        Token::Titik => Precedence::Property,
         _ => Precedence::Lowest,
     }
 }
@@ -324,6 +326,19 @@ impl Parser {
                 self.expect(Token::KurungTutup)?;
                 Ok(expr)
             }
+            Token::Impor => {
+                self.advance();
+                let path = match &self.current().token {
+                    Token::String(s) => s.clone(),
+                    _ => return Err(IplError::Sintaks {
+                        pesan: "Diharapkan string path setelah 'impor'.".to_string(),
+                        lokasi: token.lokasi,
+                        saran: Some("Contoh: impor \"matematika.ipl\"".to_string()),
+                    }),
+                };
+                self.advance();
+                Ok(Expression::Impor(path, token.lokasi))
+            }
             _ => Err(IplError::Sintaks {
                 pesan: format!("Token tidak valid untuk permulaan ekspresi: {:?}", token.token),
                 lokasi: token.lokasi,
@@ -337,6 +352,27 @@ impl Parser {
         
         if token.token == Token::KurungBuka {
             return self.parse_call_arguments(left);
+        }
+
+        if token.token == Token::Titik {
+            let lokasi = self.current().lokasi.clone();
+            self.advance(); // lewati '.'
+            
+            let properti = match &self.current().token {
+                Token::Identifier(n) => n.clone(),
+                _ => return Err(IplError::Sintaks {
+                    pesan: "Diharapkan identifier setelah tanda titik '.'.".to_string(),
+                    lokasi: self.current().lokasi.clone(),
+                    saran: None,
+                }),
+            };
+            self.advance();
+
+            return Ok(Expression::PropertyAccess {
+                kiri: Box::new(left),
+                properti,
+                lokasi,
+            });
         }
 
         let op = match token.token {

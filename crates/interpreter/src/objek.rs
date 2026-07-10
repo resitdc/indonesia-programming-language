@@ -17,6 +17,7 @@ pub enum Objek {
         env: Rc<RefCell<Lingkungan>>,
     },
     FungsiBawaan(fn(Vec<Objek>) -> Objek),
+    Modul(Rc<RefCell<Lingkungan>>),
 }
 
 impl PartialEq for Objek {
@@ -48,6 +49,7 @@ impl fmt::Display for Objek {
             Objek::Kembalikan(val) => write!(f, "{}", val),
             Objek::Fungsi { .. } => write!(f, "[Fungsi kustom]"),
             Objek::FungsiBawaan(_) => write!(f, "[Fungsi bawaan]"),
+            Objek::Modul(_) => write!(f, "[Modul]"),
         }
     }
 }

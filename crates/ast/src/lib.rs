@@ -53,6 +53,14 @@ pub enum Expression {
     Boolean(bool, Lokasi),
     Kosong(Lokasi),
     
+    Impor(String, Lokasi),
+    
+    PropertyAccess {
+        kiri: Box<Expression>,
+        properti: String,
+        lokasi: Lokasi,
+    },
+    
     Prefix {
         operator: PrefixOperator,
         kanan: Box<Expression>,
@@ -105,6 +113,8 @@ impl Expression {
             Expression::Prefix { lokasi, .. } => lokasi,
             Expression::Infix { lokasi, .. } => lokasi,
             Expression::Call { lokasi, .. } => lokasi,
+            Expression::Impor(_, lokasi) => lokasi,
+            Expression::PropertyAccess { lokasi, .. } => lokasi,
         }
     }
 }

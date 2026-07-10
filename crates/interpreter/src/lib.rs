@@ -1,6 +1,8 @@
 pub mod objek;
 pub mod lingkungan;
 
+use std::fs;
+use std::path::Path;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -134,6 +136,66 @@ impl Interpreter {
                     Some(val) => Ok(val),
                     None => Err(IplError::VariabelTidakDitemukan {
                         nama,
+                        lokasi,
+                        saran: None,
+                    }),
+                }
+            }
+            Expression::Impor(path_str, lokasi) => {
+                let path = Path::new(&path_str);
+                let kode_sumber = match fs::read_to_string(path) {
+                    Ok(k) => k,
+                    Err(e) => return Err(IplError::Sintaks {
+                        pesan: format!("Gagal memuat modul '{}': {}", path_str, e),
+                        lokasi,
+                        saran: Some("Pastikan path file sudah benar dan file dapat diakses.".to_string()),
+                    }),
+                };
+                
+                let mut lexer = lexer::Lexer::new(&kode_sumber);
+                let tokens = lexer.tokenize().map_err(|mut e| {
+                    if let IplError::Sintaks { pesan, .. } = &mut e {
+                        *pesan = format!("Di dalam modul '{}': {}", path_str, pesan);
+                    }
+                    e
+                })?;
+                
+                let mut parser = parser::Parser::new(tokens);
+                let program = parser.parse_program().map_err(|mut e| {
+                    if let IplError::Sintaks { pesan, .. } = &mut e {
+                        *pesan = format!("Di dalam modul '{}': {}", path_str, pesan);
+                    }
+                    e
+                })?;
+                
+                let mut mod_interpreter = Interpreter::baru();
+                mod_interpreter.eval_program(program)?;
+                
+                let modul_obj = Objek::Modul(mod_interpreter.lingkungan);
+                
+                // Secara otomatis menyuntikkan (auto-bind) modul ini ke lingkungan lokal 
+                // menggunakan nama filenya (misal: "matematika" dari "matematika.ipl")
+                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                    self.lingkungan.borrow_mut().set(stem.to_string(), modul_obj.clone());
+                }
+                
+                Ok(modul_obj)
+            }
+            Expression::PropertyAccess { kiri, properti, lokasi } => {
+                let modul_obj = self.eval_expression(*kiri)?;
+                match modul_obj {
+                    Objek::Modul(env) => {
+                        match env.borrow().get(&properti) {
+                            Some(val) => Ok(val),
+                            None => Err(IplError::Sintaks {
+                                pesan: format!("Properti atau fungsi '{}' tidak ditemukan di dalam modul.", properti),
+                                lokasi,
+                                saran: None,
+                            }),
+                        }
+                    }
+                    _ => Err(IplError::Sintaks {
+                        pesan: "Akses properti dengan notasi titik (.) hanya didukung pada modul.".to_string(),
                         lokasi,
                         saran: None,
                     }),

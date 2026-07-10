@@ -1,19 +1,8 @@
-fungsi salam(nama) maka
-    tampilkan "Halo, selamat datang ", nama
-selesai
+gabung "matematika.ipl"
 
-fungsi tambah_dua_angka(a, b) maka
-    kembalikan a + b
-selesai
+buat hasil_tambah = matematika.tambah(10, 5)
+buat hasil_kurang = matematika.kurang(10, 5)
 
-buat hasil = tambah_dua_angka(10, 5)
-
-tampilkan "Hasil penjumlahan adalah: ", hasil
-
-jika hasil == 15 maka
-    salam("Pengguna Baru")
-selesai
-
-jika hasil > 10 {
-    tampilkan "Dan ini pakai kurawal, hasil > 10!"
-}
+tampilkan "Hasil 10 + 5 = ", hasil_tambah
+tampilkan "Hasil 10 - 5 = ", hasil_kurang
+tampilkan "Nilai PI adalah: ", matematika.pi

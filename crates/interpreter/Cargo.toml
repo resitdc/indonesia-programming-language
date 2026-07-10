@@ -6,3 +6,5 @@ edition = "2024"
 [dependencies]
 errors = { path = "../errors" }
 ast = { path = "../ast" }
+lexer = { path = "../lexer" }
+parser = { path = "../parser" }

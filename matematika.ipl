@@ -1,0 +1,9 @@
+fungsi tambah(a, b) maka
+    kembalikan a + b
+selesai
+
+fungsi kurang(a, b) maka
+    kembalikan a - b
+selesai
+
+buat pi = 3.14

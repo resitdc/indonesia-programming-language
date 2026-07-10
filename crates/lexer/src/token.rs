@@ -14,6 +14,7 @@ pub enum Token {
     Ulangi,     // ulangi
     Berhenti,   // berhenti
     Lanjut,     // lanjut
+    Impor,      // impor
     Benar,      // benar
     Salah,      // salah
     Kosong,     // kosong
@@ -40,6 +41,7 @@ pub enum Token {
     TitikKoma,   // ;
     Koma,        // ,
     TitikDua,    // :
+    Titik,       // .
     KurungBuka,  // (
     KurungTutup, // )
     KurungSikuBuka, // [
@@ -67,6 +69,7 @@ impl Token {
             "ulangi" => Some(Token::Ulangi),
             "berhenti" => Some(Token::Berhenti),
             "lanjut" => Some(Token::Lanjut),
+            "impor" | "gabung" => Some(Token::Impor),
             "benar" => Some(Token::Benar),
             "salah" => Some(Token::Salah),
             "kosong" => Some(Token::Kosong),

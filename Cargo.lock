@@ -130,6 +130,8 @@ version = "0.1.0"
 dependencies = [
  "ast",
  "errors",
+ "lexer",
+ "parser",
 ]
 
 [[package]]

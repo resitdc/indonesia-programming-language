@@ -145,6 +145,7 @@ impl Lexer {
                 ';' => { self.advance(); Token::TitikKoma }
                 ',' => { self.advance(); Token::Koma }
                 ':' => { self.advance(); Token::TitikDua }
+                '.' => { self.advance(); Token::Titik }
                 '(' => { self.advance(); Token::KurungBuka }
                 ')' => { self.advance(); Token::KurungTutup }
                 '[' => { self.advance(); Token::KurungSikuBuka }
