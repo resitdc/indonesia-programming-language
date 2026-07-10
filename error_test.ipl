@@ -1,0 +1,13 @@
+buat umur = 10
+tampilkan nama // Error: Variabel nama belum dibuat
+
+buat hasil = "Budi" + 10 * 5 // Error: matematika beda tipe
+
+jika umur = 10 maka // Error: harusnya ==
+    tampilkan "Umur 10"
+selesai
+
+buat x = 10 / 0 // Error: bagi nol
+
+buat teks = "Halo
+ // Error: kurang kutip penutup

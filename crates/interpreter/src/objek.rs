@@ -1,6 +1,7 @@
 use std::fmt;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use ast::Statement;
 use crate::lingkungan::Lingkungan;
 
@@ -18,6 +19,8 @@ pub enum Objek {
     },
     FungsiBawaan(fn(Vec<Objek>) -> Objek),
     Modul(Rc<RefCell<Lingkungan>>),
+    Array(Vec<Objek>),
+    Kamus(HashMap<String, Objek>),
 }
 
 impl PartialEq for Objek {
@@ -28,6 +31,8 @@ impl PartialEq for Objek {
             (Objek::Boolean(a), Objek::Boolean(b)) => a == b,
             (Objek::Kosong, Objek::Kosong) => true,
             (Objek::Kembalikan(a), Objek::Kembalikan(b)) => a == b,
+            (Objek::Array(a), Objek::Array(b)) => a == b,
+            (Objek::Kamus(a), Objek::Kamus(b)) => a == b,
             _ => false,
         }
     }
@@ -50,6 +55,15 @@ impl fmt::Display for Objek {
             Objek::Fungsi { .. } => write!(f, "[Fungsi kustom]"),
             Objek::FungsiBawaan(_) => write!(f, "[Fungsi bawaan]"),
             Objek::Modul(_) => write!(f, "[Modul]"),
+            Objek::Array(elemen) => {
+                let items: Vec<String> = elemen.iter().map(|e| format!("{}", e)).collect();
+                write!(f, "[{}]", items.join(", "))
+            }
+            Objek::Kamus(pasangan) => {
+                let mut items: Vec<String> = pasangan.iter().map(|(k, v)| format!("{}: {}", k, v)).collect();
+                items.sort(); // Sort to ensure consistent output format
+                write!(f, "{{{}}}", items.join(", "))
+            }
         }
     }
 }

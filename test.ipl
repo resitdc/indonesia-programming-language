@@ -1,8 +1,1 @@
-gabung "matematika.ipl"
-
-buat hasil_tambah = matematika.tambah(10, 5)
-buat hasil_kurang = matematika.kurang(10, 5)
-
-tampilkan "Hasil 10 + 5 = ", hasil_tambah
-tampilkan "Hasil 10 - 5 = ", hasil_kurang
-tampilkan "Nilai PI adalah: ", matematika.pi
+buat x = 10 / 0

@@ -22,6 +22,7 @@ enum Commands {
     },
     Repl,
     Serve {
+        file: PathBuf,
         #[arg(short, long, default_value_t = 4000)]
         port: u16,
     },
@@ -30,7 +31,8 @@ enum Commands {
     },
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
@@ -66,8 +68,8 @@ fn main() -> Result<()> {
         Commands::Repl => {
             println!("Memulai sesi REPL IPL. Ketik 'berhenti' untuk keluar.");
         }
-        Commands::Serve { port } => {
-            println!("Menjalankan server web IPL pada http://localhost:{}", port);
+        Commands::Serve { file, port } => {
+            web::start_server(file.clone(), *port).await?;
         }
         Commands::Fmt { file } => {
             println!("Memformat file: {}", file.display());

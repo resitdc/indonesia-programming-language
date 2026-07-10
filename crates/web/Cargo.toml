@@ -1,0 +1,13 @@
+[package]
+name = "web"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1.0", features = ["full"] }
+interpreter = { path = "../interpreter" }
+parser = { path = "../parser" }
+lexer = { path = "../lexer" }
+errors = { path = "../errors" }
+anyhow = { workspace = true }

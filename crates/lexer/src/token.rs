@@ -5,6 +5,7 @@ use errors::Lokasi;
 pub enum Token {
     Buat,       // buat
     Tampilkan,  // tampilkan
+    Cetak,      // cetak
     Masukkan,   // masukkan
     Jika,       // jika
     JikaTidak,  // jika tidak
@@ -57,10 +58,52 @@ pub enum Token {
 }
 
 impl Token {
+    pub fn to_indonesian_string(&self) -> String {
+        match self {
+            Token::Buat => "kata 'buat'".to_string(),
+            Token::Tampilkan => "kata 'tampilkan'".to_string(),
+            Token::Cetak => "kata 'cetak'".to_string(),
+            Token::Masukkan => "kata 'masukkan'".to_string(),
+            Token::Jika => "kata 'jika'".to_string(),
+            Token::JikaTidak => "kata 'jika tidak'".to_string(),
+            Token::Maka => "kata 'maka' atau '{'".to_string(),
+            Token::Selama => "kata 'selama'".to_string(),
+            Token::Fungsi => "kata 'fungsi'".to_string(),
+            Token::Kembalikan => "kata 'kembalikan'".to_string(),
+            Token::Impor => "kata 'impor' atau 'gabung'".to_string(),
+            
+            Token::Identifier(s) => format!("nama (variabel/fungsi) '{}'", s),
+            Token::Angka(f) => format!("angka {}", f),
+            Token::String(s) => format!("teks \"{}\"", s),
+            
+            Token::Assign => "tanda sama dengan '='".to_string(),
+            Token::SamaDengan => "tanda cek kesamaan".to_string(),
+            Token::TidakSamaDengan => "tanda tidak sama dengan".to_string(),
+            Token::KurangDari => "tanda kurang dari".to_string(),
+            Token::LebihDari => "tanda lebih dari".to_string(),
+            Token::Tambah => "tanda tambah '+'".to_string(),
+            Token::Kurang => "tanda kurang '-'".to_string(),
+            Token::Kali => "tanda kali '*'".to_string(),
+            Token::Bagi => "tanda bagi '/'".to_string(),
+            
+            Token::KurungBuka => "kurung buka '('".to_string(),
+            Token::KurungTutup => "kurung tutup ')'".to_string(),
+            Token::KurawalBuka => "kurawal buka '{' atau 'maka'".to_string(),
+            Token::KurawalTutup => "kurawal tutup '}' atau 'selesai'".to_string(),
+            Token::TitikKoma => "titik koma ';'".to_string(),
+            Token::Koma => "koma ','".to_string(),
+            Token::Titik => "titik '.'".to_string(),
+            
+            Token::EOF => "akhir file".to_string(),
+            _ => format!("{:?}", self),
+        }
+    }
+
     pub fn dari_keyword(k: &str) -> Option<Token> {
         match k {
             "buat" => Some(Token::Buat),
             "tampilkan" => Some(Token::Tampilkan),
+            "cetak" => Some(Token::Cetak),
             "masukkan" => Some(Token::Masukkan),
             "jika" => Some(Token::Jika),
             "fungsi" => Some(Token::Fungsi),

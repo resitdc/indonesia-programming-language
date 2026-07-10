@@ -1,5 +1,6 @@
 pub mod objek;
 pub mod lingkungan;
+pub mod template;
 
 use std::fs;
 use std::path::Path;
@@ -13,13 +14,32 @@ use objek::Objek;
 
 pub struct Interpreter {
     pub lingkungan: Rc<RefCell<Lingkungan>>,
+    pub output_buffer: String,
+    pub capture_output: bool,
 }
 
 impl Interpreter {
     pub fn baru() -> Self {
-        let env = Lingkungan::baru();
         Self {
-            lingkungan: env,
+            lingkungan: Lingkungan::baru(),
+            output_buffer: String::new(),
+            capture_output: false,
+        }
+    }
+    
+    pub fn baru_dengan_capture() -> Self {
+        Self {
+            lingkungan: Lingkungan::baru(),
+            output_buffer: String::new(),
+            capture_output: true,
+        }
+    }
+
+    pub fn baru_nested(parent: Rc<RefCell<Lingkungan>>, capture_output: bool) -> Self {
+        Self {
+            lingkungan: Lingkungan::baru_nested(parent),
+            output_buffer: String::new(),
+            capture_output,
         }
     }
 
@@ -43,9 +63,30 @@ impl Interpreter {
             Statement::Tampilkan { nilai, .. } => {
                 for n in nilai {
                     let hasil_eval = self.eval_expression(n)?;
-                    print!("{} ", hasil_eval);
+                    if self.capture_output {
+                        self.output_buffer.push_str(&hasil_eval.to_string());
+                        self.output_buffer.push(' ');
+                    } else {
+                        print!("{} ", hasil_eval);
+                    }
                 }
-                println!();
+                
+                if self.capture_output {
+                    self.output_buffer.push('\n');
+                } else {
+                    println!();
+                }
+                Ok(Objek::Kosong)
+            }
+            Statement::Cetak { nilai, .. } => {
+                for n in nilai {
+                    let hasil_eval = self.eval_expression(n)?;
+                    if self.capture_output {
+                        self.output_buffer.push_str(&hasil_eval.to_string());
+                    } else {
+                        print!("{}", hasil_eval);
+                    }
+                }
                 Ok(Objek::Kosong)
             }
             Statement::DeklarasiVariabel { nama, nilai, .. } => {
@@ -134,22 +175,29 @@ impl Interpreter {
             Expression::Identifier(nama, lokasi) => {
                 match self.lingkungan.borrow().get(&nama) {
                     Some(val) => Ok(val),
-                    None => Err(IplError::VariabelTidakDitemukan {
-                        nama,
+                    None => Err(IplError::VariabelTidakDitemukan { 
+                        nama: nama.clone(),
                         lokasi,
-                        saran: None,
+                        saran: Some(format!("Gunakan perintah 'buat {} = ...' terlebih dahulu sebelum memakainya.", nama)),
                     }),
                 }
             }
             Expression::Impor(path_str, lokasi) => {
                 let path = Path::new(&path_str);
-                let kode_sumber = match fs::read_to_string(path) {
+                let kode_asli = match fs::read_to_string(path) {
                     Ok(k) => k,
                     Err(e) => return Err(IplError::Sintaks {
                         pesan: format!("Gagal memuat modul '{}': {}", path_str, e),
                         lokasi,
                         saran: Some("Pastikan path file sudah benar dan file dapat diakses.".to_string()),
                     }),
+                };
+                
+                let is_html_template = path_str.ends_with(".ipl.html");
+                let kode_sumber = if is_html_template {
+                    template::preprocess_template(&kode_asli)
+                } else {
+                    kode_asli
                 };
                 
                 let mut lexer = lexer::Lexer::new(&kode_sumber);
@@ -168,36 +216,106 @@ impl Interpreter {
                     e
                 })?;
                 
-                let mut mod_interpreter = Interpreter::baru();
+                let mut mod_interpreter = if is_html_template {
+                    Interpreter::baru_nested(self.lingkungan.clone(), self.capture_output)
+                } else {
+                    Interpreter::baru()
+                };
+                
                 mod_interpreter.eval_program(program)?;
+                
+                if is_html_template && self.capture_output {
+                    self.output_buffer.push_str(&mod_interpreter.output_buffer);
+                }
                 
                 let modul_obj = Objek::Modul(mod_interpreter.lingkungan);
                 
-                // Secara otomatis menyuntikkan (auto-bind) modul ini ke lingkungan lokal 
-                // menggunakan nama filenya (misal: "matematika" dari "matematika.ipl")
                 if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                    self.lingkungan.borrow_mut().set(stem.to_string(), modul_obj.clone());
+                    let mut real_stem = stem;
+                    if real_stem.ends_with(".ipl") {
+                        real_stem = real_stem.trim_end_matches(".ipl");
+                    }
+                    self.lingkungan.borrow_mut().set(real_stem.to_string(), modul_obj.clone());
                 }
                 
                 Ok(modul_obj)
             }
-            Expression::PropertyAccess { kiri, properti, lokasi } => {
-                let modul_obj = self.eval_expression(*kiri)?;
-                match modul_obj {
+            Expression::Array { elemen, .. } => {
+                let mut hasil = Vec::new();
+                for e in elemen {
+                    hasil.push(self.eval_expression(e)?);
+                }
+                Ok(Objek::Array(hasil))
+            }
+            Expression::Kamus { pasangan, .. } => {
+                let mut hasil = std::collections::HashMap::new();
+                for (k_expr, v_expr) in pasangan {
+                    let k = self.eval_expression(k_expr)?;
+                    let v = self.eval_expression(v_expr)?;
+                    
+                    let k_str = match k {
+                        Objek::String(s) => s,
+                        _ => format!("{}", k),
+                    };
+                    hasil.insert(k_str, v);
+                }
+                Ok(Objek::Kamus(hasil))
+            }
+            Expression::Index { kiri, indeks, lokasi } => {
+                let kiri_obj = self.eval_expression(*kiri)?;
+                let indeks_obj = self.eval_expression(*indeks)?;
+                
+                match kiri_obj {
+                    Objek::Array(elemen) => {
+                        match indeks_obj {
+                            Objek::Angka(val) => {
+                                let idx = val as usize;
+                                if val < 0.0 || idx >= elemen.len() {
+                                    Err(IplError::Sintaks {
+                                        pesan: format!("Indeks array {} di luar batas (0-{}).", idx, elemen.len().saturating_sub(1)),
+                                        lokasi,
+                                        saran: Some("Pastikan nomor yang diakses tidak melebihi ukuran array.".to_string()),
+                                    })
+                                } else {
+                                    Ok(elemen[idx].clone())
+                                }
+                            }
+                            _ => Err(IplError::TipeData {
+                                pesan: "Akses elemen array harus menggunakan angka.".to_string(),
+                                lokasi,
+                                saran: Some("Gunakan angka untuk mengakses urutan di dalam array, contoh: data[0]".to_string()),
+                            })
+                        }
+                    }
+                    Objek::Kamus(pasangan) => {
+                        let kunci = match indeks_obj {
+                            Objek::String(s) => s,
+                            _ => format!("{}", indeks_obj),
+                        };
+                        
+                        match pasangan.get(&kunci) {
+                            Some(val) => Ok(val.clone()),
+                            None => Ok(Objek::Kosong),
+                        }
+                    }
                     Objek::Modul(env) => {
-                        match env.borrow().get(&properti) {
+                        let kunci = match indeks_obj {
+                            Objek::String(s) => s,
+                            _ => format!("{}", indeks_obj),
+                        };
+                        match env.borrow().get(&kunci) {
                             Some(val) => Ok(val),
                             None => Err(IplError::Sintaks {
-                                pesan: format!("Properti atau fungsi '{}' tidak ditemukan di dalam modul.", properti),
+                                pesan: format!("Properti atau fungsi '{}' tidak ditemukan di dalam modul.", kunci),
                                 lokasi,
                                 saran: None,
                             }),
                         }
                     }
-                    _ => Err(IplError::Sintaks {
-                        pesan: "Akses properti dengan notasi titik (.) hanya didukung pada modul.".to_string(),
+                    _ => Err(IplError::TipeData {
+                        pesan: "Hanya Array, Kamus, atau Modul yang bisa diakses bagian dalamnya dengan `[ ]` atau `.`".to_string(),
                         lokasi,
-                        saran: None,
+                        saran: Some("Pastikan variabel tersebut adalah daftar kumpulan data.".to_string()),
                     }),
                 }
             }
@@ -211,6 +329,11 @@ impl Interpreter {
                 self.eval_infix_expression(operator, kiri_obj, kanan_obj, lokasi)
             }
             Expression::Call { fungsi, argumen, lokasi } => {
+                let nama_fungsi = match &*fungsi {
+                    Expression::Identifier(nama, _) => nama.clone(),
+                    _ => "fungsi_anonim".to_string(),
+                };
+                
                 let fungsi_obj = self.eval_expression(*fungsi)?;
                 
                 let mut arg_eval = Vec::new();
@@ -225,9 +348,9 @@ impl Interpreter {
                     Objek::Fungsi { parameter, body, env } => {
                         if arg_eval.len() != parameter.len() {
                             return Err(IplError::Sintaks {
-                                pesan: format!("Fungsi mengharapkan {} argumen, tapi diberikan {}", parameter.len(), arg_eval.len()),
+                                pesan: format!("Fungsi '{}' mengharapkan {} data (argumen), tapi kamu memberikan {}.", nama_fungsi, parameter.len(), arg_eval.len()),
                                 lokasi,
-                                saran: None,
+                                saran: Some("Pastikan jumlah data di dalam kurung sesuai dengan yang diminta fungsi.".to_string()),
                             });
                         }
 
@@ -249,10 +372,10 @@ impl Interpreter {
                         }
                     }
                     _ => {
-                        Err(IplError::Sintaks {
-                            pesan: "Tidak dapat memanggil (call) selain dari fungsi.".to_string(),
+                        Err(IplError::TipeData {
+                            pesan: format!("'{}' bukanlah sebuah fungsi yang bisa dipanggil.", nama_fungsi),
                             lokasi,
-                            saran: None,
+                            saran: Some(format!("Mungkin '{}' adalah variabel biasa? Pastikan hanya menggunakan '()' pada nama fungsi.", nama_fungsi)),
                         })
                     }
                 }
@@ -269,9 +392,9 @@ impl Interpreter {
                 match kanan {
                     Objek::Angka(val) => Ok(Objek::Angka(-val)),
                     _ => Err(IplError::TipeData {
-                        pesan: "Operator '-' hanya bisa digunakan untuk Angka.".to_string(),
+                        pesan: "Kamu menggunakan tanda kurang '-' (negatif) pada tipe data yang bukan Angka.".to_string(),
                         lokasi,
-                        saran: None,
+                        saran: Some("Pastikan kamu hanya menempelkan tanda '-' pada variabel bernilai Angka.".to_string()),
                     })
                 }
             }
@@ -291,9 +414,9 @@ impl Interpreter {
                     Ok(Objek::String(format!("{}{}", kiri_val, kanan_val)))
                 } else {
                     Err(IplError::TipeData {
-                        pesan: format!("Operator tidak didukung untuk String dan Angka"),
+                        pesan: format!("Kamu mencoba menggunakan operasi matematika selain tambah pada Teks dan Angka."),
                         lokasi,
-                        saran: None,
+                        saran: Some("Teks dan Angka hanya bisa digabungkan dengan tanda tambah '+'. Tidak bisa dikurang, kali, atau bagi.".to_string()),
                     })
                 }
             }
@@ -302,9 +425,9 @@ impl Interpreter {
                     Ok(Objek::String(format!("{}{}", kiri_val, kanan_val)))
                 } else {
                     Err(IplError::TipeData {
-                        pesan: format!("Operator tidak didukung untuk Angka dan String"),
+                        pesan: format!("Kamu mencoba menggunakan operasi matematika selain tambah pada Angka dan Teks."),
                         lokasi,
-                        saran: None,
+                        saran: Some("Angka dan Teks hanya bisa digabungkan dengan tanda tambah '+'. Tidak bisa dikurang, kali, atau bagi.".to_string()),
                     })
                 }
             }
@@ -315,21 +438,31 @@ impl Interpreter {
                     InfixOperator::Dan => Ok(Objek::Boolean(is_truthy(&kiri_obj) && is_truthy(&kanan_obj))),
                     InfixOperator::Atau => Ok(Objek::Boolean(is_truthy(&kiri_obj) || is_truthy(&kanan_obj))),
                     _ => Err(IplError::TipeData {
-                        pesan: format!("Operator tidak didukung untuk tipe data {} dan {}", kiri_obj, kanan_obj),
+                        pesan: format!("Kamu mencoba menghitung {} dengan {}", kiri_obj, kanan_obj),
                         lokasi,
-                        saran: None,
+                        saran: Some("Pastikan tipe datanya sama atau mendukung operasi tersebut (misalnya Angka dengan Angka).".to_string()),
                     })
                 }
             }
         }
     }
 
-    fn eval_angka_infix(&self, operator: InfixOperator, kiri: f64, kanan: f64, _lokasi: errors::Lokasi) -> Result<Objek, IplError> {
+    fn eval_angka_infix(&self, operator: InfixOperator, kiri: f64, kanan: f64, lokasi: errors::Lokasi) -> Result<Objek, IplError> {
         match operator {
             InfixOperator::Tambah => Ok(Objek::Angka(kiri + kanan)),
             InfixOperator::Kurang => Ok(Objek::Angka(kiri - kanan)),
             InfixOperator::Kali => Ok(Objek::Angka(kiri * kanan)),
-            InfixOperator::Bagi => Ok(Objek::Angka(kiri / kanan)),
+            InfixOperator::Bagi => {
+                if kanan == 0.0 {
+                    Err(IplError::TipeData {
+                        pesan: "Pembagian dengan nilai 0 (Nol).".to_string(),
+                        lokasi,
+                        saran: Some("Pastikan angka pembaginya tidak sama dengan nol (0). Tidak ada angka yang bisa dibagi nol.".to_string()),
+                    })
+                } else {
+                    Ok(Objek::Angka(kiri / kanan))
+                }
+            }
             InfixOperator::Mod => Ok(Objek::Angka(kiri % kanan)),
             InfixOperator::LebihDari => Ok(Objek::Boolean(kiri > kanan)),
             InfixOperator::KurangDari => Ok(Objek::Boolean(kiri < kanan)),
@@ -347,9 +480,9 @@ impl Interpreter {
             InfixOperator::SamaDengan => Ok(Objek::Boolean(kiri == kanan)),
             InfixOperator::TidakSamaDengan => Ok(Objek::Boolean(kiri != kanan)),
             _ => Err(IplError::TipeData {
-                pesan: "Operasi matematika tidak didukung pada String kecuali Penjumlahan (+).".to_string(),
+                pesan: "Kamu mencoba menggunakan operasi matematika yang tidak diizinkan pada Teks.".to_string(),
                 lokasi,
-                saran: None,
+                saran: Some("Untuk menggabungkan teks, gunakan tanda tambah '+'. Operasi lain seperti kurang, kali, atau bagi tidak berlaku untuk teks.".to_string()),
             })
         }
     }

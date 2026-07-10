@@ -54,11 +54,11 @@ impl IplError {
             IplError::Sintaks { pesan, lokasi, saran } => {
                 format_error(pesan, lokasi, saran, source_code)
             }
-            IplError::VariabelTidakDitemukan { lokasi, saran, .. } => {
-                format_error(&self.to_string(), lokasi, saran, source_code)
+            IplError::VariabelTidakDitemukan { nama, lokasi, saran } => {
+                format_error(&format!("Variabel '{}' belum dibuat.", nama), lokasi, saran, source_code)
             }
-            IplError::FungsiTidakDitemukan { lokasi, saran, .. } => {
-                format_error(&self.to_string(), lokasi, saran, source_code)
+            IplError::FungsiTidakDitemukan { nama, lokasi, saran } => {
+                format_error(&format!("Fungsi '{}' tidak ditemukan.", nama), lokasi, saran, source_code)
             }
             IplError::TipeData { pesan, lokasi, saran } => {
                 format_error(&format!("Tipe data tidak cocok: {}", pesan), lokasi, saran, source_code)

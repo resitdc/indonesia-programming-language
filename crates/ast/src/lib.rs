@@ -42,6 +42,10 @@ pub enum Statement {
         nilai: Vec<Expression>,
         lokasi: Lokasi,
     },
+    Cetak {
+        nilai: Vec<Expression>,
+        lokasi: Lokasi,
+    },
     Expression(Expression),
 }
 
@@ -55,11 +59,7 @@ pub enum Expression {
     
     Impor(String, Lokasi),
     
-    PropertyAccess {
-        kiri: Box<Expression>,
-        properti: String,
-        lokasi: Lokasi,
-    },
+
     
     Prefix {
         operator: PrefixOperator,
@@ -75,6 +75,19 @@ pub enum Expression {
     Call {
         fungsi: Box<Expression>,
         argumen: Vec<Expression>,
+        lokasi: Lokasi,
+    },
+    Array {
+        elemen: Vec<Expression>,
+        lokasi: Lokasi,
+    },
+    Kamus {
+        pasangan: Vec<(Expression, Expression)>,
+        lokasi: Lokasi,
+    },
+    Index {
+        kiri: Box<Expression>,
+        indeks: Box<Expression>,
         lokasi: Lokasi,
     },
 }
@@ -114,7 +127,10 @@ impl Expression {
             Expression::Infix { lokasi, .. } => lokasi,
             Expression::Call { lokasi, .. } => lokasi,
             Expression::Impor(_, lokasi) => lokasi,
-            Expression::PropertyAccess { lokasi, .. } => lokasi,
+
+            Expression::Array { lokasi, .. } => lokasi,
+            Expression::Kamus { lokasi, .. } => lokasi,
+            Expression::Index { lokasi, .. } => lokasi,
         }
     }
 }

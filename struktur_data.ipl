@@ -1,0 +1,20 @@
+buat angka = [10, 20, 30]
+tampilkan "Elemen pertama: " + angka[0]
+tampilkan "Elemen kedua: " + angka[1]
+
+buat siswa = {
+    "nama": "Budi",
+    "umur": 17,
+    "nilai": [80, 90, 100]
+}
+
+tampilkan "Nama Siswa: " + siswa.nama
+tampilkan "Umur Siswa: " + siswa["umur"]
+tampilkan "Nilai ujian pertama: " + siswa.nilai[0]
+
+buat daftar_buku = [
+    { judul: "Laskar Pelangi", penulis: "Andrea Hirata" },
+    { judul: "Bumi Manusia", penulis: "Pramoedya Ananta Toer" }
+]
+
+tampilkan "Buku kedua ditulis oleh: " + daftar_buku[1].penulis

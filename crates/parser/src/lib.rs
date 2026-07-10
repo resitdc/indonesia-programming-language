@@ -12,6 +12,7 @@ enum Precedence {
     Product,     // *, /, %
     Prefix,      // -X, bukan X
     Call,        // fungsi(X)
+    Index,       // array[0]
     Property,    // modul.fungsi
 }
 
@@ -23,6 +24,7 @@ fn token_precedence(token: &Token) -> Precedence {
         Token::Tambah | Token::Kurang => Precedence::Sum,
         Token::Kali | Token::Bagi | Token::Mod => Precedence::Product,
         Token::KurungBuka => Precedence::Call,
+        Token::KurungSikuBuka => Precedence::Index,
         Token::Titik => Precedence::Property,
         _ => Precedence::Lowest,
     }
@@ -62,9 +64,13 @@ impl Parser {
             Ok(())
         } else {
             Err(IplError::Sintaks {
-                pesan: format!("Diharapkan token {:?}, tapi mendapat {:?}", expected, self.current().token),
+                pesan: format!(
+                    "Diharapkan {}, tetapi menemukan {}.",
+                    expected.to_indonesian_string(),
+                    self.current().token.to_indonesian_string()
+                ),
                 lokasi: self.current().lokasi.clone(),
-                saran: None,
+                saran: Some(format!("Periksa kembali struktur kodemu. Apakah kamu lupa menambahkan {} di sini?", expected.to_indonesian_string())),
             })
         }
     }
@@ -87,7 +93,8 @@ impl Parser {
             Token::Selama => self.parse_selama(),
             Token::Fungsi => self.parse_fungsi(),
             Token::Kembalikan => self.parse_kembalikan(),
-            Token::Tampilkan => self.parse_tampilkan(),
+            Token::Tampilkan => self.parse_tampilkan_statement(false),
+            Token::Cetak => self.parse_tampilkan_statement(true),
             Token::Identifier(_) => {
                 if self.peek().token == Token::Assign {
                     self.parse_assignment()
@@ -106,9 +113,9 @@ impl Parser {
         let nama = match &self.current().token {
             Token::Identifier(n) => n.clone(),
             _ => return Err(IplError::Sintaks {
-                pesan: "Diharapkan nama variabel setelah 'buat'.".to_string(),
+                pesan: "Lupa memberikan nama variabel?".to_string(),
                 lokasi: self.current().lokasi.clone(),
-                saran: Some("Contoh: buat nama = 10".to_string()),
+                saran: Some("Setiap variabel harus memiliki nama yang jelas, contoh: buat nama = 10".to_string()),
             }),
         };
         self.advance();
@@ -147,10 +154,10 @@ impl Parser {
         Ok(Statement::Kembalikan { nilai, lokasi })
     }
 
-    fn parse_tampilkan(&mut self) -> Result<Statement, IplError> {
+    fn parse_tampilkan_statement(&mut self, is_cetak: bool) -> Result<Statement, IplError> {
         let lokasi = self.current().lokasi.clone();
-        self.advance(); 
-        
+        self.advance(); // lewati 'tampilkan' atau 'cetak'
+
         let mut nilai = Vec::new();
 
         if self.current().token != Token::EOF && self.current().token != Token::KurawalTutup {
@@ -164,7 +171,11 @@ impl Parser {
             }
         }
 
-        Ok(Statement::Tampilkan { nilai, lokasi })
+        if is_cetak {
+            Ok(Statement::Cetak { nilai, lokasi })
+        } else {
+            Ok(Statement::Tampilkan { nilai, lokasi })
+        }
     }
 
     fn parse_expression_statement(&mut self) -> Result<Statement, IplError> {
@@ -178,9 +189,9 @@ impl Parser {
 
         if !is_maka && !is_kurawal {
             return Err(IplError::Sintaks {
-                pesan: "Diharapkan '{' atau 'maka' untuk membuka blok.".to_string(),
+                pesan: "Lupa membuka blok perintah?".to_string(),
                 lokasi: self.current().lokasi.clone(),
-                saran: None,
+                saran: Some("Gunakan kata 'maka' atau simbol '{' untuk menandai dimulainya blok perintah.".to_string()),
             });
         }
         self.advance();
@@ -240,9 +251,9 @@ impl Parser {
         let nama = match &self.current().token {
             Token::Identifier(n) => n.clone(),
             _ => return Err(IplError::Sintaks {
-                pesan: "Diharapkan nama fungsi.".to_string(),
+                pesan: "Lupa memberikan nama fungsi?".to_string(),
                 lokasi: self.current().lokasi.clone(),
-                saran: None,
+                saran: Some("Setiap fungsi harus memiliki nama. Contoh: fungsi sapa()".to_string()),
             }),
         };
         self.advance();
@@ -257,9 +268,9 @@ impl Parser {
                         self.advance();
                     }
                     _ => return Err(IplError::Sintaks {
-                        pesan: "Diharapkan identifier untuk parameter.".to_string(),
+                        pesan: "Nama parameter tidak valid.".to_string(),
                         lokasi: self.current().lokasi.clone(),
-                        saran: None,
+                        saran: Some("Pastikan nama data (parameter) di dalam kurung menggunakan huruf, contoh: fungsi tambah(a, b)".to_string()),
                     }),
                 }
 
@@ -331,18 +342,20 @@ impl Parser {
                 let path = match &self.current().token {
                     Token::String(s) => s.clone(),
                     _ => return Err(IplError::Sintaks {
-                        pesan: "Diharapkan string path setelah 'impor'.".to_string(),
+                        pesan: "Lupa menyertakan nama file?".to_string(),
                         lokasi: token.lokasi,
-                        saran: Some("Contoh: impor \"matematika.ipl\"".to_string()),
+                        saran: Some("Kata 'impor' atau 'gabung' harus diikuti dengan nama file dalam tanda kutip. Contoh: impor \"matematika.ipl\"".to_string()),
                     }),
                 };
                 self.advance();
                 Ok(Expression::Impor(path, token.lokasi))
             }
+            Token::KurungSikuBuka => self.parse_array(),
+            Token::KurawalBuka => self.parse_kamus(),
             _ => Err(IplError::Sintaks {
-                pesan: format!("Token tidak valid untuk permulaan ekspresi: {:?}", token.token),
+                pesan: format!("Potongan kode ini tidak bisa diproses: {}", token.token.to_indonesian_string()),
                 lokasi: token.lokasi,
-                saran: None,
+                saran: Some("Sepertinya ada salah ketik atau simbol yang tertinggal. Coba periksa baris ini lagi.".to_string()),
             }),
         }
     }
@@ -354,6 +367,18 @@ impl Parser {
             return self.parse_call_arguments(left);
         }
 
+        if token.token == Token::KurungSikuBuka {
+            let lokasi = self.current().lokasi.clone();
+            self.advance(); // lewati '['
+            let indeks = self.parse_expression(Precedence::Lowest)?;
+            self.expect(Token::KurungSikuTutup)?;
+            return Ok(Expression::Index {
+                kiri: Box::new(left),
+                indeks: Box::new(indeks),
+                lokasi,
+            });
+        }
+
         if token.token == Token::Titik {
             let lokasi = self.current().lokasi.clone();
             self.advance(); // lewati '.'
@@ -361,16 +386,16 @@ impl Parser {
             let properti = match &self.current().token {
                 Token::Identifier(n) => n.clone(),
                 _ => return Err(IplError::Sintaks {
-                    pesan: "Diharapkan identifier setelah tanda titik '.'.".to_string(),
+                    pesan: "Lupa menyebutkan bagian apa yang ingin diakses?".to_string(),
                     lokasi: self.current().lokasi.clone(),
-                    saran: None,
+                    saran: Some("Setelah tanda titik '.', kamu harus menuliskan nama data yang ingin diambil. Contoh: objek.nama".to_string()),
                 }),
             };
             self.advance();
-
-            return Ok(Expression::PropertyAccess {
+            // Desugar dot notation a.b to a["b"]
+            return Ok(Expression::Index {
                 kiri: Box::new(left),
-                properti,
+                indeks: Box::new(Expression::String(properti, lokasi.clone())),
                 lokasi,
             });
         }
@@ -422,6 +447,57 @@ impl Parser {
         self.expect(Token::KurungTutup)?;
 
         Ok(Expression::Call { fungsi: Box::new(fungsi), argumen, lokasi })
+    }
+
+    fn parse_array(&mut self) -> Result<Expression, IplError> {
+        let lokasi = self.current().lokasi.clone();
+        self.advance(); // lewati '['
+
+        let mut elemen = Vec::new();
+        if self.current().token != Token::KurungSikuTutup {
+            loop {
+                elemen.push(self.parse_expression(Precedence::Lowest)?);
+                if self.current().token == Token::Koma {
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+        }
+        
+        self.expect(Token::KurungSikuTutup)?;
+        Ok(Expression::Array { elemen, lokasi })
+    }
+
+    fn parse_kamus(&mut self) -> Result<Expression, IplError> {
+        let lokasi = self.current().lokasi.clone();
+        self.advance(); // lewati '{'
+
+        let mut pasangan = Vec::new();
+        if self.current().token != Token::KurawalTutup {
+            loop {
+                let mut key = self.parse_expression(Precedence::Lowest)?;
+                
+                // Jika key adalah identifier, konversi menjadi string agar praktis (seperti JS)
+                if let Expression::Identifier(nama, lok) = key.clone() {
+                    key = Expression::String(nama, lok);
+                }
+                
+                self.expect(Token::TitikDua)?;
+                
+                let value = self.parse_expression(Precedence::Lowest)?;
+                pasangan.push((key, value));
+
+                if self.current().token == Token::Koma {
+                    self.advance();
+                } else {
+                    break;
+                }
+            }
+        }
+
+        self.expect(Token::KurawalTutup)?;
+        Ok(Expression::Kamus { pasangan, lokasi })
     }
 }
 

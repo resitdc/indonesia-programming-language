@@ -160,8 +160,8 @@ impl Lexer {
                     self.advance();
                     return Err(IplError::Sintaks {
                         pesan: format!("Karakter tidak dikenali: '{}'", err_char),
-                        lokasi: lokasi_awal,
-                        saran: Some("Pastikan menggunakan karakter yang diizinkan.".to_string()),
+                        lokasi: Lokasi::new(self.baris, self.kolom - 1),
+                        saran: Some("Mungkin kamu tidak sengaja mengetik karakter ini? Pastikan hanya menggunakan simbol dan teks yang valid.".to_string()),
                     });
                 }
             };
@@ -186,7 +186,23 @@ impl Lexer {
         let mut string_val = String::new();
 
         while let Some(c) = self.current_char() {
-            if c == '"' {
+            if c == '\\' {
+                self.advance(); // lewati '\'
+                if let Some(escaped) = self.current_char() {
+                    match escaped {
+                        'n' => string_val.push('\n'),
+                        'r' => string_val.push('\r'),
+                        't' => string_val.push('\t'),
+                        '\\' => string_val.push('\\'),
+                        '"' => string_val.push('"'),
+                        _ => {
+                            string_val.push('\\');
+                            string_val.push(escaped);
+                        }
+                    }
+                    self.advance();
+                }
+            } else if c == '"' {
                 self.advance();
                 return Ok(Token::String(string_val));
             } else {
