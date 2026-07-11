@@ -1,0 +1,61 @@
+cetak("Membuat koneksi SQLite sementara...")
+// Menggunakan database SQLite di memori atau file lokal via objek
+db.hubungkan({
+    "provider": "sqlite",
+    "nama": "test_sekolah.db"
+})
+
+cetak("Mempersiapkan tabel siswa...")
+db.eksekusi("DROP TABLE IF EXISTS siswa")
+db.eksekusi("
+    CREATE TABLE siswa (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nama TEXT NOT NULL,
+        kelas INTEGER NOT NULL,
+        aktif BOOLEAN NOT NULL
+    )
+")
+
+cetak("Menyimpan data siswa baru...")
+buat budi = {
+    "nama": "Budi Santoso",
+    "kelas": 10,
+    "aktif": benar
+}
+buat andi = {
+    "nama": "Andi Wijaya",
+    "kelas": 12,
+    "aktif": benar
+}
+buat rini = {
+    "nama": "Rini Setiawati",
+    "kelas": 10,
+    "aktif": salah
+}
+
+db.tabel("siswa").simpan(budi)
+db.tabel("siswa").simpan(andi)
+db.tabel("siswa").simpan(rini)
+
+cetak("\nMengambil semua data siswa:")
+buat semua_siswa = db.tabel("siswa").ambil()
+tampilkan(semua_siswa)
+
+cetak("\nMencari siswa yang berada di kelas 10:")
+buat kelas_10 = db.tabel("siswa").dimana("kelas", "=", 10).ambil()
+tampilkan(kelas_10)
+
+cetak("\nMemperbarui data Andi agar naik ke kelas 13:")
+db.tabel("siswa").dimana("nama", "=", "Andi Wijaya").perbarui({"kelas": 13})
+buat andi_baru = db.tabel("siswa").dimana("nama", "=", "Andi Wijaya").ambil()
+tampilkan(andi_baru)
+
+cetak("\nMenghapus siswa yang tidak aktif...")
+db.tabel("siswa").dimana("aktif", "=", 0).hapus()
+
+cetak("\nData siswa tersisa:")
+buat sisa = db.tabel("siswa").ambil()
+tampilkan(sisa)
+
+cetak("\nTest berhasil!")
+cetak("Selesai.")

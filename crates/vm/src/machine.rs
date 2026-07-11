@@ -555,42 +555,45 @@ impl VmContext for VM {
     }
 
     fn execute_function(&mut self, func_val: Value, args: Vec<Value>) -> Result<Value, String> {
-        let (func_idx, env_id) = if let Value::Fungsi(idx, env) = func_val {
-            (idx, env)
-        } else {
-            return Err("Bukan fungsi".to_string());
-        };
+        match func_val {
+            Value::Fungsi(func_idx, env_id) => {
+                let func = self.heap.get_fungsi(func_idx).clone();
+                
+                // Push args
+                for arg in &args {
+                    self.stack.push(*arg);
+                }
+                
+                // Insert into environment
+                for i in 0..func.parameter.len() {
+                    if i < args.len() {
+                        self.environments[env_id].insert(func.parameter[i].clone(), args[i]);
+                    }
+                }
+                
+                let stack_offset = self.stack.len() - args.len();
+                self.frames.push(CallFrame {
+                    fungsi: func_idx,
+                    ip: 0,
+                    stack_offset,
+                    env_id,
+                    is_module: false,
+                });
 
-        let func = self.heap.get_fungsi(func_idx).clone();
-        
-        // Push args
-        for arg in &args {
-            self.stack.push(*arg);
-        }
-        
-        // Insert into environment
-        for i in 0..func.parameter.len() {
-            if i < args.len() {
-                self.environments[env_id].insert(func.parameter[i].clone(), args[i]);
+                let target_frames = self.frames.len() - 1;
+                match self.run(target_frames) {
+                    Ok(_) => {
+                        let result = self.stack.pop().unwrap_or(Value::Kosong);
+                        Ok(result)
+                    }
+                    Err((msg, _lokasi)) => Err(msg),
+                }
             }
-        }
-        
-        let stack_offset = self.stack.len() - args.len();
-        self.frames.push(CallFrame {
-            fungsi: func_idx,
-            ip: 0,
-            stack_offset,
-            env_id,
-            is_module: false,
-        });
-
-        let target_frames = self.frames.len() - 1;
-        match self.run(target_frames) {
-            Ok(_) => {
-                let result = self.stack.pop().unwrap_or(Value::Kosong);
-                Ok(result)
+            Value::FungsiBawaan(idx) => {
+                let func_ptr = self.heap.get_fungsi_bawaan(idx).func;
+                func_ptr(self, args)
             }
-            Err((msg, _lokasi)) => Err(msg),
+            _ => Err("Bukan fungsi".to_string()),
         }
     }
 

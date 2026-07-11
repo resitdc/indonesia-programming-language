@@ -1,5 +1,15 @@
 use std::collections::HashMap;
 use crate::value::{Value, FungsiVM, FungsiBawaanVM};
+use rusqlite::Connection as SqliteConnection;
+use mysql::Conn as MysqlConnection;
+use postgres::Client as PostgresClient;
+use std::sync::{Arc, Mutex};
+
+pub enum DatabaseConnection {
+    Sqlite(SqliteConnection),
+    Mysql(MysqlConnection),
+    Postgres(PostgresClient),
+}
 
 #[derive(Clone)]
 pub struct HeapObject {
@@ -59,6 +69,12 @@ impl Default for WebState {
     }
 }
 
+#[derive(Clone, Default)]
+pub struct DbQueryState {
+    pub tabel: String,
+    pub kondisi: Vec<(String, String, Value)>, // kolom, operator, nilai
+}
+
 #[derive(Clone)]
 pub struct Heap {
     pub objects: Vec<HeapObject>,
@@ -68,6 +84,9 @@ pub struct Heap {
     pub web_static_dirs: HashMap<String, String>,
     pub web_config: WebConfig,
     pub web_state: WebState,
+    pub db_connection: Option<Arc<Mutex<DatabaseConnection>>>,
+    pub db_query_state: DbQueryState,
+    pub db_module_idx: Option<usize>,
 }
 
 impl Default for Heap {
@@ -86,6 +105,9 @@ impl Heap {
             web_static_dirs: HashMap::new(),
             web_config: WebConfig::default(),
             web_state: WebState::default(),
+            db_connection: None,
+            db_query_state: DbQueryState::default(),
+            db_module_idx: None,
         }
     }
 

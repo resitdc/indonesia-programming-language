@@ -11,6 +11,7 @@ pub mod cookie;
 pub mod session;
 pub mod tugas;
 pub mod string;
+pub mod db;
 
 use crate::machine::VM;
 
@@ -28,4 +29,5 @@ pub fn register_all(vm: &mut VM) {
     session::register(vm);
     tugas::register(vm);
     string::register(vm);
+    db::register(vm);
 }
