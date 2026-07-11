@@ -28,6 +28,12 @@ jobs:
             binary: rpl.exe
             artifact: rpl-windows-x64
 
+          - name: Windows x86 (32-bit)
+            os: windows-latest
+            target: i686-pc-windows-msvc
+            binary: rpl.exe
+            artifact: rpl-windows-x86
+
           - name: macOS Intel
             os: macos-14
             target: x86_64-apple-darwin
@@ -81,9 +87,16 @@ jobs:
   # PACKAGE WINDOWS — Create .exe installer with NSIS
   # ================================================================
   package-windows:
-    name: 📦 Windows Installer
+    name: 📦 Windows Installer (${{ matrix.arch }})
     needs: build
     runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x64
+            artifact: rpl-windows-x64
+          - arch: x86
+            artifact: rpl-windows-x86
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v5
@@ -91,7 +104,7 @@ jobs:
       - name: 📥 Download Binary
         uses: actions/download-artifact@v5
         with:
-          name: rpl-windows-x64
+          name: ${{ matrix.artifact }}
           path: staging/
 
       - name: 📁 Prepare Installer Files
@@ -142,7 +155,7 @@ jobs:
           !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
           
           Name "${PRODUCT_FULLNAME} ${PRODUCT_VERSION}"
-          OutFile "RPL-Setup-${PRODUCT_VERSION}.exe"
+          OutFile "RPL-Setup-${PRODUCT_VERSION}-${{ matrix.arch }}.exe"
           InstallDir "$PROGRAMFILES\RPL"
           RequestExecutionLevel admin
           SetCompressor /SOLID lzma
@@ -199,7 +212,7 @@ jobs:
       - name: 📤 Upload Windows Installer
         uses: actions/upload-artifact@v5
         with:
-          name: installer-windows
+          name: installer-windows-${{ matrix.arch }}
           path: staging/RPL-Setup-*.exe
 
   # ================================================================
@@ -319,7 +332,8 @@ jobs:
             
             | Platform | File |
             |----------|------|
-            | 🪟 Windows | `RPL-Setup-1.0.0.exe` |
+            | 🪟 Windows (64-bit) | `RPL-Setup-1.0.0-x64.exe` |
+            | 🪟 Windows (32-bit) | `RPL-Setup-1.0.0-x86.exe` |
             | 🍎 macOS (Apple Silicon) | `RPL-1.0.0-arm64.dmg` |
             | 🍎 macOS (Intel) | `RPL-1.0.0-x64.dmg` |
             | 🐧 Linux (Debian/Ubuntu) | `rpl_1.0.0_amd64.deb` |
@@ -327,7 +341,7 @@ jobs:
             
             ### 🚀 Cara Install
             
-            **Windows:** Download `RPL-Setup-1.0.0.exe` → Klik Install → Selesai!
+            **Windows:** Download file `.exe` sesuai tipe bit OS Anda (64-bit / 32-bit) → Klik Install → Selesai!
             
             **macOS:** Download `.dmg` → Buka → Klik `.pkg` → Install
             
