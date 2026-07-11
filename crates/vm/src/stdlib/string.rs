@@ -105,6 +105,20 @@ pub fn register(vm: &mut VM) {
     let ganti_idx = vm.heap.alloc(HeapData::FungsiBawaan(ganti_func));
     module_dict.insert("ganti".to_string(), Value::FungsiBawaan(ganti_idx));
 
+    let dari_func = FungsiBawaanVM {
+        nama: "dari".to_string(),
+        func: |ctx, args| {
+            if args.len() != 1 {
+                return Err("Fungsi 'dari' membutuhkan 1 argumen".to_string());
+            }
+            let s = args[0].to_string(ctx.get_heap_mut());
+            let new_idx = ctx.get_heap_mut().alloc(HeapData::String(s));
+            Ok(Value::String(new_idx))
+        },
+    };
+    let dari_idx = vm.heap.alloc(HeapData::FungsiBawaan(dari_func));
+    module_dict.insert("dari".to_string(), Value::FungsiBawaan(dari_idx));
+
     let dict_idx = vm.heap.alloc(HeapData::Kamus(module_dict));
     vm.set_global("string".to_string(), Value::Kamus(dict_idx));
 }

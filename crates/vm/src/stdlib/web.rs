@@ -107,6 +107,28 @@ pub fn register(vm: &mut VM) {
             'req_loop: for mut request in server.incoming_requests() {
                 let url = request.url().to_string();
                 
+                // --- AWAL REQUEST: Bersihkan state & parse cookies ---
+                ctx.get_heap_mut().web_state.active_cookies.clear();
+                ctx.get_heap_mut().web_state.cookies_to_set.clear();
+                ctx.get_heap_mut().web_state.active_session_id = None;
+                
+                for header in request.headers() {
+                    if header.field.equiv("Cookie") {
+                        let cookie_str = header.value.as_str();
+                        for part in cookie_str.split(';') {
+                            let part = part.trim();
+                            if let Some((k, v)) = part.split_once('=') {
+                                ctx.get_heap_mut().web_state.active_cookies.insert(k.to_string(), v.to_string());
+                            }
+                        }
+                    }
+                }
+                
+                if let Some(sid) = ctx.get_heap_mut().web_state.active_cookies.get("RPL_SESSIONID") {
+                    ctx.get_heap_mut().web_state.active_session_id = Some(sid.clone());
+                }
+                // --- AKHIR PARSING COOKIE ---
+                
                 // 1. Rate Limiting
                 if let Some(limit) = rate_limit {
                     let ip = request.remote_addr().map(|a| a.ip().to_string()).unwrap_or_else(|| "unknown".to_string());
@@ -203,27 +225,33 @@ pub fn register(vm: &mut VM) {
                                     }
                                 }
                                 
-                                if kompresi_aktif && accept_encoding.contains("br") {
+                                let mut response = if kompresi_aktif && accept_encoding.contains("br") {
                                     let mut compressed = Vec::new();
                                     let mut cursor = std::io::Cursor::new(val_string.as_bytes());
                                     let _ = brotli::CompressorReader::new(&mut cursor, 4096, 11, 22).read_to_end(&mut compressed);
-                                    let mut response = tiny_http::Response::from_data(compressed);
-                                    response.add_header(tiny_http::Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap());
-                                    response.add_header(tiny_http::Header::from_bytes(&b"Content-Encoding"[..], &b"br"[..]).unwrap());
-                                    let _ = request.respond(response);
+                                    let mut r = tiny_http::Response::from_data(compressed);
+                                    r.add_header(tiny_http::Header::from_bytes(&b"Content-Encoding"[..], &b"br"[..]).unwrap());
+                                    r
                                 } else if kompresi_aktif && accept_encoding.contains("gzip") {
                                     let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
                                     let _ = encoder.write_all(val_string.as_bytes());
                                     let compressed = encoder.finish().unwrap_or_default();
-                                    let mut response = tiny_http::Response::from_data(compressed);
-                                    response.add_header(tiny_http::Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap());
-                                    response.add_header(tiny_http::Header::from_bytes(&b"Content-Encoding"[..], &b"gzip"[..]).unwrap());
-                                    let _ = request.respond(response);
+                                    let mut r = tiny_http::Response::from_data(compressed);
+                                    r.add_header(tiny_http::Header::from_bytes(&b"Content-Encoding"[..], &b"gzip"[..]).unwrap());
+                                    r
                                 } else {
-                                    let mut response = tiny_http::Response::from_string(val_string);
-                                    response.add_header(tiny_http::Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap());
-                                    let _ = request.respond(response);
+                                    tiny_http::Response::from_string(val_string)
+                                };
+                                
+                                response.add_header(tiny_http::Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap());
+                                
+                                // We need to clone it because we are borrowing ctx
+                                let cookies = ctx.get_heap_mut().web_state.cookies_to_set.clone();
+                                for cookie in cookies {
+                                    response.add_header(tiny_http::Header::from_bytes(&b"Set-Cookie"[..], cookie.as_bytes()).unwrap());
                                 }
+                                
+                                let _ = request.respond(response);
                             }
                             Err(e) => {
                                 let err_resp = tiny_http::Response::from_string(format!("Internal Server Error: {}", e))

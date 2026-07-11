@@ -98,6 +98,8 @@ impl VM {
             }
         }
         
+        self.heap.mark_sessions();
+        
         let before = self.heap.allocated_count;
         self.heap.sweep();
         let after = self.heap.allocated_count;

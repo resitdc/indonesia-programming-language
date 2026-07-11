@@ -35,12 +35,37 @@ impl Default for WebConfig {
 }
 
 #[derive(Clone)]
+pub struct WebState {
+    // SessionID -> (Expired, Data)
+    // Value represents Kamus data in memory but wait, Value itself is an index.
+    // So session data needs to be stored somewhere. We can store it as a Kamus inside WebState itself instead of in the VM Heap?
+    // Actually, storing it in the VM Heap is fine, but since we are modifying WebState across requests, we can just store `HashMap<String, usize>` where usize is the Kamus Heap index.
+    pub sessions: HashMap<String, (Option<std::time::Instant>, usize)>,
+    
+    pub active_session_id: Option<String>,
+    pub active_cookies: HashMap<String, String>,
+    pub cookies_to_set: Vec<String>,
+}
+
+impl Default for WebState {
+    fn default() -> Self {
+        Self {
+            sessions: HashMap::new(),
+            active_session_id: None,
+            active_cookies: HashMap::new(),
+            cookies_to_set: Vec::new(),
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct Heap {
     pub objects: Vec<HeapObject>,
     pub free_list_head: Option<usize>,
     pub allocated_count: usize,
     pub web_routes: HashMap<String, usize>,
     pub web_config: WebConfig,
+    pub web_state: WebState,
 }
 
 impl Default for Heap {
@@ -57,6 +82,7 @@ impl Heap {
             allocated_count: 0,
             web_routes: HashMap::new(),
             web_config: WebConfig::default(),
+            web_state: WebState::default(),
         }
     }
 
@@ -149,12 +175,9 @@ impl Heap {
         self.objects[idx].is_marked = true;
 
         // Recursively mark children
-        // We have to bypass borrow checker by pulling out a clone or handling carefully.
-        // For a simple implementation, we can collect indices to mark and mark them iteratively.
         let mut worklist = vec![idx];
         
         while let Some(current) = worklist.pop() {
-            // Need a way to read children without double-borrowing self
             let children = match &self.objects[current].data {
                 HeapData::Array(arr) => {
                     let mut c = Vec::new();
@@ -198,6 +221,16 @@ impl Heap {
                     worklist.push(child);
                 }
             }
+        }
+    }
+    
+    pub fn mark_sessions(&mut self) {
+        let mut session_indices = Vec::new();
+        for (_, (_, idx)) in &self.web_state.sessions {
+            session_indices.push(*idx);
+        }
+        for idx in session_indices {
+            self.mark(idx);
         }
     }
 

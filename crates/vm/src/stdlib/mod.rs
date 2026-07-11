@@ -7,6 +7,8 @@ pub mod http;
 pub mod env;
 pub mod file;
 pub mod web;
+pub mod cookie;
+pub mod session;
 pub mod tugas;
 pub mod string;
 
@@ -22,6 +24,8 @@ pub fn register_all(vm: &mut VM) {
     env::register(vm);
     file::register(vm);
     web::register(vm);
+    cookie::register(vm);
+    session::register(vm);
     tugas::register(vm);
     string::register(vm);
 }

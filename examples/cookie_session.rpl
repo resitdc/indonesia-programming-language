@@ -1,0 +1,36 @@
+tampilkan("Memulai server dengan Cookie dan Session...")
+
+web.get("/", fungsi(req) {
+    kembalikan "<h1>Beranda</h1><p><a href='/login'>Login</a></p><p><a href='/dashboard'>Dashboard</a></p>"
+})
+
+web.get("/login", fungsi(req) {
+    session.set("user", "Resit")
+    cookie.set("tema", "gelap")
+    cookie.set("pesan", "Selamat datang", 3600)
+    session.set_expired(3600) // session bertahan 1 jam
+    
+    kembalikan "<h1>Login Berhasil</h1><p><a href='/dashboard'>Ke Dashboard</a></p>"
+})
+
+web.get("/dashboard", fungsi(req) {
+    user = session.get("user")
+    tema = cookie.get("tema")
+    pesan = cookie.get("pesan")
+    
+    jika user == kosong {
+        kembalikan "<h1>Akses Ditolak!</h1><p><a href='/login'>Silakan Login</a></p>"
+    }
+    
+    kembalikan "<h1>Dashboard</h1><p>User: " + string.dari(user) + "</p><p>Tema: " + string.dari(tema) + "</p><p>Pesan: " + string.dari(pesan) + "</p><p><a href='/logout'>Logout</a></p>"
+})
+
+web.get("/logout", fungsi(req) {
+    session.hapus("user")
+    cookie.hapus("tema")
+    cookie.hapus("pesan")
+    
+    kembalikan "<h1>Logout Berhasil</h1><p><a href='/'>Ke Beranda</a></p>"
+})
+
+web.jalankan(4010)
