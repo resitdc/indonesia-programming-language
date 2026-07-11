@@ -3,44 +3,44 @@ use crate::{Expression, Statement, Program, InfixOperator, PrefixOperator};
 pub fn optimize_program(mut program: Program) -> Program {
     let mut optimized_statements = Vec::new();
     for stmt in program.statements {
-        optimized_statements.push(optimize_statement(stmt));
+        optimized_statements.extend(optimize_statement(stmt));
     }
     program.statements = optimized_statements;
     program
 }
 
-fn optimize_statement(stmt: Statement) -> Statement {
+fn optimize_statement(stmt: Statement) -> Vec<Statement> {
     match stmt {
-        Statement::DeklarasiVariabel { nama, nilai, lokasi } => Statement::DeklarasiVariabel {
+        Statement::DeklarasiVariabel { nama, nilai, lokasi } => vec![Statement::DeklarasiVariabel {
             nama,
             nilai: optimize_expression(nilai),
             lokasi,
-        },
-        Statement::Assignment { nama, nilai, lokasi } => Statement::Assignment {
+        }],
+        Statement::Assignment { nama, nilai, lokasi } => vec![Statement::Assignment {
             nama,
             nilai: optimize_expression(nilai),
             lokasi,
-        },
+        }],
         Statement::Tampilkan { mut nilai, lokasi } => {
             for i in 0..nilai.len() {
                 nilai[i] = optimize_expression(nilai[i].clone());
             }
-            Statement::Tampilkan { nilai, lokasi }
+            vec![Statement::Tampilkan { nilai, lokasi }]
         }
         Statement::Cetak { mut nilai, lokasi } => {
             for i in 0..nilai.len() {
                 nilai[i] = optimize_expression(nilai[i].clone());
             }
-            Statement::Cetak { nilai, lokasi }
+            vec![Statement::Cetak { nilai, lokasi }]
         }
         Statement::Kembalikan { nilai, lokasi } => {
             let optimized_nilai = nilai.map(optimize_expression);
-            Statement::Kembalikan {
+            vec![Statement::Kembalikan {
                 nilai: optimized_nilai,
                 lokasi,
-            }
+            }]
         }
-        Statement::Expression(expr) => Statement::Expression(optimize_expression(expr)),
+        Statement::Expression(expr) => vec![Statement::Expression(optimize_expression(expr))],
         Statement::Jika {
             kondisi,
             konsekuensi,
@@ -48,23 +48,51 @@ fn optimize_statement(stmt: Statement) -> Statement {
             lokasi,
         } => {
             let opt_kondisi = optimize_expression(kondisi);
-            let opt_konsekuensi = konsekuensi.into_iter().map(optimize_statement).collect();
-            let opt_alternatif = alternatif.map(|alt| alt.into_iter().map(optimize_statement).collect());
-            Statement::Jika {
+            
+            // Dead Code Elimination
+            if let Expression::Boolean(b, _) = opt_kondisi {
+                if b {
+                    // kondisi selalu benar, buang Jika, kembalikan isi konsekuensi
+                    let mut inlined = Vec::new();
+                    for stmt in konsekuensi {
+                        inlined.extend(optimize_statement(stmt));
+                    }
+                    return inlined;
+                } else {
+                    // kondisi selalu salah, buang Jika, kembalikan alternatif (jika ada)
+                    let mut inlined = Vec::new();
+                    if let Some(alt) = alternatif {
+                        for stmt in alt {
+                            inlined.extend(optimize_statement(stmt));
+                        }
+                    }
+                    return inlined;
+                }
+            }
+            
+            let opt_konsekuensi = konsekuensi.into_iter().flat_map(optimize_statement).collect();
+            let opt_alternatif = alternatif.map(|alt| alt.into_iter().flat_map(optimize_statement).collect());
+            vec![Statement::Jika {
                 kondisi: opt_kondisi,
                 konsekuensi: opt_konsekuensi,
                 alternatif: opt_alternatif,
                 lokasi,
-            }
+            }]
         }
         Statement::Selama { kondisi, body, lokasi } => {
             let opt_kondisi = optimize_expression(kondisi);
-            let opt_body = body.into_iter().map(optimize_statement).collect();
-            Statement::Selama {
+            
+            if let Expression::Boolean(false, _) = opt_kondisi {
+                // Selama (salah) { ... } tidak akan pernah jalan
+                return vec![];
+            }
+            
+            let opt_body = body.into_iter().flat_map(optimize_statement).collect();
+            vec![Statement::Selama {
                 kondisi: opt_kondisi,
                 body: opt_body,
                 lokasi,
-            }
+            }]
         }
         Statement::DeklarasiFungsi {
             nama,
@@ -72,13 +100,13 @@ fn optimize_statement(stmt: Statement) -> Statement {
             body,
             lokasi,
         } => {
-            let opt_body = body.into_iter().map(optimize_statement).collect();
-            Statement::DeklarasiFungsi {
+            let opt_body = body.into_iter().flat_map(optimize_statement).collect();
+            vec![Statement::DeklarasiFungsi {
                 nama,
                 parameter,
                 body: opt_body,
                 lokasi,
-            }
+            }]
         }
     }
 }

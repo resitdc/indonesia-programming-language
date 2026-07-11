@@ -1,23 +1,53 @@
 use crate::machine::VM;
 use crate::value::{Value, FungsiBawaanVM};
-use std::rc::Rc;
 use std::collections::HashMap;
-use std::cell::RefCell;
+use crate::heap::{Heap, HeapData};
 use serde_json::Value as JsonValue;
+
+fn convert_to_value(heap: &mut Heap, json: &JsonValue) -> Value {
+    match json {
+        JsonValue::Null => Value::Kosong,
+        JsonValue::Bool(b) => Value::Boolean(*b),
+        JsonValue::Number(num) => {
+            if let Some(n) = num.as_f64() {
+                Value::Angka(n)
+            } else {
+                Value::Kosong
+            }
+        },
+        JsonValue::String(s) => {
+            let idx = heap.alloc(HeapData::String(s.clone()));
+            Value::String(idx)
+        },
+        JsonValue::Array(arr) => {
+            let elements = arr.iter().map(|v| convert_to_value(heap, v)).collect();
+            let idx = heap.alloc(HeapData::Array(elements));
+            Value::Array(idx)
+        },
+        JsonValue::Object(obj) => {
+            let mut map = HashMap::new();
+            for (k, v) in obj {
+                map.insert(k.clone(), convert_to_value(heap, v));
+            }
+            let idx = heap.alloc(HeapData::Kamus(map));
+            Value::Kamus(idx)
+        },
+    }
+}
 
 pub fn register(vm: &mut VM) {
     let mut module_dict = HashMap::new();
     
-    // json.parse(teks)
     let parse_func = FungsiBawaanVM {
         nama: "parse".to_string(),
-        func: |args| {
-            if args.len() != 1 {
-                return Err("Fungsi 'parse' membutuhkan 1 argumen: teks".to_string());
+        func: |heap, args| {
+            if args.is_empty() {
+                return Err("Fungsi 'parse' membutuhkan 1 argumen: json string".to_string());
             }
-            if let Value::String(s) = &args[0] {
-                match serde_json::from_str::<JsonValue>(s) {
-                    Ok(json_val) => Ok(json_to_value(&json_val)),
+            if let Value::String(idx) = &args[0] {
+                let s = heap.get_string(*idx).clone();
+                match serde_json::from_str::<JsonValue>(&s) {
+                    Ok(json_val) => Ok(convert_to_value(heap, &json_val)),
                     Err(e) => Err(format!("Gagal mem-parsing JSON: {}", e)),
                 }
             } else {
@@ -25,82 +55,52 @@ pub fn register(vm: &mut VM) {
             }
         },
     };
-    module_dict.insert("parse".to_string(), Value::FungsiBawaan(Rc::new(parse_func)));
+    let parse_idx = vm.heap.alloc(HeapData::FungsiBawaan(parse_func));
+    module_dict.insert("parse".to_string(), Value::FungsiBawaan(parse_idx));
 
-    // json.stringify(data)
     let stringify_func = FungsiBawaanVM {
         nama: "stringify".to_string(),
-        func: |args| {
-            if args.len() != 1 {
+        func: |heap, args| {
+            if args.is_empty() {
                 return Err("Fungsi 'stringify' membutuhkan 1 argumen: data".to_string());
             }
-            let json_val = value_to_json(&args[0]);
-            match serde_json::to_string(&json_val) {
-                Ok(s) => Ok(Value::String(Rc::new(s))),
-                Err(e) => Err(format!("Gagal men-stringify JSON: {}", e)),
+            
+            fn convert_from_value(heap: &Heap, val: &Value) -> JsonValue {
+                match val {
+                    Value::Kosong => JsonValue::Null,
+                    Value::Boolean(b) => JsonValue::Bool(*b),
+                    Value::Angka(n) => {
+                        if let Some(num) = serde_json::Number::from_f64(*n) {
+                            JsonValue::Number(num)
+                        } else {
+                            JsonValue::Null
+                        }
+                    },
+                    Value::String(idx) => JsonValue::String(heap.get_string(*idx).clone()),
+                    Value::Array(idx) => {
+                        let elements = heap.get_array(*idx).iter().map(|v| convert_from_value(heap, v)).collect();
+                        JsonValue::Array(elements)
+                    },
+                    Value::Kamus(idx) => {
+                        let mut map = serde_json::Map::new();
+                        for (k, v) in heap.get_kamus(*idx) {
+                            map.insert(k.clone(), convert_from_value(heap, v));
+                        }
+                        JsonValue::Object(map)
+                    },
+                    Value::Fungsi(_) | Value::FungsiBawaan(_) => JsonValue::Null,
+                }
             }
+            
+            let json_val = convert_from_value(heap, &args[0]);
+            let s = json_val.to_string();
+            let s_idx = heap.alloc(HeapData::String(s));
+            Ok(Value::String(s_idx))
         },
     };
-    module_dict.insert("stringify".to_string(), Value::FungsiBawaan(Rc::new(stringify_func)));
+    let stringify_idx = vm.heap.alloc(HeapData::FungsiBawaan(stringify_func));
+    module_dict.insert("stringify".to_string(), Value::FungsiBawaan(stringify_idx));
 
-    vm.set_global("json".to_string(), Value::Kamus(Rc::new(RefCell::new(module_dict))));
-}
-
-fn json_to_value(json: &JsonValue) -> Value {
-    match json {
-        JsonValue::Null => Value::Kosong,
-        JsonValue::Bool(b) => Value::Boolean(*b),
-        JsonValue::Number(n) => {
-            if let Some(f) = n.as_f64() {
-                Value::Angka(f)
-            } else {
-                Value::Kosong
-            }
-        },
-        JsonValue::String(s) => Value::String(Rc::new(s.clone())),
-        JsonValue::Array(arr) => {
-            let mut vec = Vec::new();
-            for item in arr {
-                vec.push(json_to_value(item));
-            }
-            Value::Array(Rc::new(RefCell::new(vec)))
-        },
-        JsonValue::Object(obj) => {
-            let mut map = HashMap::new();
-            for (k, v) in obj {
-                map.insert(k.clone(), json_to_value(v));
-            }
-            Value::Kamus(Rc::new(RefCell::new(map)))
-        },
-    }
-}
-
-fn value_to_json(val: &Value) -> JsonValue {
-    match val {
-        Value::Kosong => JsonValue::Null,
-        Value::Boolean(b) => JsonValue::Bool(*b),
-        Value::Angka(n) => {
-            if let Some(num) = serde_json::Number::from_f64(*n) {
-                JsonValue::Number(num)
-            } else {
-                JsonValue::Null
-            }
-        },
-        Value::String(s) => JsonValue::String(s.to_string()),
-        Value::Array(arr) => {
-            let mut vec = Vec::new();
-            for item in arr.borrow().iter() {
-                vec.push(value_to_json(item));
-            }
-            JsonValue::Array(vec)
-        },
-        Value::Kamus(kamus) => {
-            let mut map = serde_json::Map::new();
-            for (k, v) in kamus.borrow().iter() {
-                map.insert(k.clone(), value_to_json(v));
-            }
-            JsonValue::Object(map)
-        },
-        _ => JsonValue::Null,
-    }
+    let dict_idx = vm.heap.alloc(HeapData::Kamus(module_dict));
+    vm.set_global("json".to_string(), Value::Kamus(dict_idx));
 }

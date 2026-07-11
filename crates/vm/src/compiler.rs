@@ -1,12 +1,20 @@
 use crate::opcodes::OpCode;
 use crate::value::{Value, FungsiVM};
 use ast::{Program, Statement, Expression, InfixOperator, PrefixOperator};
-use std::rc::Rc;
+use crate::heap::{Heap, HeapData};
+use errors::Lokasi;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Chunk {
     pub code: Vec<u8>,
     pub constants: Vec<Value>,
+    pub locations: Vec<Lokasi>,
+}
+
+impl Default for Chunk {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Chunk {
@@ -14,15 +22,18 @@ impl Chunk {
         Self {
             code: Vec::new(),
             constants: Vec::new(),
+            locations: Vec::new(),
         }
     }
 
-    pub fn write(&mut self, byte: u8) {
+    pub fn write(&mut self, byte: u8, lokasi: Lokasi) {
         self.code.push(byte);
+        self.locations.push(lokasi);
     }
 
-    pub fn write_opcode(&mut self, op: OpCode) {
+    pub fn write_opcode(&mut self, op: OpCode, lokasi: Lokasi) {
         self.code.push(op as u8);
+        self.locations.push(lokasi);
     }
 
     pub fn write_constant(&mut self, value: Value) -> u16 {
@@ -30,29 +41,32 @@ impl Chunk {
         (self.constants.len() - 1) as u16
     }
 
-    pub fn write_u16(&mut self, val: u16) {
+    pub fn write_u16(&mut self, val: u16, lokasi: Lokasi) {
         let bytes = val.to_be_bytes();
-        self.code.push(bytes[0]);
-        self.code.push(bytes[1]);
+        self.write(bytes[0], lokasi);
+        self.write(bytes[1], lokasi);
     }
 }
 
-pub struct Compiler {
+pub struct Compiler<'a> {
     pub chunk: Chunk,
+    pub heap: &'a mut Heap,
 }
 
-impl Compiler {
-    pub fn new() -> Self {
+impl<'a> Compiler<'a> {
+    pub fn new(heap: &'a mut Heap) -> Self {
         Self {
             chunk: Chunk::new(),
+            heap,
         }
     }
 
     pub fn compile(mut self, program: Program) -> Result<Chunk, String> {
+        let dummy_lokasi = Lokasi { baris: 1, kolom: 1 };
         for stmt in program.statements {
             self.compile_statement(stmt)?;
         }
-        self.chunk.write_opcode(OpCode::Return);
+        self.chunk.write_opcode(OpCode::Return, dummy_lokasi);
         Ok(self.chunk)
     }
 
@@ -61,28 +75,35 @@ impl Compiler {
             Statement::Expression(expr) => {
                 self.compile_expression(expr)?;
             }
-            Statement::DeklarasiVariabel { nama, nilai, .. } | Statement::Assignment { nama, nilai, .. } => {
+            Statement::DeklarasiVariabel { nama, nilai, lokasi } | Statement::Assignment { nama, nilai, lokasi } => {
                 self.compile_expression(nilai)?;
-                let const_idx = self.chunk.write_constant(Value::String(Rc::new(nama)));
-                self.chunk.write_opcode(OpCode::StoreVar);
-                self.chunk.write_u16(const_idx);
+                let name_idx = self.heap.alloc(HeapData::String(nama));
+                let const_idx = self.chunk.write_constant(Value::String(name_idx));
+                self.chunk.write_opcode(OpCode::StoreVar, lokasi);
+                self.chunk.write_u16(const_idx, lokasi);
             }
-            Statement::Tampilkan { nilai, .. } => {
+            Statement::Tampilkan { nilai, lokasi } => {
                 for expr in nilai {
                     self.compile_expression(expr)?;
-                    self.chunk.write_opcode(OpCode::Print);
+                    self.chunk.write_opcode(OpCode::Print, lokasi);
                 }
             }
-            Statement::Jika { kondisi, konsekuensi, alternatif, .. } => {
+            Statement::Cetak { nilai, lokasi } => {
+                for expr in nilai {
+                    self.compile_expression(expr)?;
+                    self.chunk.write_opcode(OpCode::Print, lokasi);
+                }
+            }
+            Statement::Jika { kondisi, konsekuensi, alternatif, lokasi } => {
                 self.compile_expression(kondisi)?;
                 
-                let jump_if_false_offset = self.emit_jump(OpCode::JumpIfFalse);
+                let jump_if_false_offset = self.emit_jump(OpCode::JumpIfFalse, lokasi);
                 
                 for stmt in konsekuensi {
                     self.compile_statement(stmt)?;
                 }
 
-                let jump_offset = self.emit_jump(OpCode::Jump);
+                let jump_offset = self.emit_jump(OpCode::Jump, lokasi);
                 
                 self.patch_jump(jump_if_false_offset);
                 
@@ -94,37 +115,34 @@ impl Compiler {
                 
                 self.patch_jump(jump_offset);
             }
-            Statement::Selama { kondisi, body, .. } => {
+            Statement::Selama { kondisi, body, lokasi } => {
                 let loop_start = self.chunk.code.len();
                 
                 self.compile_expression(kondisi)?;
                 
-                let jump_if_false_offset = self.emit_jump(OpCode::JumpIfFalse);
+                let jump_if_false_offset = self.emit_jump(OpCode::JumpIfFalse, lokasi);
                 
                 for stmt in body {
                     self.compile_statement(stmt)?;
                 }
                 
-                // Jump back to start
-                let jump_back = self.emit_jump(OpCode::Jump);
+                let jump_back = self.emit_jump(OpCode::Jump, lokasi);
                 self.patch_jump_to(jump_back, loop_start);
                 
-                // Patch end
                 self.patch_jump(jump_if_false_offset);
             }
-            Statement::DeklarasiFungsi { nama, parameter, body, .. } => {
-                let mut fn_compiler = Compiler::new();
+            Statement::DeklarasiFungsi { nama, parameter, body, lokasi } => {
+                let mut fn_compiler = Compiler::new(self.heap);
                 for stmt in body {
                     fn_compiler.compile_statement(stmt)?;
                 }
                 
-                // Ensure function always returns
                 let mut chunk = fn_compiler.chunk;
                 if chunk.code.last() != Some(&(OpCode::Return as u8)) {
                     let const_idx = chunk.write_constant(Value::Kosong);
-                    chunk.write_opcode(OpCode::LoadConst);
-                    chunk.write_u16(const_idx);
-                    chunk.write_opcode(OpCode::Return);
+                    chunk.write_opcode(OpCode::LoadConst, lokasi);
+                    chunk.write_u16(const_idx, lokasi);
+                    chunk.write_opcode(OpCode::Return, lokasi);
                 }
                 
                 let fungsi = FungsiVM {
@@ -132,81 +150,86 @@ impl Compiler {
                     parameter,
                     chunk,
                 };
-                let const_idx = self.chunk.write_constant(Value::Fungsi(Rc::new(fungsi)));
-                self.chunk.write_opcode(OpCode::LoadConst);
-                self.chunk.write_u16(const_idx);
+                let fungsi_idx = self.heap.alloc(HeapData::Fungsi(fungsi));
+                let const_idx = self.chunk.write_constant(Value::Fungsi(fungsi_idx));
+                self.chunk.write_opcode(OpCode::LoadConst, lokasi);
+                self.chunk.write_u16(const_idx, lokasi);
 
-                let name_idx = self.chunk.write_constant(Value::String(Rc::new(nama)));
-                self.chunk.write_opcode(OpCode::StoreVar);
-                self.chunk.write_u16(name_idx);
+                let name_idx = self.heap.alloc(HeapData::String(nama));
+                let const_name_idx = self.chunk.write_constant(Value::String(name_idx));
+                self.chunk.write_opcode(OpCode::StoreVar, lokasi);
+                self.chunk.write_u16(const_name_idx, lokasi);
             }
-            Statement::Kembalikan { nilai, .. } => {
+            Statement::Kembalikan { nilai, lokasi } => {
                 if let Some(expr) = nilai {
                     self.compile_expression(expr)?;
                 } else {
                     let const_idx = self.chunk.write_constant(Value::Kosong);
-                    self.chunk.write_opcode(OpCode::LoadConst);
-                    self.chunk.write_u16(const_idx);
+                    self.chunk.write_opcode(OpCode::LoadConst, lokasi);
+                    self.chunk.write_u16(const_idx, lokasi);
                 }
-                self.chunk.write_opcode(OpCode::Return);
+                self.chunk.write_opcode(OpCode::Return, lokasi);
             }
-            _ => return Err(format!("Statement tidak didukung di VM: {:?}", stmt)),
         }
         Ok(())
     }
 
     fn compile_expression(&mut self, expr: Expression) -> Result<(), String> {
         match expr {
-            Expression::Angka(val, _) => {
+            Expression::Angka(val, lokasi) => {
                 let const_idx = self.chunk.write_constant(Value::Angka(val));
-                self.chunk.write_opcode(OpCode::LoadConst);
-                self.chunk.write_u16(const_idx);
+                self.chunk.write_opcode(OpCode::LoadConst, lokasi);
+                self.chunk.write_u16(const_idx, lokasi);
             }
-            Expression::String(val, _) => {
-                let const_idx = self.chunk.write_constant(Value::String(Rc::new(val)));
-                self.chunk.write_opcode(OpCode::LoadConst);
-                self.chunk.write_u16(const_idx);
+            Expression::String(val, lokasi) => {
+                let s_idx = self.heap.alloc(HeapData::String(val));
+                let const_idx = self.chunk.write_constant(Value::String(s_idx));
+                self.chunk.write_opcode(OpCode::LoadConst, lokasi);
+                self.chunk.write_u16(const_idx, lokasi);
             }
-            Expression::Boolean(val, _) => {
+            Expression::Boolean(val, lokasi) => {
                 let const_idx = self.chunk.write_constant(Value::Boolean(val));
-                self.chunk.write_opcode(OpCode::LoadConst);
-                self.chunk.write_u16(const_idx);
+                self.chunk.write_opcode(OpCode::LoadConst, lokasi);
+                self.chunk.write_u16(const_idx, lokasi);
             }
-            Expression::Identifier(nama, _) => {
-                let const_idx = self.chunk.write_constant(Value::String(Rc::new(nama)));
-                self.chunk.write_opcode(OpCode::LoadVar);
-                self.chunk.write_u16(const_idx);
+            Expression::Kosong(lokasi) => {
+                let const_idx = self.chunk.write_constant(Value::Kosong);
+                self.chunk.write_opcode(OpCode::LoadConst, lokasi);
+                self.chunk.write_u16(const_idx, lokasi);
             }
-            Expression::Infix { kiri, operator, kanan, .. } => {
+            Expression::Identifier(nama, lokasi) => {
+                let name_idx = self.heap.alloc(HeapData::String(nama));
+                let const_idx = self.chunk.write_constant(Value::String(name_idx));
+                self.chunk.write_opcode(OpCode::LoadVar, lokasi);
+                self.chunk.write_u16(const_idx, lokasi);
+            }
+            Expression::Infix { kiri, operator, kanan, lokasi } => {
                 self.compile_expression(*kiri)?;
                 self.compile_expression(*kanan)?;
                 match operator {
-                    InfixOperator::Tambah => self.chunk.write_opcode(OpCode::Add),
-                    InfixOperator::Kurang => self.chunk.write_opcode(OpCode::Subtract),
-                    InfixOperator::Kali => self.chunk.write_opcode(OpCode::Multiply),
-                    InfixOperator::Bagi => self.chunk.write_opcode(OpCode::Divide),
-                    InfixOperator::Mod => self.chunk.write_opcode(OpCode::Modulus),
-                    InfixOperator::LebihDari => self.chunk.write_opcode(OpCode::Greater),
-                    InfixOperator::KurangDari => self.chunk.write_opcode(OpCode::Less),
-                    InfixOperator::Minimal => self.chunk.write_opcode(OpCode::GreaterEqual),
-                    InfixOperator::Maksimal => self.chunk.write_opcode(OpCode::LessEqual),
-                    InfixOperator::SamaDengan => self.chunk.write_opcode(OpCode::Equal),
-                    InfixOperator::TidakSamaDengan => self.chunk.write_opcode(OpCode::NotEqual),
-                    InfixOperator::Dan => self.chunk.write_opcode(OpCode::And),
-                    InfixOperator::Atau => self.chunk.write_opcode(OpCode::Or),
+                    InfixOperator::Tambah => self.chunk.write_opcode(OpCode::Add, lokasi),
+                    InfixOperator::Kurang => self.chunk.write_opcode(OpCode::Subtract, lokasi),
+                    InfixOperator::Kali => self.chunk.write_opcode(OpCode::Multiply, lokasi),
+                    InfixOperator::Bagi => self.chunk.write_opcode(OpCode::Divide, lokasi),
+                    InfixOperator::Mod => self.chunk.write_opcode(OpCode::Modulus, lokasi),
+                    InfixOperator::LebihDari => self.chunk.write_opcode(OpCode::Greater, lokasi),
+                    InfixOperator::KurangDari => self.chunk.write_opcode(OpCode::Less, lokasi),
+                    InfixOperator::Minimal => self.chunk.write_opcode(OpCode::GreaterEqual, lokasi),
+                    InfixOperator::Maksimal => self.chunk.write_opcode(OpCode::LessEqual, lokasi),
+                    InfixOperator::SamaDengan => self.chunk.write_opcode(OpCode::Equal, lokasi),
+                    InfixOperator::TidakSamaDengan => self.chunk.write_opcode(OpCode::NotEqual, lokasi),
+                    InfixOperator::Dan => self.chunk.write_opcode(OpCode::And, lokasi),
+                    InfixOperator::Atau => self.chunk.write_opcode(OpCode::Or, lokasi),
                 }
             }
-            Expression::Prefix { operator, kanan, .. } => {
+            Expression::Prefix { operator, kanan, lokasi } => {
                 self.compile_expression(*kanan)?;
                 match operator {
-                    PrefixOperator::Minus => {
-                        // Implement negate in future
-                        return Err("Prefix Minus not yet supported in VM".to_string());
-                    }
-                    PrefixOperator::Bukan => self.chunk.write_opcode(OpCode::Not),
+                    PrefixOperator::Minus => return Err("Prefix Minus not yet supported in VM".to_string()),
+                    PrefixOperator::Bukan => self.chunk.write_opcode(OpCode::Not, lokasi),
                 }
             }
-            Expression::Call { fungsi, argumen, .. } => {
+            Expression::Call { fungsi, argumen, lokasi } => {
                 self.compile_expression(*fungsi)?;
                 let arg_count = argumen.len();
                 if arg_count > 255 {
@@ -215,15 +238,15 @@ impl Compiler {
                 for arg in argumen {
                     self.compile_expression(arg)?;
                 }
-                self.chunk.write_opcode(OpCode::Call);
-                self.chunk.write(arg_count as u8);
+                self.chunk.write_opcode(OpCode::Call, lokasi);
+                self.chunk.write(arg_count as u8, lokasi);
             }
-            Expression::Index { kiri, indeks, .. } => {
+            Expression::Index { kiri, indeks, lokasi } => {
                 self.compile_expression(*kiri)?;
                 self.compile_expression(*indeks)?;
-                self.chunk.write_opcode(OpCode::GetIndex);
+                self.chunk.write_opcode(OpCode::GetIndex, lokasi);
             }
-            Expression::Array { elemen, .. } => {
+            Expression::Array { elemen, lokasi } => {
                 let count = elemen.len();
                 if count > u16::MAX as usize {
                     return Err("Elemen array maksimal 65535".to_string());
@@ -231,10 +254,10 @@ impl Compiler {
                 for el in elemen {
                     self.compile_expression(el)?;
                 }
-                self.chunk.write_opcode(OpCode::MakeArray);
-                self.chunk.write_u16(count as u16);
+                self.chunk.write_opcode(OpCode::MakeArray, lokasi);
+                self.chunk.write_u16(count as u16, lokasi);
             }
-            Expression::Kamus { pasangan, .. } => {
+            Expression::Kamus { pasangan, lokasi } => {
                 let count = pasangan.len();
                 if count > u16::MAX as usize {
                     return Err("Elemen kamus maksimal 65535".to_string());
@@ -243,35 +266,31 @@ impl Compiler {
                     self.compile_expression(k)?;
                     self.compile_expression(v)?;
                 }
-                self.chunk.write_opcode(OpCode::MakeKamus);
-                self.chunk.write_u16(count as u16);
+                self.chunk.write_opcode(OpCode::MakeKamus, lokasi);
+                self.chunk.write_u16(count as u16, lokasi);
             }
-            _ => return Err(format!("Ekspresi tidak didukung di VM: {:?}", expr)),
+            Expression::Impor(..) => {
+                return Err("Impor modul belum didukung di VM".to_string());
+            }
         }
         Ok(())
     }
 
-    fn emit_jump(&mut self, instruction: OpCode) -> usize {
-        self.chunk.write_opcode(instruction);
-        self.chunk.write(0xff);
-        self.chunk.write(0xff);
+    fn emit_jump(&mut self, instruction: OpCode, lokasi: Lokasi) -> usize {
+        self.chunk.write_opcode(instruction, lokasi);
+        self.chunk.write(0xff, lokasi);
+        self.chunk.write(0xff, lokasi);
         self.chunk.code.len() - 2
     }
 
     fn patch_jump(&mut self, offset: usize) {
         let target = self.chunk.code.len();
-        if target > u16::MAX as usize {
-            // handle error
-        }
         let bytes = (target as u16).to_be_bytes();
         self.chunk.code[offset] = bytes[0];
         self.chunk.code[offset + 1] = bytes[1];
     }
     
     fn patch_jump_to(&mut self, offset: usize, target: usize) {
-        // Backwards jump requires different calculation or we can just make it absolute.
-        // Let's use absolute jumps for simplicity.
-        // Change Jump implementation to be absolute!
         let bytes = (target as u16).to_be_bytes();
         self.chunk.code[offset] = bytes[0];
         self.chunk.code[offset + 1] = bytes[1];

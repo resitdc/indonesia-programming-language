@@ -1,0 +1,13 @@
+tampilkan "Mulai"
+
+jika benar {
+    tampilkan "Kondisi ini selalu benar"
+    buat a = 10 + 20
+    tampilkan a
+}
+
+jika salah {
+    tampilkan "Baris ini tidak akan pernah dieksekusi"
+}
+
+tampilkan "Selesai"

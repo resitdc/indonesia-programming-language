@@ -1,10 +1,7 @@
-use std::rc::Rc;
 use std::fmt;
+use crate::heap::Heap;
 
-use std::collections::HashMap;
-use std::cell::RefCell;
-
-pub type NativeFnVM = fn(Vec<Value>) -> Result<Value, String>;
+pub type NativeFnVM = fn(&mut Heap, Vec<Value>) -> Result<Value, String>;
 
 #[derive(Clone)]
 pub struct FungsiBawaanVM {
@@ -31,35 +28,35 @@ pub struct FungsiVM {
     pub chunk: crate::compiler::Chunk,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Value {
     Angka(f64),
-    String(Rc<String>),
     Boolean(bool),
-    Fungsi(Rc<FungsiVM>),
-    FungsiBawaan(Rc<FungsiBawaanVM>),
-    Array(Rc<RefCell<Vec<Value>>>),
-    Kamus(Rc<RefCell<HashMap<String, Value>>>),
     Kosong,
+    String(usize),
+    Array(usize),
+    Kamus(usize),
+    Fungsi(usize),
+    FungsiBawaan(usize),
 }
 
-impl fmt::Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Value {
+    pub fn to_string(&self, heap: &Heap) -> String {
         match self {
-            Value::Angka(val) => write!(f, "{}", val),
-            Value::String(val) => write!(f, "{}", val),
-            Value::Boolean(val) => write!(f, "{}", if *val { "benar" } else { "salah" }),
-            Value::Fungsi(fungsi) => write!(f, "<fungsi {}>", fungsi.nama),
-            Value::FungsiBawaan(fungsi) => write!(f, "<fungsi bawaan {}>", fungsi.nama),
-            Value::Array(arr) => {
-                let items: Vec<String> = arr.borrow().iter().map(|v| v.to_string()).collect();
-                write!(f, "[{}]", items.join(", "))
+            Value::Angka(val) => val.to_string(),
+            Value::String(idx) => heap.get_string(*idx).clone(),
+            Value::Boolean(val) => (if *val { "benar" } else { "salah" }).to_string(),
+            Value::Fungsi(idx) => format!("<fungsi {}>", heap.get_fungsi(*idx).nama),
+            Value::FungsiBawaan(idx) => format!("<fungsi bawaan {}>", heap.get_fungsi_bawaan(*idx).nama),
+            Value::Array(idx) => {
+                let items: Vec<String> = heap.get_array(*idx).iter().map(|v| v.to_string(heap)).collect();
+                format!("[{}]", items.join(", "))
             }
-            Value::Kamus(kamus) => {
-                let items: Vec<String> = kamus.borrow().iter().map(|(k, v)| format!("{}: {}", k, v)).collect();
-                write!(f, "{{{}}}", items.join(", "))
+            Value::Kamus(idx) => {
+                let items: Vec<String> = heap.get_kamus(*idx).iter().map(|(k, v)| format!("{}: {}", k, v.to_string(heap))).collect();
+                format!("{{{}}}", items.join(", "))
             }
-            Value::Kosong => write!(f, "kosong"),
+            Value::Kosong => "kosong".to_string(),
         }
     }
 }

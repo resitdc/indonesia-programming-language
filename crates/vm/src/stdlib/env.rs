@@ -1,26 +1,27 @@
 use crate::machine::VM;
 use crate::value::{Value, FungsiBawaanVM};
-use std::rc::Rc;
 use std::collections::HashMap;
-use std::cell::RefCell;
+use crate::heap::HeapData;
 use std::env;
 
 pub fn register(vm: &mut VM) {
     let mut module_dict = HashMap::new();
     
-    // Attempt to load .env file silently. It's okay if it fails (e.g. file doesn't exist).
     let _ = dotenvy::dotenv();
     
-    // env.get(key)
     let get_func = FungsiBawaanVM {
         nama: "get".to_string(),
-        func: |args| {
+        func: |heap, args| {
             if args.is_empty() {
                 return Err("Fungsi 'get' membutuhkan 1 argumen: kunci (key)".to_string());
             }
-            if let Value::String(key) = &args[0] {
-                match env::var(key.as_ref()) {
-                    Ok(val) => Ok(Value::String(Rc::new(val))),
+            if let Value::String(idx) = &args[0] {
+                let key = heap.get_string(*idx).clone();
+                match env::var(&key) {
+                    Ok(val) => {
+                        let new_idx = heap.alloc(HeapData::String(val));
+                        Ok(Value::String(new_idx))
+                    },
                     Err(_) => Ok(Value::Kosong),
                 }
             } else {
@@ -28,7 +29,9 @@ pub fn register(vm: &mut VM) {
             }
         },
     };
-    module_dict.insert("get".to_string(), Value::FungsiBawaan(Rc::new(get_func)));
+    let get_idx = vm.heap.alloc(HeapData::FungsiBawaan(get_func));
+    module_dict.insert("get".to_string(), Value::FungsiBawaan(get_idx));
 
-    vm.set_global("env".to_string(), Value::Kamus(Rc::new(RefCell::new(module_dict))));
+    let dict_idx = vm.heap.alloc(HeapData::Kamus(module_dict));
+    vm.set_global("env".to_string(), Value::Kamus(dict_idx));
 }

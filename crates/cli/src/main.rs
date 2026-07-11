@@ -60,14 +60,19 @@ fn run_file(file: &PathBuf, use_vm: bool) -> Result<bool> {
     let program = ast::optimizer::optimize_program(program);
 
     if use_vm {
-        let compiler = vm::Compiler::new();
+        let mut machine = vm::VM::new();
+        vm::stdlib::register_all(&mut machine);
+
+        let mut compiler = vm::Compiler::new(&mut machine.heap);
         match compiler.compile(program) {
             Ok(chunk) => {
-                let mut machine = vm::VM::new();
-                vm::stdlib::register_all(&mut machine);
-                
-                if let Err(e) = machine.execute(chunk) {
-                    eprintln!("VM Error: {}", e);
+                if let Err((msg, opt_lokasi)) = machine.execute(chunk) {
+                    if let Some(lokasi) = opt_lokasi {
+                        let e = errors::IplError::Runtime { pesan: msg, lokasi };
+                        eprintln!("{}", e.tampilkan(&kode_sumber));
+                    } else {
+                        eprintln!("\x1b[33mVM Error: {}\x1b[0m", msg);
+                    }
                     return Ok(false);
                 }
                 return Ok(true);

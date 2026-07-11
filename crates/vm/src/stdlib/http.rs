@@ -1,29 +1,30 @@
 use crate::machine::VM;
 use crate::value::{Value, FungsiBawaanVM};
-use std::rc::Rc;
 use std::collections::HashMap;
-use std::cell::RefCell;
+use crate::heap::HeapData;
 
 pub fn register(vm: &mut VM) {
     let mut module_dict = HashMap::new();
     
-    // http.get(url)
     let get_func = FungsiBawaanVM {
         nama: "get".to_string(),
-        func: |args| {
+        func: |heap, args| {
             if args.is_empty() {
                 return Err("Fungsi 'get' membutuhkan minimal 1 argumen: url".to_string());
             }
-            if let Value::String(url) = &args[0] {
-                match ureq::get(url.as_ref()).call() {
+            if let Value::String(idx) = &args[0] {
+                let url = heap.get_string(*idx).clone();
+                match ureq::get(&url).call() {
                     Ok(mut response) => {
                         let mut resp_dict = HashMap::new();
                         resp_dict.insert("status".to_string(), Value::Angka(response.status().as_u16() as f64));
                         
                         let body = response.body_mut().read_to_string().unwrap_or_default();
-                        resp_dict.insert("body".to_string(), Value::String(Rc::new(body)));
+                        let body_idx = heap.alloc(HeapData::String(body));
+                        resp_dict.insert("body".to_string(), Value::String(body_idx));
                         
-                        Ok(Value::Kamus(Rc::new(RefCell::new(resp_dict))))
+                        let dict_idx = heap.alloc(HeapData::Kamus(resp_dict));
+                        Ok(Value::Kamus(dict_idx))
                     }
                     Err(e) => Err(format!("Permintaan HTTP gagal: {}", e)),
                 }
@@ -32,7 +33,9 @@ pub fn register(vm: &mut VM) {
             }
         },
     };
-    module_dict.insert("get".to_string(), Value::FungsiBawaan(Rc::new(get_func)));
+    let get_idx = vm.heap.alloc(HeapData::FungsiBawaan(get_func));
+    module_dict.insert("get".to_string(), Value::FungsiBawaan(get_idx));
 
-    vm.set_global("http".to_string(), Value::Kamus(Rc::new(RefCell::new(module_dict))));
+    let dict_idx = vm.heap.alloc(HeapData::Kamus(module_dict));
+    vm.set_global("http".to_string(), Value::Kamus(dict_idx));
 }

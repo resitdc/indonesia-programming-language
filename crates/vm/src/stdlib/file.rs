@@ -1,23 +1,25 @@
 use crate::machine::VM;
 use crate::value::{Value, FungsiBawaanVM};
-use std::rc::Rc;
 use std::collections::HashMap;
-use std::cell::RefCell;
+use crate::heap::HeapData;
 use std::fs;
 
 pub fn register(vm: &mut VM) {
     let mut module_dict = HashMap::new();
     
-    // file.baca(path)
     let baca_func = FungsiBawaanVM {
         nama: "baca".to_string(),
-        func: |args| {
+        func: |heap, args| {
             if args.is_empty() {
                 return Err("Fungsi 'baca' membutuhkan 1 argumen: path".to_string());
             }
-            if let Value::String(path) = &args[0] {
-                match fs::read_to_string(path.as_ref()) {
-                    Ok(content) => Ok(Value::String(Rc::new(content))),
+            if let Value::String(idx) = &args[0] {
+                let path = heap.get_string(*idx).clone();
+                match fs::read_to_string(&path) {
+                    Ok(content) => {
+                        let new_idx = heap.alloc(HeapData::String(content));
+                        Ok(Value::String(new_idx))
+                    },
                     Err(e) => Err(format!("Gagal membaca file '{}': {}", path, e)),
                 }
             } else {
@@ -25,17 +27,19 @@ pub fn register(vm: &mut VM) {
             }
         },
     };
-    module_dict.insert("baca".to_string(), Value::FungsiBawaan(Rc::new(baca_func)));
+    let baca_idx = vm.heap.alloc(HeapData::FungsiBawaan(baca_func));
+    module_dict.insert("baca".to_string(), Value::FungsiBawaan(baca_idx));
 
-    // file.tulis(path, content)
     let tulis_func = FungsiBawaanVM {
         nama: "tulis".to_string(),
-        func: |args| {
+        func: |heap, args| {
             if args.len() != 2 {
                 return Err("Fungsi 'tulis' membutuhkan 2 argumen: path dan isi".to_string());
             }
-            if let (Value::String(path), Value::String(content)) = (&args[0], &args[1]) {
-                match fs::write(path.as_ref(), content.as_bytes()) {
+            if let (Value::String(path_idx), Value::String(content_idx)) = (&args[0], &args[1]) {
+                let path = heap.get_string(*path_idx).clone();
+                let content = heap.get_string(*content_idx).clone();
+                match fs::write(&path, content.as_bytes()) {
                     Ok(_) => Ok(Value::Kosong),
                     Err(e) => Err(format!("Gagal menulis ke file '{}': {}", path, e)),
                 }
@@ -44,7 +48,9 @@ pub fn register(vm: &mut VM) {
             }
         },
     };
-    module_dict.insert("tulis".to_string(), Value::FungsiBawaan(Rc::new(tulis_func)));
+    let tulis_idx = vm.heap.alloc(HeapData::FungsiBawaan(tulis_func));
+    module_dict.insert("tulis".to_string(), Value::FungsiBawaan(tulis_idx));
 
-    vm.set_global("file".to_string(), Value::Kamus(Rc::new(RefCell::new(module_dict))));
+    let dict_idx = vm.heap.alloc(HeapData::Kamus(module_dict));
+    vm.set_global("file".to_string(), Value::Kamus(dict_idx));
 }

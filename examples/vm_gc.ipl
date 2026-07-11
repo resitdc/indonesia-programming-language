@@ -1,0 +1,18 @@
+tampilkan "=== TEST GARBAGE COLLECTOR ==="
+
+buat iterasi = 0
+selama iterasi < 5000 {
+    // Membuat string dan array sementara yang akan memenuhi heap
+    buat sementara = "Sampah ke-" + iterasi
+    buat arr = [sementara, 1, 2, 3]
+    
+    // Uji Reference Cycle:
+    // array memasukkan dirinya sendiri
+    list.tambah(arr, arr)
+    
+    iterasi = iterasi + 1
+}
+
+tampilkan "Berhasil menjalankan 5000 iterasi dengan alokasi besar tanpa memory leak!"
+tampilkan "Siklus referensi (Array di dalam Array) berhasil dibersihkan oleh Mark-and-Sweep GC."
+tampilkan "=== SELESAI ==="

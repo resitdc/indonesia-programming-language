@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Lokasi {
     pub baris: usize,
     pub kolom: usize,
@@ -46,6 +46,12 @@ pub enum IplError {
     Internal {
         pesan: String,
     },
+
+    #[error("Error runtime: {pesan}")]
+    Runtime {
+        pesan: String,
+        lokasi: Lokasi,
+    },
 }
 
 impl IplError {
@@ -65,6 +71,9 @@ impl IplError {
             }
             IplError::Internal { pesan } => {
                 format!("\x1b[33mKesalahan sistem internal: {}\x1b[0m", pesan)
+            }
+            IplError::Runtime { pesan, lokasi } => {
+                format_error(&format!("Runtime Error: {}", pesan), lokasi, &None, source_code)
             }
         }
     }
