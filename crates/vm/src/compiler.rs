@@ -343,9 +343,21 @@ impl<'a> Compiler<'a> {
                     std::path::PathBuf::from(&path_str)
                 };
                 
-                let kode_asli = match std::fs::read_to_string(&resolved_path) {
-                    Ok(k) => k,
-                    Err(e) => return Err(format!("Gagal memuat modul '{}': {}", resolved_path.display(), e)),
+                let (kode_asli, final_path) = match std::fs::read_to_string(&resolved_path) {
+                    Ok(k) => (k, resolved_path),
+                    Err(e) => {
+                        // Fallback ke rpl_modules
+                        let mut current_dir = std::env::current_dir().unwrap_or_default();
+                        if let Some(base) = &self.base_path {
+                            current_dir = base.clone();
+                        }
+                        
+                        let module_path = current_dir.join("rpl_modules").join(&path_str).join("main.rpl");
+                        match std::fs::read_to_string(&module_path) {
+                            Ok(k) => (k, module_path),
+                            Err(_) => return Err(format!("Gagal memuat modul '{}': {}", resolved_path.display(), e)),
+                        }
+                    }
                 };
                 
                 let is_html_template = path_str.ends_with(".rpl.html");
@@ -361,7 +373,7 @@ impl<'a> Compiler<'a> {
                 let mut parser = parser::Parser::new(tokens);
                 let program = parser.parse_program().map_err(|e| format!("Error parser di '{}': {:?}", path_str, e))?;
                 
-                let new_base_path = resolved_path.parent().map(|p| p.to_path_buf());
+                let new_base_path = final_path.parent().map(|p| p.to_path_buf());
                 let mut fn_compiler = Compiler::baru_dengan_base_path(self.heap, new_base_path);
                 
                 for stmt in program.statements {

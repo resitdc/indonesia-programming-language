@@ -24,7 +24,7 @@ pub async fn start_server(file: PathBuf, mut port: u16) -> Result<()> {
         let addr = format!("0.0.0.0:{}", port);
         match TcpListener::bind(&addr).await {
             Ok(l) => {
-                println!("Menjalankan server web RPL pada http://{}", addr);
+                println!("\x1b[32mMenjalankan server web RPL pada http://{}\x1b[0m", addr);
                 break l;
             }
             Err(e) if e.kind() == std::io::ErrorKind::AddrInUse => {

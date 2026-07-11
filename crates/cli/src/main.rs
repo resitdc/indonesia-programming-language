@@ -2,13 +2,18 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use anyhow::Result;
 
+mod pkg;
+
 #[derive(Parser)]
 #[command(name = "rpl")]
 #[command(about = "Interpreter Rakoda Programming Language (RPL)", long_about = None)]
-#[command(version = runtime::version())]
+#[command(disable_version_flag = true)]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
+
+    #[arg(short = 'v', long = "version", action = clap::ArgAction::SetTrue)]
+    version: bool,
 }
 
 #[derive(Subcommand)]
@@ -29,14 +34,24 @@ enum Commands {
     Fmt {
         file: PathBuf,
     },
+    #[command(alias = "inisialisasi")]
+    Init,
+    Instal {
+        paket: Option<String>,
+    },
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
+    if cli.version {
+        println!("Rakoda Programming Language\nV{}", runtime::version());
+        return Ok(());
+    }
+
     match &cli.command {
-        Commands::Run { file, watch, interpreter } => {
+        Some(Commands::Run { file, watch, interpreter }) => {
             let use_vm = !*interpreter;
             if !*watch {
                 match runtime::run_file(file, use_vm) {
@@ -88,14 +103,35 @@ async fn main() -> Result<()> {
                 }
             }
         }
-        Commands::Repl => {
+        Some(Commands::Repl) => {
             println!("Memulai sesi REPL RPL. Ketik 'berhenti' untuk keluar.");
         }
-        Commands::Serve { file, port } => {
-            runtime::serve(file.clone(), *port).await?;
+        Some(Commands::Serve { file, port }) => {
+            if let Err(e) = runtime::serve(file.clone(), *port).await {
+                let msg = e.to_string();
+                if msg.contains("Address already in use") || msg.contains("os error 48") {
+                    eprintln!("\x1b[33mError: Port sudah digunakan oleh program lain.\x1b[0m");
+                } else {
+                    eprintln!("\x1b[33mError: {}\x1b[0m", msg);
+                }
+                std::process::exit(1);
+            }
         }
-        Commands::Fmt { file } => {
+        Some(Commands::Fmt { file }) => {
             println!("Memformat file: {}", file.display());
+            println!("Format selesai (fitur masih dalam pengembangan).");
+        }
+        Some(Commands::Init) => {
+            let cwd = std::env::current_dir()?;
+            pkg::inisialisasi(&cwd)?;
+        }
+        Some(Commands::Instal { paket }) => {
+            pkg::instal(paket.clone()).await?;
+        }
+        None => {
+            use clap::CommandFactory;
+            let mut cmd = Cli::command();
+            cmd.print_help()?;
         }
     }
 

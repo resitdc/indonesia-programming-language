@@ -1,0 +1,9 @@
+{
+  "nama": "indonesia-programming-language",
+  "versi": "1.0.0",
+  "penulis": "Restu Dwi Cahyo",
+  "titik_masuk": "main.rpl",
+  "dependensi": {
+    "127.0.0.1": "http://127.0.0.1:8999/main.zip"
+  }
+}

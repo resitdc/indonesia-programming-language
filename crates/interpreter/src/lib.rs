@@ -268,13 +268,24 @@ impl Interpreter {
                     PathBuf::from(&path_str)
                 };
                 
-                let kode_asli = match fs::read_to_string(&resolved_path) {
-                    Ok(k) => k,
-                    Err(e) => return Err(RplError::Sintaks {
-                        pesan: format!("Gagal memuat modul '{}': {}", resolved_path.display(), e),
-                        lokasi,
-                        saran: Some("Pastikan path file sudah benar dan file dapat diakses.".to_string()),
-                    }),
+                let (kode_asli, final_path) = match fs::read_to_string(&resolved_path) {
+                    Ok(k) => (k, resolved_path),
+                    Err(e) => {
+                        let mut current_dir = std::env::current_dir().unwrap_or_default();
+                        if let Some(base) = &self.base_path {
+                            current_dir = base.clone();
+                        }
+                        
+                        let module_path = current_dir.join("rpl_modules").join(&path_str).join("main.rpl");
+                        match fs::read_to_string(&module_path) {
+                            Ok(k) => (k, module_path),
+                            Err(_) => return Err(RplError::Sintaks {
+                                pesan: format!("Gagal memuat modul '{}': {}", resolved_path.display(), e),
+                                lokasi,
+                                saran: Some("Pastikan path file sudah benar dan file dapat diakses.".to_string()),
+                            }),
+                        }
+                    }
                 };
                 
                 let is_html_template = path_str.ends_with(".rpl.html");
@@ -300,7 +311,7 @@ impl Interpreter {
                     e
                 })?;
                 
-                let new_base_path = resolved_path.parent().map(|p| p.to_path_buf());
+                let new_base_path = final_path.parent().map(|p| p.to_path_buf());
                 
                 let mut mod_interpreter = if is_html_template {
                     Interpreter::baru_nested(self.lingkungan.clone(), self.capture_output, new_base_path)
@@ -318,7 +329,7 @@ impl Interpreter {
                 
                 let modul_obj = Objek::Modul(mod_interpreter.lingkungan);
                 
-                if let Some(stem) = resolved_path.file_stem().and_then(|s| s.to_str()) {
+                if let Some(stem) = final_path.file_stem().and_then(|s| s.to_str()) {
                     let mut real_stem = stem;
                     if real_stem.ends_with(".rpl") {
                         real_stem = real_stem.trim_end_matches(".rpl");
