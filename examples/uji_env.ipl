@@ -1,0 +1,22 @@
+tampilkan "=== UJI MODULE ENV ==="
+
+// Uji baca env dari sistem (contoh: PWD atau PATH atau semacamnya)
+// Akan kosong jika tidak ada
+tampilkan "USER saat ini: " + env.get("USER")
+
+tampilkan "\n=== UJI SET DAN GET DINAMIS ==="
+env.set("TEMA_APLIKASI", "Gelap")
+tampilkan "TEMA_APLIKASI: " + env.get("TEMA_APLIKASI")
+
+tampilkan "\n=== UJI LOAD .ENV ==="
+// Load .env dari path eksplisit (karena kita me-run dari root workspace)
+buat hasil_load = env.load("examples/.env")
+
+jika hasil_load maka
+    tampilkan "Berhasil load file .env!"
+    tampilkan "NAMA_DATABASE: " + env.get("NAMA_DATABASE")
+    tampilkan "API_KEY: " + env.get("API_KEY")
+    tampilkan "MODE: " + env.get("MODE")
+selesai jika tidak maka
+    tampilkan "Gagal load file .env!"
+selesai

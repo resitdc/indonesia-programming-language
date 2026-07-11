@@ -6,6 +6,7 @@ pub mod file;
 pub mod waktu;
 pub mod json;
 pub mod http;
+pub mod env;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -20,4 +21,5 @@ pub fn register_all(env: &Rc<RefCell<Lingkungan>>) {
     waktu::register(env);
     json::register(env);
     http::register(env);
+    env::register(env);
 }
