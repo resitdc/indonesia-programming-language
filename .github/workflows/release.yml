@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 🦀 Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -56,7 +56,7 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: 📦 Cache Cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -72,7 +72,7 @@ jobs:
         shell: bash
 
       - name: 📤 Upload Binary Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.artifact }}
           path: target/${{ matrix.target }}/release/${{ matrix.binary }}
@@ -86,10 +86,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📥 Download Binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: rpl-windows-x64
           path: staging/
@@ -197,7 +197,7 @@ jobs:
           makensis staging/rpl-setup.nsi
 
       - name: 📤 Upload Windows Installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: installer-windows
           path: staging/RPL-Setup-*.exe
@@ -220,10 +220,10 @@ jobs:
             artifact: rpl-macos-arm64
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📥 Download Binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ${{ matrix.artifact }}
           path: target/release/
@@ -237,7 +237,7 @@ jobs:
           installer/macos/build-dmg.sh ${{ matrix.arch }}
 
       - name: 📤 Upload macOS DMG
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: installer-macos-${{ matrix.arch }}
           path: RPL-*.dmg
@@ -251,10 +251,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: 📥 Download Binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: rpl-linux-x64
           path: target/release/
@@ -284,7 +284,7 @@ jobs:
           installer/linux/build-appimage.sh
 
       - name: 📤 Upload Linux Packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: installer-linux
           path: |
@@ -301,7 +301,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Download All Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: artifacts/
 
