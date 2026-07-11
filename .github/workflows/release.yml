@@ -140,7 +140,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-14
+          - os: macos-13
             arch: x64
             artifact: rpl-macos-x64
           - os: macos-14

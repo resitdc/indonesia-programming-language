@@ -62,6 +62,7 @@ Cara Install:
 4. Ketik: rpl --version
 
 Selamat belajar pemrograman!
+Salam Restu Dwi Cahyo
 EOF
 
 hdiutil create \
