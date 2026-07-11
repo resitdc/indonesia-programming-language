@@ -1,0 +1,90 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "RPL",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#constants"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#functions"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.rpl",
+          "match": "//.*$"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.rpl",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.rpl",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.rpl",
+          "match": "\\b(jika|maka|jika tidak|selama|ulangi|dalam|selesai|coba|tangkap|lempar|impor|gabung)\\b"
+        },
+        {
+          "name": "keyword.declaration.rpl",
+          "match": "\\b(buat|fungsi|kembalikan)\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.rpl",
+          "match": "\\b(benar|salah)\\b"
+        },
+        {
+          "name": "constant.language.null.rpl",
+          "match": "\\bkosong\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.rpl",
+          "match": "\\b\\d+(\\.\\d+)?\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.rpl",
+          "match": "\\b(cetak|tampilkan|baca)\\b"
+        },
+        {
+          "name": "entity.name.function.rpl",
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()"
+        }
+      ]
+    }
+  ],
+  "scopeName": "source.rpl"
+}

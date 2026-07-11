@@ -1,0 +1,30 @@
+{
+  "name": "rpl-vscode",
+  "displayName": "RPL (Rakoda Programming Language)",
+  "description": "Dukungan syntax highlighting untuk bahasa pemrograman RPL",
+  "version": "1.0.0",
+  "publisher": "rakoda",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "rpl",
+        "aliases": ["RPL", "rpl", "IPL", "ipl"],
+        "extensions": [".rpl", ".ipl"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "rpl",
+        "scopeName": "source.rpl",
+        "path": "./syntaxes/rpl.tmLanguage.json"
+      }
+    ]
+  }
+}
