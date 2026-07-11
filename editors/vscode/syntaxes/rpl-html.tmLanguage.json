@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "RPL HTML",
+  "patterns": [
+    {
+      "begin": "<\\?(rpl)\\b",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.embedded.begin.rpl"
+        },
+        "1": {
+          "name": "keyword.other.rpl"
+        }
+      },
+      "end": "(\\?)>",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.embedded.end.rpl"
+        },
+        "1": {
+          "name": "punctuation.section.embedded.end.rpl"
+        }
+      },
+      "name": "meta.embedded.block.rpl",
+      "contentName": "source.rpl",
+      "patterns": [
+        {
+          "include": "source.rpl"
+        }
+      ]
+    },
+    {
+      "include": "text.html.basic"
+    }
+  ],
+  "scopeName": "text.html.rpl"
+}

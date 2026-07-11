@@ -17,6 +17,12 @@
         "aliases": ["RPL", "rpl", "IPL", "ipl"],
         "extensions": [".rpl", ".ipl"],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "rpl-html",
+        "aliases": ["RPL HTML", "rpl-html"],
+        "extensions": [".rpl.html", ".ipl.html"],
+        "configuration": "./html-language-configuration.json"
       }
     ],
     "grammars": [
@@ -24,6 +30,11 @@
         "language": "rpl",
         "scopeName": "source.rpl",
         "path": "./syntaxes/rpl.tmLanguage.json"
+      },
+      {
+        "language": "rpl-html",
+        "scopeName": "text.html.rpl",
+        "path": "./syntaxes/rpl-html.tmLanguage.json"
       }
     ]
   }
