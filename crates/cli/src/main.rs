@@ -39,6 +39,9 @@ enum Commands {
     Instal {
         paket: Option<String>,
     },
+    Hapus {
+        paket: String,
+    },
 }
 
 #[tokio::main]
@@ -127,6 +130,9 @@ async fn main() -> Result<()> {
         }
         Some(Commands::Instal { paket }) => {
             pkg::instal(paket.clone()).await?;
+        }
+        Some(Commands::Hapus { paket }) => {
+            pkg::hapus(paket)?;
         }
         None => {
             use clap::CommandFactory;

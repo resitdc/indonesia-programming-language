@@ -63,23 +63,96 @@ pub fn register(vm: &mut VM) {
     let proxy_idx = vm.heap.alloc(HeapData::FungsiBawaan(proxy_func));
     web_map.insert("proxy".to_string(), Value::FungsiBawaan(proxy_idx));
 
+    // HTTP method routes
     let get_func = FungsiBawaanVM {
         nama: "get".to_string(),
         func: |ctx, args| {
-            if args.len() != 2 {
-                return Err("Fungsi 'web.get' membutuhkan 2 argumen (path, handler)".to_string());
-            }
+            if args.len() != 2 { return Err("Fungsi 'web.get' membutuhkan 2 argumen (path, handler)".to_string()); }
             let path = args[0].to_string(ctx.get_heap_mut());
-            let func_val = match args[1] {
-                Value::Fungsi(idx, env) => Value::Fungsi(idx, env),
-                _ => return Err("Argumen kedua 'web.get' harus berupa fungsi".to_string()),
-            };
-            ctx.get_heap_mut().web_routes.insert(path, func_val);
+            let func_val = match args[1] { Value::Fungsi(idx, env) => Value::Fungsi(idx, env), _ => return Err("Argumen kedua harus berupa fungsi".to_string()), };
+            let method_map = ctx.get_heap_mut().web_routes.entry(path).or_insert_with(HashMap::new);
+            method_map.insert("GET".to_string(), func_val);
             Ok(Value::Kosong)
         },
     };
     let get_idx = vm.heap.alloc(HeapData::FungsiBawaan(get_func));
     web_map.insert("get".to_string(), Value::FungsiBawaan(get_idx));
+
+    let post_func = FungsiBawaanVM {
+        nama: "post".to_string(),
+        func: |ctx, args| {
+            if args.len() != 2 { return Err("Fungsi 'web.post' membutuhkan 2 argumen (path, handler)".to_string()); }
+            let path = args[0].to_string(ctx.get_heap_mut());
+            let func_val = match args[1] { Value::Fungsi(idx, env) => Value::Fungsi(idx, env), _ => return Err("Argumen kedua harus berupa fungsi".to_string()), };
+            let method_map = ctx.get_heap_mut().web_routes.entry(path).or_insert_with(HashMap::new);
+            method_map.insert("POST".to_string(), func_val);
+            Ok(Value::Kosong)
+        },
+    };
+    let post_idx = vm.heap.alloc(HeapData::FungsiBawaan(post_func));
+    web_map.insert("post".to_string(), Value::FungsiBawaan(post_idx));
+
+    let put_func = FungsiBawaanVM {
+        nama: "put".to_string(),
+        func: |ctx, args| {
+            if args.len() != 2 { return Err("Fungsi 'web.put' membutuhkan 2 argumen (path, handler)".to_string()); }
+            let path = args[0].to_string(ctx.get_heap_mut());
+            let func_val = match args[1] { Value::Fungsi(idx, env) => Value::Fungsi(idx, env), _ => return Err("Argumen kedua harus berupa fungsi".to_string()), };
+            let method_map = ctx.get_heap_mut().web_routes.entry(path).or_insert_with(HashMap::new);
+            method_map.insert("PUT".to_string(), func_val);
+            Ok(Value::Kosong)
+        },
+    };
+    let put_idx = vm.heap.alloc(HeapData::FungsiBawaan(put_func));
+    web_map.insert("put".to_string(), Value::FungsiBawaan(put_idx));
+
+    let delete_func = FungsiBawaanVM {
+        nama: "delete".to_string(),
+        func: |ctx, args| {
+            if args.len() != 2 { return Err("Fungsi 'web.delete' membutuhkan 2 argumen (path, handler)".to_string()); }
+            let path = args[0].to_string(ctx.get_heap_mut());
+            let func_val = match args[1] { Value::Fungsi(idx, env) => Value::Fungsi(idx, env), _ => return Err("Argumen kedua harus berupa fungsi".to_string()), };
+            let method_map = ctx.get_heap_mut().web_routes.entry(path).or_insert_with(HashMap::new);
+            method_map.insert("DELETE".to_string(), func_val);
+            Ok(Value::Kosong)
+        },
+    };
+    let delete_idx = vm.heap.alloc(HeapData::FungsiBawaan(delete_func));
+    web_map.insert("delete".to_string(), Value::FungsiBawaan(delete_idx));
+
+    let patch_func = FungsiBawaanVM {
+        nama: "patch".to_string(),
+        func: |ctx, args| {
+            if args.len() != 2 { return Err("Fungsi 'web.patch' membutuhkan 2 argumen (path, handler)".to_string()); }
+            let path = args[0].to_string(ctx.get_heap_mut());
+            let func_val = match args[1] { Value::Fungsi(idx, env) => Value::Fungsi(idx, env), _ => return Err("Argumen kedua harus berupa fungsi".to_string()), };
+            let method_map = ctx.get_heap_mut().web_routes.entry(path).or_insert_with(HashMap::new);
+            method_map.insert("PATCH".to_string(), func_val);
+            Ok(Value::Kosong)
+        },
+    };
+    let patch_idx = vm.heap.alloc(HeapData::FungsiBawaan(patch_func));
+    web_map.insert("patch".to_string(), Value::FungsiBawaan(patch_idx));
+
+    // web.statis(path, folder)
+    let statis_func = FungsiBawaanVM {
+        nama: "statis".to_string(),
+        func: |ctx, args| {
+            if args.len() != 2 {
+                return Err("Fungsi 'web.statis' membutuhkan 2 argumen (path, folder)".to_string());
+            }
+            if let (Value::String(p_idx), Value::String(f_idx)) = (&args[0], &args[1]) {
+                let path = ctx.get_heap_mut().get_string(*p_idx).clone();
+                let folder = ctx.get_heap_mut().get_string(*f_idx).clone();
+                ctx.get_heap_mut().web_static_dirs.insert(path, folder);
+                Ok(Value::Kosong)
+            } else {
+                Err("Path dan folder harus berupa string".to_string())
+            }
+        },
+    };
+    let statis_idx = vm.heap.alloc(HeapData::FungsiBawaan(statis_func));
+    web_map.insert("statis".to_string(), Value::FungsiBawaan(statis_idx));
     
     let jalankan_func = FungsiBawaanVM {
         nama: "jalankan".to_string(),
@@ -93,11 +166,12 @@ pub fn register(vm: &mut VM) {
             };
             
             let addr = format!("0.0.0.0:{}", port);
-            println!("🚀 Menjalankan Server Web Native RPL di http://{}", addr);
+            println!("\x1b[32m🚀 Menjalankan Server Web Native RPL di http://{}\x1b[0m", addr);
             
             let kompresi_aktif = ctx.get_heap_mut().web_config.kompresi;
             let rate_limit = ctx.get_heap_mut().web_config.rate_limit;
-            let proxies = ctx.get_heap_mut().web_config.proxies.clone(); // Clone to use in loop
+            let proxies = ctx.get_heap_mut().web_config.proxies.clone();
+            let static_dirs = ctx.get_heap_mut().web_static_dirs.clone();
             
             let server = tiny_http::Server::http(&addr)
                 .map_err(|e| format!("Gagal menjalankan server: {}", e))?;
@@ -106,6 +180,7 @@ pub fn register(vm: &mut VM) {
                 
             'req_loop: for mut request in server.incoming_requests() {
                 let url = request.url().to_string();
+                let method = request.method().as_str().to_string();
                 
                 // --- AWAL REQUEST: Bersihkan state & parse cookies ---
                 ctx.get_heap_mut().web_state.active_cookies.clear();
@@ -159,8 +234,7 @@ pub fn register(vm: &mut VM) {
                         let mut body = String::new();
                         let _ = request.as_reader().read_to_string(&mut body);
 
-                        let method = request.method().as_str();
-                        let res = match method {
+                        let res = match method.as_str() {
                             "POST" => if body.is_empty() { ureq::post(&target_url).send_empty() } else { ureq::post(&target_url).send(body) },
                             "PUT" => if body.is_empty() { ureq::put(&target_url).send_empty() } else { ureq::put(&target_url).send(body) },
                             "PATCH" => if body.is_empty() { ureq::patch(&target_url).send_empty() } else { ureq::patch(&target_url).send(body) },
@@ -188,22 +262,72 @@ pub fn register(vm: &mut VM) {
                     }
                 }
                 
-                // 3. Normal Routing
-                let route_opt = ctx.get_heap_mut().web_routes.get(&url).copied();
+                // 3. Static File Serving
+                let mut static_response = None;
+                for (prefix, folder) in &static_dirs {
+                    if url.starts_with(prefix) {
+                        let file_path = url[prefix.len()..].trim_start_matches('/');
+                        let full_path = std::path::Path::new(folder).join(file_path);
+                        
+                        if full_path.exists() && full_path.is_file() {
+                            if let Ok(content) = std::fs::read(&full_path) {
+                                let content_type = match full_path.extension().and_then(|e| e.to_str()) {
+                                    Some("html") => "text/html; charset=utf-8",
+                                    Some("css") => "text/css; charset=utf-8",
+                                    Some("js") => "application/javascript; charset=utf-8",
+                                    Some("json") => "application/json; charset=utf-8",
+                                    Some("png") => "image/png",
+                                    Some("jpg") | Some("jpeg") => "image/jpeg",
+                                    Some("gif") => "image/gif",
+                                    Some("svg") => "image/svg+xml",
+                                    Some("ico") => "image/x-icon",
+                                    Some("woff") => "font/woff",
+                                    Some("woff2") => "font/woff2",
+                                    Some("ttf") => "font/ttf",
+                                    _ => "application/octet-stream",
+                                };
+                                static_response = Some((content, content_type));
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if let Some((content, content_type)) = static_response {
+                    let mut resp = tiny_http::Response::from_data(content);
+                    resp.add_header(tiny_http::Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap());
+                    let _ = request.respond(resp);
+                    continue 'req_loop;
+                }
+                
+                // 4. Dynamic Routing (with parameter support)
+                let (route_opt, params) = find_route(ctx.get_heap_mut(), &url, &method);
+                
                 match route_opt {
                     Some(func_val) => {
                         let req_kamus_idx = {
                             let mut req_map = HashMap::new();
-                            let url_str = ctx.get_heap_mut().alloc(HeapData::String(url));
+                            let url_str = ctx.get_heap_mut().alloc(HeapData::String(url.clone()));
                             req_map.insert("url".to_string(), Value::String(url_str));
                             
-                            let method_str = ctx.get_heap_mut().alloc(HeapData::String(request.method().as_str().to_string()));
+                            let method_str = ctx.get_heap_mut().alloc(HeapData::String(method.clone()));
                             req_map.insert("metode".to_string(), Value::String(method_str));
                             
                             let mut body = String::new();
                             let _ = request.as_reader().read_to_string(&mut body);
                             let body_str = ctx.get_heap_mut().alloc(HeapData::String(body));
                             req_map.insert("tubuh".to_string(), Value::String(body_str));
+                            
+                            // Add params
+                            if !params.is_empty() {
+                                let mut params_map = HashMap::new();
+                                for (k, v) in params {
+                                    let v_idx = ctx.get_heap_mut().alloc(HeapData::String(v));
+                                    params_map.insert(k, Value::String(v_idx));
+                                }
+                                let params_idx = ctx.get_heap_mut().alloc(HeapData::Kamus(params_map));
+                                req_map.insert("params".to_string(), Value::Kamus(params_idx));
+                            }
                             
                             ctx.get_heap_mut().alloc(HeapData::Kamus(req_map))
                         };
@@ -245,7 +369,6 @@ pub fn register(vm: &mut VM) {
                                 
                                 response.add_header(tiny_http::Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap());
                                 
-                                // We need to clone it because we are borrowing ctx
                                 let cookies = ctx.get_heap_mut().web_state.cookies_to_set.clone();
                                 for cookie in cookies {
                                     response.add_header(tiny_http::Header::from_bytes(&b"Set-Cookie"[..], cookie.as_bytes()).unwrap());
@@ -274,4 +397,44 @@ pub fn register(vm: &mut VM) {
     
     let web_idx = vm.heap.alloc(HeapData::Kamus(web_map));
     vm.set_global("web".to_string(), Value::Kamus(web_idx));
+}
+
+// Find a matching route, supporting :param dynamic segments
+fn find_route(heap: &crate::heap::Heap, url: &str, method: &str) -> (Option<Value>, HashMap<String, String>) {
+    // Try exact match first
+    if let Some(method_map) = heap.web_routes.get(url) {
+        if let Some(func) = method_map.get(method) {
+            return (Some(*func), HashMap::new());
+        }
+    }
+    
+    // Try pattern match with :param
+    let url_parts: Vec<&str> = url.trim_matches('/').split('/').collect();
+    
+    for (pattern, method_map) in &heap.web_routes {
+        if !pattern.contains(':') { continue; }
+        
+        let pattern_parts: Vec<&str> = pattern.trim_matches('/').split('/').collect();
+        if pattern_parts.len() != url_parts.len() { continue; }
+        
+        let mut params = HashMap::new();
+        let mut matched = true;
+        
+        for (pp, up) in pattern_parts.iter().zip(url_parts.iter()) {
+            if pp.starts_with(':') {
+                params.insert(pp[1..].to_string(), up.to_string());
+            } else if pp != up {
+                matched = false;
+                break;
+            }
+        }
+        
+        if matched {
+            if let Some(func) = method_map.get(method) {
+                return (Some(*func), params);
+            }
+        }
+    }
+    
+    (None, HashMap::new())
 }

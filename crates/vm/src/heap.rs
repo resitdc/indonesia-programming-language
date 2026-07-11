@@ -64,7 +64,8 @@ pub struct Heap {
     pub objects: Vec<HeapObject>,
     pub free_list_head: Option<usize>,
     pub allocated_count: usize,
-    pub web_routes: HashMap<String, Value>,
+    pub web_routes: HashMap<String, HashMap<String, Value>>,
+    pub web_static_dirs: HashMap<String, String>,
     pub web_config: WebConfig,
     pub web_state: WebState,
 }
@@ -82,6 +83,7 @@ impl Heap {
             free_list_head: None,
             allocated_count: 0,
             web_routes: HashMap::new(),
+            web_static_dirs: HashMap::new(),
             web_config: WebConfig::default(),
             web_state: WebState::default(),
         }

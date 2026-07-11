@@ -182,3 +182,49 @@ fn download_and_extract_recursive<'a>(
         Ok(())
     })
 }
+
+pub fn hapus(paket: &str) -> Result<()> {
+    let cwd = std::env::current_dir()?;
+    let rpl_json_path = cwd.join("rpl.json");
+
+    if !rpl_json_path.exists() {
+        anyhow::bail!("File rpl.json tidak ditemukan. Jalankan 'rpl init' terlebih dahulu.");
+    }
+
+    let content = std::fs::read_to_string(&rpl_json_path)?;
+    let mut config: PaketConfig = serde_json::from_str(&content)?;
+
+    // Cari dan hapus dependensi berdasarkan nama
+    let nama_paket = paket.split(':').last().unwrap_or(paket).split('/').last().unwrap_or(paket);
+
+    let ditemukan = config.dependensi.remove(nama_paket).is_some();
+
+    if !ditemukan {
+        // Coba cari berdasarkan value (url lengkap)
+        let key_to_remove: Option<String> = config.dependensi.iter()
+            .find(|(_, v)| v.as_str() == paket)
+            .map(|(k, _)| k.clone());
+
+        if let Some(key) = key_to_remove {
+            config.dependensi.remove(&key);
+        } else {
+            println!("\x1b[33m⚠️  Paket '{}' tidak ditemukan di rpl.json.\x1b[0m", paket);
+            return Ok(());
+        }
+    }
+
+    // Tulis ulang rpl.json
+    let json_string = serde_json::to_string_pretty(&config)?;
+    std::fs::write(&rpl_json_path, json_string)?;
+
+    // Hapus folder dari rpl_modules
+    let module_dir = cwd.join("rpl_modules").join(nama_paket);
+    if module_dir.exists() {
+        std::fs::remove_dir_all(&module_dir)?;
+        println!("🗑️  Berhasil menghapus paket '{}'.", nama_paket);
+    } else {
+        println!("🗑️  Paket '{}' dihapus dari rpl.json (folder tidak ditemukan).", nama_paket);
+    }
+
+    Ok(())
+}
