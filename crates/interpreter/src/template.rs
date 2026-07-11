@@ -7,7 +7,7 @@ pub fn preprocess_template(input: &str) -> String {
     while i < chars.len() {
         if !in_ipl {
             // Cek apakah masuk blok RPL
-            if i + 4 < chars.len() && chars[i..i+5] == ['<', '?', 'i', 'p', 'l'] {
+            if i + 4 < chars.len() && chars[i..i+5] == ['<', '?', 'r', 'p', 'l'] {
                 in_ipl = true;
                 i += 5;
                 continue;
@@ -29,7 +29,7 @@ pub fn preprocess_template(input: &str) -> String {
             // Kumpulkan HTML murni
             let mut html_chunk = String::new();
             while i < chars.len() {
-                if i + 4 < chars.len() && chars[i..i+5] == ['<', '?', 'i', 'p', 'l'] {
+                if i + 4 < chars.len() && chars[i..i+5] == ['<', '?', 'r', 'p', 'l'] {
                     break;
                 }
                 if i + 1 < chars.len() && chars[i] == '{' && chars[i+1] == '{' {

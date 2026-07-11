@@ -4,7 +4,7 @@ pub mod template;
 pub mod stdlib;
 
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -17,6 +17,7 @@ pub struct Interpreter {
     pub lingkungan: Rc<RefCell<Lingkungan>>,
     pub output_buffer: String,
     pub capture_output: bool,
+    pub base_path: Option<PathBuf>,
 }
 
 impl Interpreter {
@@ -27,6 +28,7 @@ impl Interpreter {
             lingkungan,
             output_buffer: String::new(),
             capture_output: false,
+            base_path: None,
         }
     }
     
@@ -37,14 +39,16 @@ impl Interpreter {
             lingkungan,
             output_buffer: String::new(),
             capture_output: true,
+            base_path: None,
         }
     }
 
-    pub fn baru_nested(parent: Rc<RefCell<Lingkungan>>, capture_output: bool) -> Self {
+    pub fn baru_nested(parent: Rc<RefCell<Lingkungan>>, capture_output: bool, base_path: Option<PathBuf>) -> Self {
         Self {
             lingkungan: Lingkungan::baru_nested(parent),
             output_buffer: String::new(),
             capture_output,
+            base_path,
         }
     }
 
@@ -254,11 +258,20 @@ impl Interpreter {
                 }
             }
             Expression::Impor(path_str, lokasi) => {
-                let path = Path::new(&path_str);
-                let kode_asli = match fs::read_to_string(path) {
+                let resolved_path = if let Some(base) = &self.base_path {
+                    if Path::new(&path_str).is_relative() {
+                        base.join(&path_str)
+                    } else {
+                        PathBuf::from(&path_str)
+                    }
+                } else {
+                    PathBuf::from(&path_str)
+                };
+                
+                let kode_asli = match fs::read_to_string(&resolved_path) {
                     Ok(k) => k,
                     Err(e) => return Err(RplError::Sintaks {
-                        pesan: format!("Gagal memuat modul '{}': {}", path_str, e),
+                        pesan: format!("Gagal memuat modul '{}': {}", resolved_path.display(), e),
                         lokasi,
                         saran: Some("Pastikan path file sudah benar dan file dapat diakses.".to_string()),
                     }),
@@ -287,10 +300,14 @@ impl Interpreter {
                     e
                 })?;
                 
+                let new_base_path = resolved_path.parent().map(|p| p.to_path_buf());
+                
                 let mut mod_interpreter = if is_html_template {
-                    Interpreter::baru_nested(self.lingkungan.clone(), self.capture_output)
+                    Interpreter::baru_nested(self.lingkungan.clone(), self.capture_output, new_base_path)
                 } else {
-                    Interpreter::baru()
+                    let mut i = Interpreter::baru();
+                    i.base_path = new_base_path;
+                    i
                 };
                 
                 mod_interpreter.eval_program(program)?;
@@ -301,7 +318,7 @@ impl Interpreter {
                 
                 let modul_obj = Objek::Modul(mod_interpreter.lingkungan);
                 
-                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                if let Some(stem) = resolved_path.file_stem().and_then(|s| s.to_str()) {
                     let mut real_stem = stem;
                     if real_stem.ends_with(".rpl") {
                         real_stem = real_stem.trim_end_matches(".rpl");

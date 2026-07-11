@@ -13,13 +13,21 @@ pub async fn serve(file: PathBuf, port: u16) -> anyhow::Result<()> {
 }
 
 pub fn run_file(file: &PathBuf, use_vm: bool) -> Result<bool, String> {
-    let kode_sumber = fs::read_to_string(file)
+    let kode_asli = fs::read_to_string(file)
         .map_err(|_| format!("Gagal membaca file: {}", file.display()))?;
 
-    run_source(&kode_sumber, use_vm)
+    let is_html_template = file.to_string_lossy().ends_with(".rpl.html");
+    let kode_sumber = if is_html_template {
+        interpreter::template::preprocess_template(&kode_asli)
+    } else {
+        kode_asli
+    };
+
+    let base_path = file.parent().map(|p| p.to_path_buf());
+    run_source(&kode_sumber, use_vm, base_path)
 }
 
-pub fn run_source(kode_sumber: &str, use_vm: bool) -> Result<bool, String> {
+pub fn run_source(kode_sumber: &str, use_vm: bool, base_path: Option<PathBuf>) -> Result<bool, String> {
     let mut lexer = Lexer::new(kode_sumber);
     let tokens = match lexer.tokenize() {
         Ok(t) => t,
@@ -62,6 +70,7 @@ pub fn run_source(kode_sumber: &str, use_vm: bool) -> Result<bool, String> {
     }
 
     let mut interpreter = Interpreter::baru();
+    interpreter.base_path = base_path;
     match interpreter.eval_program(program) {
         Ok(hasil) => {
             if hasil != interpreter::objek::Objek::Kosong {

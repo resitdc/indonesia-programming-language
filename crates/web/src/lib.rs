@@ -53,6 +53,7 @@ async fn handle_request(file: PathBuf) -> Html<String> {
     };
 
     let mut interpreter = Interpreter::baru_dengan_capture();
+    interpreter.base_path = file.parent().map(|p| p.to_path_buf());
     if let Err(e) = interpreter.eval_program(program) {
         return Html(format!("<pre>{}</pre>", e.tampilkan(&kode_sumber)));
     }
