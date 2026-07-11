@@ -1,0 +1,23 @@
+tampilkan "Memulai inisialisasi server..."
+
+web.get("/halo", fungsi(req) {
+    tampilkan "Menerima request di rute /halo"
+    kembalikan "Halo Dunia! Ini dari server Native IPL menggunakan fungsi anonim!"
+})
+
+web.get("/json", fungsi(req) {
+    tampilkan "Menerima request di rute /json"
+    buat data = {
+        "pesan": "Berhasil",
+        "status": 200,
+        "bahasa": "Indonesia Programming Language"
+    }
+    kembalikan data
+})
+
+web.get("/info", fungsi(req) {
+    tampilkan "Method: " + req["metode"]
+    kembalikan "Anda mengakses URL: " + req["url"]
+})
+
+web.jalankan(8555)

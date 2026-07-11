@@ -5,14 +5,14 @@ use crate::heap::HeapData;
 pub fn register(vm: &mut VM) {
     let angka_func = FungsiBawaanVM {
         nama: "angka".to_string(),
-        func: |heap, args| {
+        func: |ctx, args| {
             if args.len() != 1 {
                 return Err("Fungsi 'angka' membutuhkan 1 argumen".to_string());
             }
             match &args[0] {
                 Value::Angka(n) => Ok(Value::Angka(*n)),
                 Value::String(idx) => {
-                    let s = heap.get_string(*idx).clone();
+                    let s = ctx.get_heap_mut().get_string(*idx).clone();
                     if let Ok(n) = s.parse::<f64>() {
                         Ok(Value::Angka(n))
                     } else {
@@ -29,12 +29,12 @@ pub fn register(vm: &mut VM) {
 
     let teks_func = FungsiBawaanVM {
         nama: "teks".to_string(),
-        func: |heap, args| {
+        func: |ctx, args| {
             if args.len() != 1 {
                 return Err("Fungsi 'teks' membutuhkan 1 argumen".to_string());
             }
-            let s = args[0].to_string(heap);
-            let idx = heap.alloc(HeapData::String(s));
+            let s = args[0].to_string(ctx.get_heap_mut());
+            let idx = ctx.get_heap_mut().alloc(HeapData::String(s));
             Ok(Value::String(idx))
         },
     };

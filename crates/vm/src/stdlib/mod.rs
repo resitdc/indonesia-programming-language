@@ -6,6 +6,7 @@ pub mod json;
 pub mod http;
 pub mod env;
 pub mod file;
+pub mod web;
 
 use crate::machine::VM;
 
@@ -18,4 +19,5 @@ pub fn register_all(vm: &mut VM) {
     http::register(vm);
     env::register(vm);
     file::register(vm);
+    web::register(vm);
 }

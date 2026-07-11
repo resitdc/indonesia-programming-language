@@ -11,15 +11,15 @@ pub fn register(vm: &mut VM) {
     
     let get_func = FungsiBawaanVM {
         nama: "get".to_string(),
-        func: |heap, args| {
+        func: |ctx, args| {
             if args.is_empty() {
                 return Err("Fungsi 'get' membutuhkan 1 argumen: kunci (key)".to_string());
             }
             if let Value::String(idx) = &args[0] {
-                let key = heap.get_string(*idx).clone();
+                let key = ctx.get_heap_mut().get_string(*idx).clone();
                 match env::var(&key) {
                     Ok(val) => {
-                        let new_idx = heap.alloc(HeapData::String(val));
+                        let new_idx = ctx.get_heap_mut().alloc(HeapData::String(val));
                         Ok(Value::String(new_idx))
                     },
                     Err(_) => Ok(Value::Kosong),

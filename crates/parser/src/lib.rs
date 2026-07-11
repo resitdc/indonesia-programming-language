@@ -325,6 +325,38 @@ impl Parser {
                 self.advance();
                 Ok(Expression::Kosong(token.lokasi))
             }
+            Token::Fungsi => {
+                self.advance();
+                self.expect(Token::KurungBuka)?;
+                
+                let mut parameter = Vec::new();
+                if self.current().token != Token::KurungTutup {
+                    loop {
+                        match &self.current().token {
+                            Token::Identifier(p) => {
+                                parameter.push(p.clone());
+                                self.advance();
+                            }
+                            _ => return Err(IplError::Sintaks {
+                                pesan: "Nama parameter tidak valid.".to_string(),
+                                lokasi: self.current().lokasi.clone(),
+                                saran: Some("Pastikan nama data (parameter) di dalam kurung menggunakan huruf, contoh: fungsi(a, b)".to_string()),
+                            }),
+                        }
+
+                        if self.current().token == Token::Koma {
+                            self.advance();
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                self.expect(Token::KurungTutup)?;
+
+                let body = self.parse_block()?;
+
+                Ok(Expression::FungsiAnonim { parameter, body, lokasi: token.lokasi })
+            }
             Token::Bukan | Token::Kurang => {
                 self.advance();
                 let op = if token.token == Token::Bukan { PrefixOperator::Bukan } else { PrefixOperator::Minus };

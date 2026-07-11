@@ -177,6 +177,13 @@ impl Interpreter {
             Expression::String(val, _) => Ok(Objek::String(val)),
             Expression::Boolean(val, _) => Ok(Objek::Boolean(val)),
             Expression::Kosong(_) => Ok(Objek::Kosong),
+            Expression::FungsiAnonim { parameter, body, .. } => {
+                Ok(Objek::Fungsi {
+                    parameter,
+                    body,
+                    env: Rc::clone(&self.lingkungan),
+                })
+            }
             Expression::Identifier(nama, lokasi) => {
                 match self.lingkungan.borrow().get(&nama) {
                     Some(val) => Ok(val),

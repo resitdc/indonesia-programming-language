@@ -111,10 +111,10 @@ impl VM {
             stack_offset: 0,
         });
 
-        self.run()
+        self.run(0)
     }
 
-    fn run(&mut self) -> Result<(), (String, Option<Lokasi>)> {
+    fn run(&mut self, initial_frames: usize) -> Result<(), (String, Option<Lokasi>)> {
         loop {
             // Trigger GC if we allocated a lot
             if self.heap.allocated_count > 1000 {
@@ -134,12 +134,13 @@ impl VM {
                     let result = self.stack.pop().unwrap_or(Value::Kosong);
                     
                     let frame = self.frames.pop().unwrap();
-                    if self.frames.is_empty() {
-                        return Ok(());
-                    }
                     
                     self.stack.truncate(frame.stack_offset);
                     self.stack.push(result);
+
+                    if self.frames.len() == initial_frames {
+                        return Ok(());
+                    }
                 }
                 OpCode::LoadConst => {
                     let constant = self.frames.last_mut().unwrap().read_constant(&self.heap);
@@ -326,7 +327,7 @@ impl VM {
                             
                             let func_ptr = self.heap.get_fungsi_bawaan(fungsi_idx).func;
                             // Pass heap implicitly
-                            let result = func_ptr(&mut self.heap, args).map_err(|e| self.err(e))?;
+                            let result = func_ptr(self, args).map_err(|e| self.err(e))?;
                             self.stack.push(result);
                         }
                         _ => return Err(self.err("Hanya fungsi yang dapat dipanggil.")),
@@ -395,5 +396,45 @@ fn is_truthy(val: &Value) -> bool {
         Value::Boolean(b) => *b,
         Value::Angka(a) => *a != 0.0,
         _ => true,
+    }
+}
+
+use crate::value::VmContext;
+
+impl VmContext for VM {
+    fn get_heap_mut(&mut self) -> &mut Heap {
+        &mut self.heap
+    }
+
+    fn execute_function(&mut self, func_idx: usize, args: Vec<Value>) -> Result<Value, String> {
+        let func = self.heap.get_fungsi(func_idx).clone();
+        
+        // Push args
+        for arg in &args {
+            self.stack.push(*arg);
+        }
+        
+        // Insert into globals
+        for i in 0..func.parameter.len() {
+            if i < args.len() {
+                self.globals.insert(func.parameter[i].clone(), args[i]);
+            }
+        }
+        
+        let stack_offset = self.stack.len() - args.len();
+        self.frames.push(CallFrame {
+            fungsi: func_idx,
+            ip: 0,
+            stack_offset,
+        });
+
+        let target_frames = self.frames.len() - 1;
+        match self.run(target_frames) {
+            Ok(_) => {
+                let result = self.stack.pop().unwrap_or(Value::Kosong);
+                Ok(result)
+            }
+            Err((msg, _lokasi)) => Err(msg),
+        }
     }
 }

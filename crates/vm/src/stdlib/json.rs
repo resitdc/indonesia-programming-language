@@ -1,10 +1,10 @@
 use crate::machine::VM;
-use crate::value::{Value, FungsiBawaanVM};
+use crate::value::{Value, FungsiBawaanVM, VmContext};
 use std::collections::HashMap;
 use crate::heap::{Heap, HeapData};
 use serde_json::Value as JsonValue;
 
-fn convert_to_value(heap: &mut Heap, json: &JsonValue) -> Value {
+fn convert_to_value(ctx: &mut dyn VmContext, json: &JsonValue) -> Value {
     match json {
         JsonValue::Null => Value::Kosong,
         JsonValue::Bool(b) => Value::Boolean(*b),
@@ -16,20 +16,20 @@ fn convert_to_value(heap: &mut Heap, json: &JsonValue) -> Value {
             }
         },
         JsonValue::String(s) => {
-            let idx = heap.alloc(HeapData::String(s.clone()));
+            let idx = ctx.get_heap_mut().alloc(HeapData::String(s.clone()));
             Value::String(idx)
         },
         JsonValue::Array(arr) => {
-            let elements = arr.iter().map(|v| convert_to_value(heap, v)).collect();
-            let idx = heap.alloc(HeapData::Array(elements));
+            let elements = arr.iter().map(|v| convert_to_value(ctx, v)).collect();
+            let idx = ctx.get_heap_mut().alloc(HeapData::Array(elements));
             Value::Array(idx)
         },
         JsonValue::Object(obj) => {
             let mut map = HashMap::new();
             for (k, v) in obj {
-                map.insert(k.clone(), convert_to_value(heap, v));
+                map.insert(k.clone(), convert_to_value(ctx, v));
             }
-            let idx = heap.alloc(HeapData::Kamus(map));
+            let idx = ctx.get_heap_mut().alloc(HeapData::Kamus(map));
             Value::Kamus(idx)
         },
     }
@@ -40,14 +40,14 @@ pub fn register(vm: &mut VM) {
     
     let parse_func = FungsiBawaanVM {
         nama: "parse".to_string(),
-        func: |heap, args| {
+        func: |ctx, args| {
             if args.is_empty() {
                 return Err("Fungsi 'parse' membutuhkan 1 argumen: json string".to_string());
             }
             if let Value::String(idx) = &args[0] {
-                let s = heap.get_string(*idx).clone();
+                let s = ctx.get_heap_mut().get_string(*idx).clone();
                 match serde_json::from_str::<JsonValue>(&s) {
-                    Ok(json_val) => Ok(convert_to_value(heap, &json_val)),
+                    Ok(json_val) => Ok(convert_to_value(ctx, &json_val)),
                     Err(e) => Err(format!("Gagal mem-parsing JSON: {}", e)),
                 }
             } else {
@@ -60,12 +60,12 @@ pub fn register(vm: &mut VM) {
 
     let stringify_func = FungsiBawaanVM {
         nama: "stringify".to_string(),
-        func: |heap, args| {
+        func: |ctx, args| {
             if args.is_empty() {
                 return Err("Fungsi 'stringify' membutuhkan 1 argumen: data".to_string());
             }
             
-            fn convert_from_value(heap: &Heap, val: &Value) -> JsonValue {
+            fn convert_from_value(ctx: &mut dyn VmContext, val: &Value) -> JsonValue {
                 match val {
                     Value::Kosong => JsonValue::Null,
                     Value::Boolean(b) => JsonValue::Bool(*b),
@@ -76,15 +76,17 @@ pub fn register(vm: &mut VM) {
                             JsonValue::Null
                         }
                     },
-                    Value::String(idx) => JsonValue::String(heap.get_string(*idx).clone()),
+                    Value::String(idx) => JsonValue::String(ctx.get_heap_mut().get_string(*idx).clone()),
                     Value::Array(idx) => {
-                        let elements = heap.get_array(*idx).iter().map(|v| convert_from_value(heap, v)).collect();
+                        let array_clone = ctx.get_heap_mut().get_array(*idx).clone();
+                        let elements = array_clone.iter().map(|v| convert_from_value(ctx, v)).collect();
                         JsonValue::Array(elements)
                     },
                     Value::Kamus(idx) => {
                         let mut map = serde_json::Map::new();
-                        for (k, v) in heap.get_kamus(*idx) {
-                            map.insert(k.clone(), convert_from_value(heap, v));
+                        let kamus_clone = ctx.get_heap_mut().get_kamus(*idx).clone();
+                        for (k, v) in kamus_clone {
+                            map.insert(k, convert_from_value(ctx, &v));
                         }
                         JsonValue::Object(map)
                     },
@@ -92,9 +94,9 @@ pub fn register(vm: &mut VM) {
                 }
             }
             
-            let json_val = convert_from_value(heap, &args[0]);
+            let json_val = convert_from_value(ctx, &args[0]);
             let s = json_val.to_string();
-            let s_idx = heap.alloc(HeapData::String(s));
+            let s_idx = ctx.get_heap_mut().alloc(HeapData::String(s));
             Ok(Value::String(s_idx))
         },
     };

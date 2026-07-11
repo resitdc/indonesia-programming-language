@@ -1,7 +1,12 @@
 use std::fmt;
 use crate::heap::Heap;
 
-pub type NativeFnVM = fn(&mut Heap, Vec<Value>) -> Result<Value, String>;
+pub trait VmContext {
+    fn get_heap_mut(&mut self) -> &mut Heap;
+    fn execute_function(&mut self, func_idx: usize, args: Vec<Value>) -> Result<Value, String>;
+}
+
+pub type NativeFnVM = fn(&mut dyn VmContext, Vec<Value>) -> Result<Value, String>;
 
 #[derive(Clone)]
 pub struct FungsiBawaanVM {

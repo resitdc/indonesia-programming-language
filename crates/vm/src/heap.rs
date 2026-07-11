@@ -21,6 +21,7 @@ pub struct Heap {
     pub objects: Vec<HeapObject>,
     pub free_list_head: Option<usize>,
     pub allocated_count: usize,
+    pub web_routes: HashMap<String, usize>,
 }
 
 impl Default for Heap {
@@ -35,6 +36,7 @@ impl Heap {
             objects: Vec::new(),
             free_list_head: None,
             allocated_count: 0,
+            web_routes: HashMap::new(),
         }
     }
 

@@ -91,6 +91,11 @@ pub enum Expression {
         indeks: Box<Expression>,
         lokasi: Lokasi,
     },
+    FungsiAnonim {
+        parameter: Vec<String>,
+        body: Vec<Statement>,
+        lokasi: Lokasi,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -152,6 +157,7 @@ impl Expression {
             Expression::Array { lokasi, .. } => lokasi,
             Expression::Kamus { lokasi, .. } => lokasi,
             Expression::Index { lokasi, .. } => lokasi,
+            Expression::FungsiAnonim { lokasi, .. } => lokasi,
         }
     }
 }

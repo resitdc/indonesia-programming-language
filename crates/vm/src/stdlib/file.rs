@@ -9,15 +9,15 @@ pub fn register(vm: &mut VM) {
     
     let baca_func = FungsiBawaanVM {
         nama: "baca".to_string(),
-        func: |heap, args| {
+        func: |ctx, args| {
             if args.is_empty() {
                 return Err("Fungsi 'baca' membutuhkan 1 argumen: path".to_string());
             }
             if let Value::String(idx) = &args[0] {
-                let path = heap.get_string(*idx).clone();
+                let path = ctx.get_heap_mut().get_string(*idx).clone();
                 match fs::read_to_string(&path) {
                     Ok(content) => {
-                        let new_idx = heap.alloc(HeapData::String(content));
+                        let new_idx = ctx.get_heap_mut().alloc(HeapData::String(content));
                         Ok(Value::String(new_idx))
                     },
                     Err(e) => Err(format!("Gagal membaca file '{}': {}", path, e)),
@@ -32,13 +32,13 @@ pub fn register(vm: &mut VM) {
 
     let tulis_func = FungsiBawaanVM {
         nama: "tulis".to_string(),
-        func: |heap, args| {
+        func: |ctx, args| {
             if args.len() != 2 {
                 return Err("Fungsi 'tulis' membutuhkan 2 argumen: path dan isi".to_string());
             }
             if let (Value::String(path_idx), Value::String(content_idx)) = (&args[0], &args[1]) {
-                let path = heap.get_string(*path_idx).clone();
-                let content = heap.get_string(*content_idx).clone();
+                let path = ctx.get_heap_mut().get_string(*path_idx).clone();
+                let content = ctx.get_heap_mut().get_string(*content_idx).clone();
                 match fs::write(&path, content.as_bytes()) {
                     Ok(_) => Ok(Value::Kosong),
                     Err(e) => Err(format!("Gagal menulis ke file '{}': {}", path, e)),

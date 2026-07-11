@@ -269,6 +269,30 @@ impl<'a> Compiler<'a> {
                 self.chunk.write_opcode(OpCode::MakeKamus, lokasi);
                 self.chunk.write_u16(count as u16, lokasi);
             }
+            Expression::FungsiAnonim { parameter, body, lokasi } => {
+                let mut fn_compiler = Compiler::new(self.heap);
+                for stmt in body {
+                    fn_compiler.compile_statement(stmt)?;
+                }
+                
+                let mut chunk = fn_compiler.chunk;
+                if chunk.code.last() != Some(&(OpCode::Return as u8)) {
+                    let const_idx = chunk.write_constant(Value::Kosong);
+                    chunk.write_opcode(OpCode::LoadConst, lokasi);
+                    chunk.write_u16(const_idx, lokasi);
+                    chunk.write_opcode(OpCode::Return, lokasi);
+                }
+                
+                let fungsi = crate::value::FungsiVM {
+                    nama: "<anonim>".to_string(),
+                    parameter,
+                    chunk,
+                };
+                let fungsi_idx = self.heap.alloc(crate::heap::HeapData::Fungsi(fungsi));
+                let const_idx = self.chunk.write_constant(Value::Fungsi(fungsi_idx));
+                self.chunk.write_opcode(OpCode::LoadConst, lokasi);
+                self.chunk.write_u16(const_idx, lokasi);
+            }
             Expression::Impor(..) => {
                 return Err("Impor modul belum didukung di VM".to_string());
             }

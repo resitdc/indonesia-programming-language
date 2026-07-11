@@ -181,6 +181,10 @@ fn optimize_expression(expr: Expression) -> Expression {
             let opt_indeks = optimize_expression(*indeks);
             Expression::Index { kiri: Box::new(opt_kiri), indeks: Box::new(opt_indeks), lokasi }
         }
+        Expression::FungsiAnonim { parameter, body, lokasi } => {
+            let opt_body = body.into_iter().flat_map(optimize_statement).collect();
+            Expression::FungsiAnonim { parameter, body: opt_body, lokasi }
+        }
         // Base cases
         _ => expr
     }

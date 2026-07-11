@@ -25,13 +25,13 @@ pub fn register(vm: &mut VM) {
 
     let string_func = FungsiBawaanVM {
         nama: "string".to_string(),
-        func: |heap, args| {
+        func: |ctx, args| {
             if !args.is_empty() {
                 return Err("Fungsi 'string' tidak menerima argumen".to_string());
             }
             let now = Local::now();
             let s = now.format("%Y-%m-%d %H:%M:%S").to_string();
-            let new_idx = heap.alloc(HeapData::String(s));
+            let new_idx = ctx.get_heap_mut().alloc(HeapData::String(s));
             Ok(Value::String(new_idx))
         },
     };
