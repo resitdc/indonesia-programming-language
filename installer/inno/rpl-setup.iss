@@ -5,7 +5,9 @@
 ; ====================================================================
 
 #define MyAppName "RPL"
-#define MyAppVersion "1.0.0"
+#ifndef MyAppVersion
+  #define MyAppVersion "1.0.0"
+#endif
 #define MyAppPublisher "Restu Dwi Cahyo"
 #define MyAppURL "https://github.com/resitdc/rakoda-programming-language"
 #define MyAppExeName "rpl.exe"

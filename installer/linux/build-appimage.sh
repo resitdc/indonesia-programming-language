@@ -7,7 +7,7 @@
 # ====================================================================
 set -e
 
-VERSION="1.0.0"
+VERSION="${RPL_VERSION:-1.0.0}"
 PRODUCT_NAME="RPL"
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 APPDIR="${ROOT_DIR}/RPL.AppDir"

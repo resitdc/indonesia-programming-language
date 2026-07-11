@@ -7,7 +7,7 @@
 # ====================================================================
 set -e
 
-VERSION="1.0.0"
+VERSION="${RPL_VERSION:-1.0.0}"
 ARCH="${1:-arm64}"
 PRODUCT_NAME="RPL"
 DMG_NAME="RPL-${VERSION}-${ARCH}.dmg"

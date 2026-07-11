@@ -115,6 +115,12 @@ jobs:
           cp -r documentation/* staging/documentation/ 2>/dev/null || true
           cp LICENSE staging/
 
+      - name: 📋 Get Version from Tag
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "RPL_VERSION=${TAG#v}" >> $GITHUB_ENV
+        shell: bash
+
       - name: 🔧 Install Inno Setup
         run: choco install innosetup -y
 
@@ -122,7 +128,7 @@ jobs:
         shell: cmd
         run: |
           copy installer\inno\rpl-setup.iss staging\
-          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppArch="${{ matrix.arch }}" "staging\rpl-setup.iss"
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppArch="${{ matrix.arch }}" /DMyAppVersion="%RPL_VERSION%" "staging\rpl-setup.iss"
 
       - name: 📤 Upload Windows Installer
         uses: actions/upload-artifact@v5
@@ -160,6 +166,12 @@ jobs:
         run: |
           chmod +x target/release/rpl
           codesign --force --deep -s - target/release/rpl
+
+      - name: 📋 Get Version from Tag
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "RPL_VERSION=${TAG#v}" >> $GITHUB_ENV
+        shell: bash
 
       - name: 🏗️ Build DMG
         run: |
@@ -200,6 +212,12 @@ jobs:
           cargo install cargo-deb --locked
           cargo install cargo-generate-rpm --locked
 
+      - name: 📋 Get Version from Tag
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "RPL_VERSION=${TAG#v}" >> $GITHUB_ENV
+        shell: bash
+
       - name: 🏗️ Build .deb Package
         run: cargo deb -p rpl --no-build
         continue-on-error: true
@@ -239,6 +257,13 @@ jobs:
       - name: 📋 List Artifacts
         run: find artifacts/ -type f | head -50
 
+      - name: 📋 Get Version from Tag
+        id: version
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "clean=${TAG#v}" >> $GITHUB_OUTPUT
+        shell: bash
+
       - name: 🎉 Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -250,12 +275,12 @@ jobs:
             
             | Platform | File |
             |----------|------|
-            | 🪟 Windows (64-bit) | `RPL-Setup-1.0.0-x64.exe` |
-            | 🪟 Windows (32-bit) | `RPL-Setup-1.0.0-x86.exe` |
-            | 🍎 macOS (Apple Silicon) | `RPL-1.0.0-arm64.dmg` |
-            | 🍎 macOS (Intel) | `RPL-1.0.0-x64.dmg` |
-            | 🐧 Linux (Debian/Ubuntu) | `rpl_1.0.0_amd64.deb` |
-            | 🐧 Linux (AppImage) | `RPL-1.0.0-x86_64.AppImage` |
+            | 🪟 Windows (64-bit) | `RPL-Setup-${{ steps.version.outputs.clean }}-x64.exe` |
+            | 🪟 Windows (32-bit) | `RPL-Setup-${{ steps.version.outputs.clean }}-x86.exe` |
+            | 🍎 macOS (Apple Silicon) | `RPL-${{ steps.version.outputs.clean }}-arm64.dmg` |
+            | 🍎 macOS (Intel) | `RPL-${{ steps.version.outputs.clean }}-x64.dmg` |
+            | 🐧 Linux (Debian/Ubuntu) | `rpl_${{ steps.version.outputs.clean }}_amd64.deb` |
+            | 🐧 Linux (AppImage) | `RPL-${{ steps.version.outputs.clean }}-x86_64.AppImage` |
             
             ### 🚀 Cara Install
             
@@ -265,13 +290,13 @@ jobs:
             
             **Linux (Debian/Ubuntu):**
             ```bash
-            sudo dpkg -i rpl_1.0.0_amd64.deb
+            sudo dpkg -i rpl_${{ steps.version.outputs.clean }}_amd64.deb
             ```
             
             **Linux (AppImage):**
             ```bash
-            chmod +x RPL-1.0.0-x86_64.AppImage
-            ./RPL-1.0.0-x86_64.AppImage --version
+            chmod +x RPL-${{ steps.version.outputs.clean }}-x86_64.AppImage
+            ./RPL-${{ steps.version.outputs.clean }}-x86_64.AppImage --version
             ```
             
             ### ✅ Verifikasi
