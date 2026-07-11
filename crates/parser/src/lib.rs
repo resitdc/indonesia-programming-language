@@ -385,6 +385,28 @@ impl Parser {
             
             let properti = match &self.current().token {
                 Token::Identifier(n) => n.clone(),
+                Token::Buat => "buat".to_string(),
+                Token::Tampilkan => "tampilkan".to_string(),
+                Token::Cetak => "cetak".to_string(),
+                Token::Masukkan => "masukkan".to_string(),
+                Token::Jika => "jika".to_string(),
+                Token::Fungsi => "fungsi".to_string(),
+                Token::Kembalikan => "kembalikan".to_string(),
+                Token::Selama => "selama".to_string(),
+                Token::Ulangi => "ulangi".to_string(),
+                Token::Berhenti => "berhenti".to_string(),
+                Token::Lanjut => "lanjut".to_string(),
+                Token::Impor => "impor".to_string(), // or gabung, doesn't matter much
+                Token::Benar => "benar".to_string(),
+                Token::Salah => "salah".to_string(),
+                Token::Kosong => "kosong".to_string(),
+                Token::Maka => "maka".to_string(),
+                Token::Selesai => "selesai".to_string(),
+                Token::Minimal => "minimal".to_string(),
+                Token::Maksimal => "maksimal".to_string(),
+                Token::Dan => "dan".to_string(),
+                Token::Atau => "atau".to_string(),
+                Token::Bukan => "bukan".to_string(),
                 _ => return Err(IplError::Sintaks {
                     pesan: "Lupa menyebutkan bagian apa yang ingin diakses?".to_string(),
                     lokasi: self.current().lokasi.clone(),

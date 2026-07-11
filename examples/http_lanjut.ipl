@@ -1,0 +1,48 @@
+tampilkan("--- UJI HTTP GET DENGAN KONFIGURASI ---")
+tampilkan("Mengambil data cuaca...")
+
+buat config_get = {
+    "header": {
+        "Accept": "application/json"
+    },
+    "parameter": {
+        "id": 1
+    }
+}
+
+buat respon_get = http.get("https://jsonplaceholder.typicode.com/posts", config_get)
+
+tampilkan("Status Code: " + respon_get.status)
+tampilkan("Status Text: " + respon_get.status_text)
+tampilkan("Berhasil: " + respon_get.berhasil)
+tampilkan("Waktu (ms): " + respon_get.waktu)
+
+jika respon_get.berhasil maka
+    tampilkan("Data berhasil diambil:")
+    tampilkan("Judul Post: " + respon_get)
+selesai
+jika tidak maka
+    tampilkan("Gagal mengambil data HTTP")
+selesai
+
+tampilkan("")
+tampilkan("--- UJI HTTP POST DENGAN JSON ---")
+tampilkan("Mengirim data...")
+
+buat config_post = {
+    "header": {
+        "Authorization": "Bearer token123"
+    }
+}
+
+buat payload = {
+    "title": "foo",
+    "body": "bar",
+    "userId": 1
+}
+
+buat respon_post = http.post("https://jsonplaceholder.typicode.com/posts", payload, config_post)
+
+tampilkan("Status Code: " + respon_post.status)
+tampilkan("Waktu (ms): " + respon_post.waktu)
+tampilkan("Respon API: " + respon_post.data.id)

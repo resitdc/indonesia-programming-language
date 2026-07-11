@@ -18,9 +18,68 @@ pub enum Objek {
         env: Rc<RefCell<Lingkungan>>,
     },
     FungsiBawaan(fn(Vec<Objek>) -> Objek),
+    MetodeBawaan(Rc<dyn Fn(Vec<Objek>) -> Objek>),
     Modul(Rc<RefCell<Lingkungan>>),
-    Array(Vec<Objek>),
-    Kamus(HashMap<String, Objek>),
+    Array(Rc<RefCell<Vec<Objek>>>),
+    Kamus(Rc<RefCell<HashMap<String, Objek>>>),
+}
+
+impl Objek {
+    pub fn to_string_pretty(&self, indent: usize, is_root: bool) -> String {
+        let spaces = " ".repeat(indent);
+        let inner_spaces = " ".repeat(indent + 2);
+        match self {
+            Objek::Array(elemen) => {
+                let borrow = elemen.borrow();
+                if borrow.is_empty() {
+                    return "[]".to_string();
+                }
+                let mut s = String::from("[\n");
+                for (i, e) in borrow.iter().enumerate() {
+                    s.push_str(&inner_spaces);
+                    s.push_str(&e.to_string_pretty(indent + 2, false));
+                    if i < borrow.len() - 1 {
+                        s.push_str(",");
+                    }
+                    s.push_str("\n");
+                }
+                s.push_str(&format!("{}]", spaces));
+                s
+            }
+            Objek::Kamus(pasangan) => {
+                let borrow = pasangan.borrow();
+                if borrow.is_empty() {
+                    return "{}".to_string();
+                }
+                let mut s = String::from("{\n");
+                let mut iter = borrow.iter().collect::<Vec<_>>();
+                iter.sort_by_key(|a| a.0);
+                for (i, (k, v)) in iter.iter().enumerate() {
+                    s.push_str(&inner_spaces);
+                    if k.contains(" ") || k.contains("-") {
+                        s.push_str(&format!("\"{}\": ", k));
+                    } else {
+                        s.push_str(&format!("{}: ", k));
+                    }
+                    s.push_str(&v.to_string_pretty(indent + 2, false));
+                    if i < borrow.len() - 1 {
+                        s.push_str(",");
+                    }
+                    s.push_str("\n");
+                }
+                s.push_str(&format!("{}}}", spaces));
+                s
+            }
+            Objek::String(val) => {
+                if is_root {
+                    val.clone()
+                } else {
+                    format!("\"{}\"", val)
+                }
+            }
+            _ => format!("{}", self),
+        }
+    }
 }
 
 impl PartialEq for Objek {
@@ -31,8 +90,8 @@ impl PartialEq for Objek {
             (Objek::Boolean(a), Objek::Boolean(b)) => a == b,
             (Objek::Kosong, Objek::Kosong) => true,
             (Objek::Kembalikan(a), Objek::Kembalikan(b)) => a == b,
-            (Objek::Array(a), Objek::Array(b)) => a == b,
-            (Objek::Kamus(a), Objek::Kamus(b)) => a == b,
+            (Objek::Array(a), Objek::Array(b)) => *a.borrow() == *b.borrow(),
+            (Objek::Kamus(a), Objek::Kamus(b)) => *a.borrow() == *b.borrow(),
             _ => false,
         }
     }
@@ -54,13 +113,14 @@ impl fmt::Display for Objek {
             Objek::Kembalikan(val) => write!(f, "{}", val),
             Objek::Fungsi { .. } => write!(f, "[Fungsi kustom]"),
             Objek::FungsiBawaan(_) => write!(f, "[Fungsi bawaan]"),
+            Objek::MetodeBawaan(_) => write!(f, "[Metode bawaan]"),
             Objek::Modul(_) => write!(f, "[Modul]"),
             Objek::Array(elemen) => {
-                let items: Vec<String> = elemen.iter().map(|e| format!("{}", e)).collect();
+                let items: Vec<String> = elemen.borrow().iter().map(|e| format!("{}", e)).collect();
                 write!(f, "[{}]", items.join(", "))
             }
             Objek::Kamus(pasangan) => {
-                let mut items: Vec<String> = pasangan.iter().map(|(k, v)| format!("{}: {}", k, v)).collect();
+                let mut items: Vec<String> = pasangan.borrow().iter().map(|(k, v)| format!("{}: {}", k, v)).collect();
                 items.sort(); // Sort to ensure consistent output format
                 write!(f, "{{{}}}", items.join(", "))
             }

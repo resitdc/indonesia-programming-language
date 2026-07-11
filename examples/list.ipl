@@ -1,0 +1,12 @@
+// Test List Stdlib
+tampilkan("--- UJI LIST ---")
+buat siswa = ["Budi", "Ani", "Citra"]
+tampilkan("Daftar awal: " + siswa)
+tampilkan("Panjang array: " + list.panjang(siswa))
+tampilkan("Ambil indeks 1: " + list.ambil(siswa, 1))
+
+list.tambah(siswa, "Dodi")
+tampilkan("Setelah ditambah: " + siswa)
+
+list.hapus(siswa, 0)
+tampilkan("Setelah indeks 0 dihapus: " + siswa)

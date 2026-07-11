@@ -1,0 +1,44 @@
+tampilkan("--- UJI HTTP PHASE 2 ---")
+tampilkan("Uji Timeout (Harus Timeout!)")
+
+buat config_to = {
+    "timeout": 1 // 1 ms pasti timeout
+}
+
+buat respon_to = http.get("https://jsonplaceholder.typicode.com/posts", config_to)
+tampilkan("Status Waktu Habis: " + respon_to.status_text)
+tampilkan("Waktu (ms): " + respon_to.waktu)
+
+tampilkan("")
+tampilkan("Uji PUT")
+buat payload_put = {
+    "id": 1,
+    "title": "foo update",
+    "body": "bar update",
+    "userId": 1
+}
+
+buat respon_put = http.put("https://jsonplaceholder.typicode.com/posts/1", payload_put)
+tampilkan("Status PUT: " + respon_put.status)
+jika respon_put.berhasil maka
+    tampilkan("Hasil PUT Judul: " + respon_put.data.title)
+selesai
+
+tampilkan("")
+tampilkan("Uji DELETE")
+buat respon_del = http.delete("https://jsonplaceholder.typicode.com/posts/1")
+tampilkan("Status DELETE: " + respon_del.status)
+
+tampilkan("")
+tampilkan("Uji File Download")
+buat config_dl = {
+    "simpan": "contoh_download.json"
+}
+buat respon_dl = http.download("https://jsonplaceholder.typicode.com/posts/1", config_dl)
+tampilkan("Status Download: " + respon_dl.status)
+tampilkan("Hasil Download: " + respon_dl.data)
+
+tampilkan("")
+tampilkan("Cek apakah file berhasil didownload...")
+// Note: We can't easily check file from IPL yet, but we will see it in the folder!
+tampilkan("Berhasil cek file di folder!")

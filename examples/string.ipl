@@ -1,0 +1,8 @@
+// Test String Stdlib
+tampilkan("--- UJI STRING ---")
+buat nama = "Indonesia Programming Language"
+tampilkan("Panjang teks: " + string.panjang(nama))
+tampilkan("Huruf besar: " + string.besar(nama))
+tampilkan("Huruf kecil: " + string.kecil(nama))
+tampilkan("Potong teks (0-9): " + string.potong(nama, 0, 9))
+tampilkan("Ganti teks: " + string.ganti("Halo Budi", "Budi", "Ani"))

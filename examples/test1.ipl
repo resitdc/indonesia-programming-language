@@ -1,0 +1,11 @@
+buat siswa = [
+  {
+    nama: "Restu Dwi Cahyo",
+    umur: 26
+  },
+  {
+    nama: "Bernandus Naibaho",
+    umur: 26
+  }
+]
+tampilkan siswa

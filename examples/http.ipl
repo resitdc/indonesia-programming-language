@@ -1,0 +1,19 @@
+// Test HTTP Client
+tampilkan("--- UJI HTTP GET ---")
+tampilkan("Mengambil data cuaca...")
+
+// Gunakan API dummy jsonplaceholder
+buat data_teks = http.get("https://jsonplaceholder.typicode.com/users/1")
+
+jika data_teks != kosong maka
+    tampilkan("Berhasil mengambil data dari API!")
+    
+    // Kita gabungkan dengan fitur JSON!
+    buat user = json.parse(data_teks)
+    tampilkan("Nama User: " + user.name)
+    tampilkan("Email User: " + user.email)
+    tampilkan("Kota: " + user.address.city)
+selesai
+jika tidak maka
+    tampilkan("Gagal mengambil data HTTP")
+selesai

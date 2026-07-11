@@ -1,0 +1,44 @@
+tampilkan("--- UJI HTTP PHASE 3 (Client Instance) ---")
+tampilkan("Membuat instance klien HTTP dengan base URL dan header...")
+
+buat klien = http.klien({
+    "base_url": "https://jsonplaceholder.typicode.com",
+    "header": {
+        "Authorization": "Bearer token-rahasia"
+    },
+    "timeout": 5000 // Global timeout untuk agent ini
+})
+
+tampilkan("Mengirim GET request ke /posts/1 (Tanpa mengetik domain penuh)")
+buat respon_get = klien.get("/posts/1")
+tampilkan("Status: " + respon_get.status)
+jika respon_get.berhasil maka
+    tampilkan("Hasil Judul: " + respon_get.data.title)
+selesai
+
+tampilkan("")
+tampilkan("Mengirim POST request ke /posts dengan parameter tambahan...")
+buat payload_post = {
+    "title": "foo",
+    "body": "bar",
+    "userId": 1
+}
+// Override header untuk request ini spesifik
+buat config_post = {
+    "header": {
+        "X-Custom-Req": "Halo"
+    }
+}
+buat respon_post = klien.post("/posts", payload_post, config_post)
+tampilkan("Status POST: " + respon_post.status)
+jika respon_post.berhasil maka
+    tampilkan("Data POST ID: " + respon_post.data.id)
+selesai
+
+tampilkan("")
+tampilkan("Mengirim DELETE request ke /posts/1 ...")
+buat respon_del = klien.delete("/posts/1")
+tampilkan("Status DELETE: " + respon_del.status)
+
+tampilkan("")
+tampilkan("Selesai! Koneksi antar request akan di-reuse secara otomatis berkat Ureq Agent Pooling.")

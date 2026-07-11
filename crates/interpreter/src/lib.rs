@@ -1,6 +1,7 @@
 pub mod objek;
 pub mod lingkungan;
 pub mod template;
+pub mod stdlib;
 
 use std::fs;
 use std::path::Path;
@@ -20,16 +21,20 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn baru() -> Self {
+        let lingkungan = Lingkungan::baru();
+        crate::stdlib::register_all(&lingkungan);
         Self {
-            lingkungan: Lingkungan::baru(),
+            lingkungan,
             output_buffer: String::new(),
             capture_output: false,
         }
     }
     
     pub fn baru_dengan_capture() -> Self {
+        let lingkungan = Lingkungan::baru();
+        crate::stdlib::register_all(&lingkungan);
         Self {
-            lingkungan: Lingkungan::baru(),
+            lingkungan,
             output_buffer: String::new(),
             capture_output: true,
         }
@@ -64,10 +69,10 @@ impl Interpreter {
                 for n in nilai {
                     let hasil_eval = self.eval_expression(n)?;
                     if self.capture_output {
-                        self.output_buffer.push_str(&hasil_eval.to_string());
+                        self.output_buffer.push_str(&hasil_eval.to_string_pretty(0, true));
                         self.output_buffer.push(' ');
                     } else {
-                        print!("{} ", hasil_eval);
+                        print!("{} ", hasil_eval.to_string_pretty(0, true));
                     }
                 }
                 
@@ -245,7 +250,7 @@ impl Interpreter {
                 for e in elemen {
                     hasil.push(self.eval_expression(e)?);
                 }
-                Ok(Objek::Array(hasil))
+                Ok(Objek::Array(Rc::new(RefCell::new(hasil))))
             }
             Expression::Kamus { pasangan, .. } => {
                 let mut hasil = std::collections::HashMap::new();
@@ -259,14 +264,15 @@ impl Interpreter {
                     };
                     hasil.insert(k_str, v);
                 }
-                Ok(Objek::Kamus(hasil))
+                Ok(Objek::Kamus(Rc::new(RefCell::new(hasil))))
             }
             Expression::Index { kiri, indeks, lokasi } => {
                 let kiri_obj = self.eval_expression(*kiri)?;
                 let indeks_obj = self.eval_expression(*indeks)?;
                 
                 match kiri_obj {
-                    Objek::Array(elemen) => {
+                    Objek::Array(elemen_rc) => {
+                        let elemen = elemen_rc.borrow();
                         match indeks_obj {
                             Objek::Angka(val) => {
                                 let idx = val as usize;
@@ -287,7 +293,8 @@ impl Interpreter {
                             })
                         }
                     }
-                    Objek::Kamus(pasangan) => {
+                    Objek::Kamus(pasangan_rc) => {
+                        let pasangan = pasangan_rc.borrow();
                         let kunci = match indeks_obj {
                             Objek::String(s) => s,
                             _ => format!("{}", indeks_obj),
@@ -343,6 +350,9 @@ impl Interpreter {
 
                 match fungsi_obj {
                     Objek::FungsiBawaan(func) => {
+                        Ok(func(arg_eval))
+                    }
+                    Objek::MetodeBawaan(func) => {
                         Ok(func(arg_eval))
                     }
                     Objek::Fungsi { parameter, body, env } => {
@@ -409,25 +419,33 @@ impl Interpreter {
             (Objek::String(kiri_val), Objek::String(kanan_val)) => {
                 self.eval_string_infix(operator, kiri_val, kanan_val, lokasi)
             }
-            (Objek::String(kiri_val), Objek::Angka(kanan_val)) => {
+            (Objek::String(kiri_val), kanan_val) => {
                 if operator == InfixOperator::Tambah {
                     Ok(Objek::String(format!("{}{}", kiri_val, kanan_val)))
+                } else if operator == InfixOperator::SamaDengan {
+                    Ok(Objek::Boolean(false)) // String and other type are never equal
+                } else if operator == InfixOperator::TidakSamaDengan {
+                    Ok(Objek::Boolean(true))
                 } else {
                     Err(IplError::TipeData {
-                        pesan: format!("Kamu mencoba menggunakan operasi matematika selain tambah pada Teks dan Angka."),
+                        pesan: format!("Kamu mencoba menggunakan operasi matematika selain tambah pada Teks dan Tipe Data Lain."),
                         lokasi,
-                        saran: Some("Teks dan Angka hanya bisa digabungkan dengan tanda tambah '+'. Tidak bisa dikurang, kali, atau bagi.".to_string()),
+                        saran: Some("Teks hanya bisa digabungkan dengan tanda tambah '+'. Tidak bisa dikurang, kali, atau bagi.".to_string()),
                     })
                 }
             }
-            (Objek::Angka(kiri_val), Objek::String(kanan_val)) => {
+            (kiri_val, Objek::String(kanan_val)) => {
                 if operator == InfixOperator::Tambah {
                     Ok(Objek::String(format!("{}{}", kiri_val, kanan_val)))
+                } else if operator == InfixOperator::SamaDengan {
+                    Ok(Objek::Boolean(false))
+                } else if operator == InfixOperator::TidakSamaDengan {
+                    Ok(Objek::Boolean(true))
                 } else {
                     Err(IplError::TipeData {
-                        pesan: format!("Kamu mencoba menggunakan operasi matematika selain tambah pada Angka dan Teks."),
+                        pesan: format!("Kamu mencoba menggunakan operasi matematika selain tambah pada Tipe Data Lain dan Teks."),
                         lokasi,
-                        saran: Some("Angka dan Teks hanya bisa digabungkan dengan tanda tambah '+'. Tidak bisa dikurang, kali, atau bagi.".to_string()),
+                        saran: Some("Hanya tanda tambah '+' yang bisa digunakan untuk menggabungkan sesuatu dengan Teks.".to_string()),
                     })
                 }
             }

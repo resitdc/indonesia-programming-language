@@ -1,0 +1,9 @@
+// Test Matematika Stdlib
+tampilkan("--- UJI MATEMATIKA ---")
+tampilkan("10 + 5 = " + matematika.tambah(10, 5))
+tampilkan("10 - 5 = " + matematika.kurang(10, 5))
+tampilkan("10 * 5 = " + matematika.kali(10, 5))
+tampilkan("10 / 5 = " + matematika.bagi(10, 5))
+tampilkan("2 ^ 3 = " + matematika.pangkat(2, 3))
+tampilkan("3.14 dibulatkan = " + matematika.bulatkan(3.14))
+tampilkan("Angka acak 1-100: " + matematika.acak(1, 100))

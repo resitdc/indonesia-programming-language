@@ -1,0 +1,10 @@
+// Test Waktu
+tampilkan("--- UJI WAKTU ---")
+tampilkan("Waktu format: " + waktu.format())
+tampilkan("Tahun: " + waktu.tahun())
+tampilkan("Bulan: " + waktu.bulan())
+tampilkan("Tanggal: " + waktu.tanggal())
+tampilkan("Jam: " + waktu.jam())
+tampilkan("Menit: " + waktu.menit())
+tampilkan("Detik: " + waktu.detik())
+tampilkan("Timestamp: " + waktu.sekarang())

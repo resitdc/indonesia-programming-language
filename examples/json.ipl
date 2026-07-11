@@ -1,0 +1,18 @@
+// Test JSON
+tampilkan("--- UJI JSON ---")
+buat siswa = {
+    nama: "Budi",
+    umur: 17,
+    hobi: ["Membaca", "Ngoding"]
+}
+
+tampilkan("Objek asli: " + siswa)
+
+buat json_teks = json.buat(siswa)
+tampilkan("Setelah diubah ke JSON:")
+tampilkan(json_teks)
+
+buat siswa_kembali = json.parse(json_teks)
+tampilkan("Parse kembali JSON ke objek:")
+tampilkan("Nama: " + siswa_kembali.nama)
+tampilkan("Hobi pertama: " + siswa_kembali.hobi[0])
