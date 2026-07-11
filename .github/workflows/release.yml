@@ -35,7 +35,7 @@ jobs:
             artifact: rpl-windows-x86
 
           - name: macOS Intel
-            os: macos-14
+            os: macos-13
             target: x86_64-apple-darwin
             binary: rpl
             artifact: rpl-macos-x64
