@@ -65,7 +65,7 @@ fi
 
 # ---- Build AppImage ----
 echo "📦 Creating AppImage..."
-ARCH=x86_64 "${APPIMAGETOOL}" "${APPDIR}" "${ROOT_DIR}/RPL-${VERSION}-x86_64.AppImage"
+APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 "${APPIMAGETOOL}" "${APPDIR}" "${ROOT_DIR}/RPL-${VERSION}-x86_64.AppImage"
 
 # ---- Cleanup ----
 rm -rf "${APPDIR}"
