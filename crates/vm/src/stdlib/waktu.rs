@@ -38,6 +38,23 @@ pub fn register(vm: &mut VM) {
     let string_idx = vm.heap.alloc(HeapData::FungsiBawaan(string_func));
     module_dict.insert("string".to_string(), Value::FungsiBawaan(string_idx));
 
+    let tunggu_func = FungsiBawaanVM {
+        nama: "tunggu".to_string(),
+        func: |_ctx, args| {
+            if args.len() != 1 {
+                return Err("Fungsi 'tunggu' membutuhkan 1 argumen (angka milidetik)".to_string());
+            }
+            if let Value::Angka(ms) = args[0] {
+                std::thread::sleep(std::time::Duration::from_millis(ms as u64));
+                Ok(Value::Kosong)
+            } else {
+                Err("Argumen fungsi 'tunggu' harus berupa angka".to_string())
+            }
+        },
+    };
+    let tunggu_idx = vm.heap.alloc(HeapData::FungsiBawaan(tunggu_func));
+    module_dict.insert("tunggu".to_string(), Value::FungsiBawaan(tunggu_idx));
+
     let dict_idx = vm.heap.alloc(HeapData::Kamus(module_dict));
     vm.set_global("waktu".to_string(), Value::Kamus(dict_idx));
 }

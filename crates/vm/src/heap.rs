@@ -17,6 +17,7 @@ pub enum HeapData {
     Free(usize), // Next free index
 }
 
+#[derive(Clone)]
 pub struct Heap {
     pub objects: Vec<HeapObject>,
     pub free_list_head: Option<usize>,

@@ -1,0 +1,21 @@
+tampilkan "Memulai eksekusi tugas background..."
+
+buat t1 = tugas.jalankan(fungsi() {
+    waktu.tunggu(2000)
+    kembalikan "Hasil dari Tugas 1"
+})
+
+buat t2 = tugas.jalankan(fungsi() {
+    waktu.tunggu(1000)
+    kembalikan "Hasil dari Tugas 2"
+})
+
+tampilkan "Menunggu tugas selesai..."
+
+buat hasil2 = tugas.tunggu(t2)
+tampilkan hasil2
+
+buat hasil1 = tugas.tunggu(t1)
+tampilkan hasil1
+
+tampilkan "Semua tugas selesai!"

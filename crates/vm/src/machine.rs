@@ -5,6 +5,7 @@ use crate::heap::{Heap, HeapData};
 use crate::value::{FungsiVM, Value};
 use errors::Lokasi;
 
+#[derive(Clone)]
 pub struct CallFrame {
     pub fungsi: usize, // index to Heap.fungsi
     pub ip: usize,
@@ -35,6 +36,8 @@ pub struct VM {
     stack: Vec<Value>,
     globals: HashMap<String, Value>,
     pub heap: Heap,
+    pub tasks: HashMap<usize, std::thread::JoinHandle<(Result<Value, String>, Heap)>>,
+    pub next_task_id: usize,
 }
 
 impl Default for VM {
@@ -50,6 +53,19 @@ impl VM {
             stack: Vec::with_capacity(256),
             globals: HashMap::new(),
             heap: Heap::new(),
+            tasks: HashMap::new(),
+            next_task_id: 1,
+        }
+    }
+
+    pub fn clone_vm(&self) -> VM {
+        VM {
+            frames: self.frames.clone(),
+            stack: self.stack.clone(),
+            globals: self.globals.clone(),
+            heap: self.heap.clone(),
+            tasks: HashMap::new(),
+            next_task_id: 1,
         }
     }
 
@@ -330,7 +346,7 @@ impl VM {
                             let result = func_ptr(self, args).map_err(|e| self.err(e))?;
                             self.stack.push(result);
                         }
-                        _ => return Err(self.err("Hanya fungsi yang dapat dipanggil.")),
+                        _ => return Err(self.err(format!("Hanya fungsi yang dapat dipanggil. Ditemukan: {:?}", fungsi_val))),
                     }
                 }
                 OpCode::GetIndex => {
@@ -435,6 +451,40 @@ impl VmContext for VM {
                 Ok(result)
             }
             Err((msg, _lokasi)) => Err(msg),
+        }
+    }
+
+    fn spawn_task(&mut self, func_idx: usize) -> Result<usize, String> {
+        let mut vm_clone = self.clone_vm();
+        
+        let handle = std::thread::spawn(move || {
+            let res = vm_clone.execute_function(func_idx, vec![]);
+            (res, vm_clone.heap)
+        });
+        
+        let task_id = self.next_task_id;
+        self.next_task_id += 1;
+        self.tasks.insert(task_id, handle);
+        
+        Ok(task_id)
+    }
+
+    fn join_task(&mut self, task_id: usize) -> Result<Value, String> {
+        if let Some(handle) = self.tasks.remove(&task_id) {
+            match handle.join() {
+                Ok((res, background_heap)) => {
+                    match res {
+                        Ok(val) => {
+                            let copied_val = crate::value::deep_copy_value(&val, &background_heap, &mut self.heap);
+                            Ok(copied_val)
+                        }
+                        Err(e) => Err(e),
+                    }
+                }
+                Err(_) => Err("Gagal menunggu tugas background (Thread Panicked)".to_string()),
+            }
+        } else {
+            Err(format!("Tiket tugas dengan ID {} tidak ditemukan.", task_id))
         }
     }
 }
