@@ -31,6 +31,13 @@ impl CallFrame {
     }
 }
 
+#[derive(Clone)]
+pub struct CatchHandler {
+    pub frame_index: usize,
+    pub stack_offset: usize,
+    pub ip_offset: usize,
+}
+
 pub struct VM {
     frames: Vec<CallFrame>,
     stack: Vec<Value>,
@@ -38,6 +45,7 @@ pub struct VM {
     pub heap: Heap,
     pub tasks: HashMap<usize, std::thread::JoinHandle<(Result<Value, String>, Heap)>>,
     pub next_task_id: usize,
+    pub catch_handlers: Vec<CatchHandler>,
 }
 
 impl Default for VM {
@@ -55,6 +63,7 @@ impl VM {
             heap: Heap::new(),
             tasks: HashMap::new(),
             next_task_id: 1,
+            catch_handlers: Vec::new(),
         }
     }
 
@@ -66,6 +75,7 @@ impl VM {
             heap: self.heap.clone(),
             tasks: HashMap::new(),
             next_task_id: 1,
+            catch_handlers: self.catch_handlers.clone(),
         }
     }
 
@@ -241,12 +251,26 @@ impl VM {
                 OpCode::Equal => {
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push(Value::Boolean(a == b));
+                    
+                    if let (Value::String(a_idx), Value::String(b_idx)) = (a, b) {
+                        let a_str = self.heap.get_string(a_idx).clone();
+                        let b_str = self.heap.get_string(b_idx).clone();
+                        self.stack.push(Value::Boolean(a_str == b_str));
+                    } else {
+                        self.stack.push(Value::Boolean(a == b));
+                    }
                 }
                 OpCode::NotEqual => {
                     let b = self.stack.pop().unwrap();
                     let a = self.stack.pop().unwrap();
-                    self.stack.push(Value::Boolean(a != b));
+                    
+                    if let (Value::String(a_idx), Value::String(b_idx)) = (a, b) {
+                        let a_str = self.heap.get_string(a_idx).clone();
+                        let b_str = self.heap.get_string(b_idx).clone();
+                        self.stack.push(Value::Boolean(a_str != b_str));
+                    } else {
+                        self.stack.push(Value::Boolean(a != b));
+                    }
                 }
                 OpCode::Greater => {
                     let b = self.stack.pop().unwrap();
@@ -400,6 +424,28 @@ impl VM {
                     }
                     let new_idx = self.heap.alloc(HeapData::Kamus(map));
                     self.stack.push(Value::Kamus(new_idx));
+                }
+                OpCode::SetupCatch => {
+                    let offset = self.frames.last_mut().unwrap().read_short(&self.heap) as usize;
+                    self.catch_handlers.push(CatchHandler {
+                        frame_index: self.frames.len(),
+                        stack_offset: self.stack.len(),
+                        ip_offset: offset,
+                    });
+                }
+                OpCode::PopCatch => {
+                    self.catch_handlers.pop();
+                }
+                OpCode::Throw => {
+                    let error_val = self.stack.pop().unwrap();
+                    if let Some(handler) = self.catch_handlers.pop() {
+                        self.frames.truncate(handler.frame_index);
+                        self.stack.truncate(handler.stack_offset);
+                        self.frames.last_mut().unwrap().ip = handler.ip_offset;
+                        self.stack.push(error_val);
+                    } else {
+                        return Err(self.err(format!("Unhandled exception: {}", error_val.to_string(&self.heap))));
+                    }
                 }
             }
         }

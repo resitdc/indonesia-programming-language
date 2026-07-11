@@ -22,7 +22,7 @@ enum Commands {
         #[arg(short, long)]
         watch: bool,
         #[arg(long)]
-        vm: bool,
+        interpreter: bool,
     },
     Repl,
     Serve {
@@ -63,7 +63,7 @@ fn run_file(file: &PathBuf, use_vm: bool) -> Result<bool> {
         let mut machine = vm::VM::new();
         vm::stdlib::register_all(&mut machine);
 
-        let mut compiler = vm::Compiler::new(&mut machine.heap);
+        let compiler = vm::Compiler::new(&mut machine.heap);
         match compiler.compile(program) {
             Ok(chunk) => {
                 if let Err((msg, opt_lokasi)) = machine.execute(chunk) {
@@ -104,9 +104,10 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Run { file, watch, vm } => {
+        Commands::Run { file, watch, interpreter } => {
+            let use_vm = !*interpreter;
             if !*watch {
-                let success = run_file(file, *vm)?;
+                let success = run_file(file, use_vm)?;
                 if !success {
                     std::process::exit(1);
                 }
@@ -117,7 +118,7 @@ async fn main() -> Result<()> {
 
                 print!("{}[2J{}[1;1H", 27 as char, 27 as char); // Clear screen
                 println!("\x1b[32m⏳ Memulai watch mode untuk {}...\x1b[0m", file.display());
-                let _ = run_file(file, *vm);
+                let _ = run_file(file, use_vm);
                 println!("\n\x1b[32m👀 Menunggu perubahan file...\x1b[0m");
 
                 let (tx, rx) = channel();
@@ -134,7 +135,7 @@ async fn main() -> Result<()> {
                                     last_run = std::time::Instant::now();
                                     print!("{}[2J{}[1;1H", 27 as char, 27 as char); // Clear screen
                                     println!("\x1b[32m🔄 File berubah, menjalankan ulang...\x1b[0m\n");
-                                    let _ = run_file(file, *vm);
+                                    let _ = run_file(file, use_vm);
                                     println!("\n\x1b[32m👀 Menunggu perubahan file...\x1b[0m");
                                 }
                             }

@@ -57,6 +57,12 @@ impl Interpreter {
             if let Objek::Kembalikan(nilai) = hasil {
                 return Ok(*nilai);
             }
+            if let Objek::Pengecualian(err) = hasil {
+                return Err(IplError::Runtime {
+                    pesan: format!("Pengecualian tidak ditangkap: {}", err.to_string_pretty(0, true)),
+                    lokasi: errors::Lokasi::new(0, 0),
+                });
+            }
         }
 
         Ok(hasil)
@@ -142,6 +148,9 @@ impl Interpreter {
                     if let Objek::Kembalikan(_) = hasil {
                         return Ok(hasil);
                     }
+                    if let Objek::Pengecualian(_) = hasil {
+                        return Ok(hasil);
+                    }
                 }
                 Ok(hasil)
             }
@@ -154,6 +163,53 @@ impl Interpreter {
                 self.lingkungan.borrow_mut().set(nama, fungsi);
                 Ok(Objek::Kosong)
             }
+            Statement::CobaTangkap { coba_body, error_ident, tangkap_body, .. } => {
+                let mut hasil = Objek::Kosong;
+                let mut terlempar = false;
+                let mut nilai_error = Objek::Kosong;
+
+                for stmt in coba_body {
+                    hasil = self.eval_statement(stmt)?;
+                    if let Objek::Kembalikan(_) = hasil {
+                        return Ok(hasil);
+                    }
+                    if let Objek::Pengecualian(ref err) = hasil {
+                        terlempar = true;
+                        nilai_error = *err.clone();
+                        break;
+                    }
+                }
+
+                if terlempar {
+                    // Create new environment for catch block
+                    let lingkungan_lama = Rc::clone(&self.lingkungan);
+                    self.lingkungan = Lingkungan::baru_nested(Rc::clone(&lingkungan_lama));
+                    
+                    self.lingkungan.borrow_mut().set(error_ident, nilai_error);
+                    
+                    let mut hasil_tangkap = Objek::Kosong;
+                    for stmt in tangkap_body {
+                        hasil_tangkap = self.eval_statement(stmt)?;
+                        if let Objek::Kembalikan(_) = hasil_tangkap {
+                            self.lingkungan = lingkungan_lama;
+                            return Ok(hasil_tangkap);
+                        }
+                        if let Objek::Pengecualian(_) = hasil_tangkap {
+                            self.lingkungan = lingkungan_lama;
+                            return Ok(hasil_tangkap);
+                        }
+                    }
+                    
+                    self.lingkungan = lingkungan_lama;
+                    Ok(hasil_tangkap)
+                } else {
+                    Ok(hasil)
+                }
+            }
+            Statement::Lempar { nilai, .. } => {
+                let eval_nilai = self.eval_expression(nilai)?;
+                Ok(Objek::Pengecualian(Box::new(eval_nilai)))
+            }
         }
     }
 
@@ -164,6 +220,9 @@ impl Interpreter {
             hasil = self.eval_statement(statement)?;
 
             if let Objek::Kembalikan(_) = hasil {
+                return Ok(hasil);
+            }
+            if let Objek::Pengecualian(_) = hasil {
                 return Ok(hasil);
             }
         }
@@ -385,6 +444,7 @@ impl Interpreter {
 
                         match hasil? {
                             Objek::Kembalikan(val) => Ok(*val),
+                            Objek::Pengecualian(val) => Ok(Objek::Pengecualian(val)),
                             _ => Ok(Objek::Kosong),
                         }
                     }

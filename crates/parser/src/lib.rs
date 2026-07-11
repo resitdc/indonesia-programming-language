@@ -95,6 +95,8 @@ impl Parser {
             Token::Kembalikan => self.parse_kembalikan(),
             Token::Tampilkan => self.parse_tampilkan_statement(false),
             Token::Cetak => self.parse_tampilkan_statement(true),
+            Token::Coba => self.parse_coba(),
+            Token::Lempar => self.parse_lempar(),
             Token::Identifier(_) => {
                 if self.peek().token == Token::Assign {
                     self.parse_assignment()
@@ -187,26 +189,32 @@ impl Parser {
         let is_maka = self.current().token == Token::Maka;
         let is_kurawal = self.current().token == Token::KurawalBuka;
 
-        if !is_maka && !is_kurawal {
-            return Err(IplError::Sintaks {
-                pesan: "Lupa membuka blok perintah?".to_string(),
-                lokasi: self.current().lokasi.clone(),
-                saran: Some("Gunakan kata 'maka' atau simbol '{' untuk menandai dimulainya blok perintah.".to_string()),
-            });
+        if is_maka || is_kurawal {
+            self.advance();
         }
-        self.advance();
 
         let mut statements = Vec::new();
-        while self.current().token != Token::KurawalTutup 
-            && self.current().token != Token::Selesai 
-            && self.current().token != Token::EOF 
-        {
+        
+        loop {
+            let current = &self.current().token;
+            if current == &Token::EOF {
+                break;
+            }
+            if is_kurawal {
+                if current == &Token::KurawalTutup {
+                    break;
+                }
+            } else {
+                if current == &Token::Selesai || current == &Token::JikaTidak || current == &Token::Tangkap {
+                    break;
+                }
+            }
             statements.push(self.parse_statement()?);
         }
 
         if is_kurawal {
             self.expect(Token::KurawalTutup)?;
-        } else {
+        } else if self.current().token != Token::JikaTidak && self.current().token != Token::Tangkap {
             self.expect(Token::Selesai)?;
         }
 
@@ -286,6 +294,40 @@ impl Parser {
         let body = self.parse_block()?;
 
         Ok(Statement::DeklarasiFungsi { nama, parameter, body, lokasi })
+    }
+
+    fn parse_coba(&mut self) -> Result<Statement, IplError> {
+        let lokasi = self.current().lokasi.clone();
+        self.advance();
+
+        let coba_body = self.parse_block()?;
+
+        self.expect(Token::Tangkap)?;
+        
+        self.expect(Token::KurungBuka)?;
+        let error_ident = match &self.current().token {
+            Token::Identifier(n) => n.clone(),
+            _ => return Err(IplError::Sintaks {
+                pesan: "Nama variabel error tidak valid.".to_string(),
+                lokasi: self.current().lokasi.clone(),
+                saran: Some("Berikan nama variabel untuk menangkap error, contoh: tangkap (error)".to_string()),
+            }),
+        };
+        self.advance();
+        self.expect(Token::KurungTutup)?;
+
+        let tangkap_body = self.parse_block()?;
+
+        Ok(Statement::CobaTangkap { coba_body, error_ident, tangkap_body, lokasi })
+    }
+
+    fn parse_lempar(&mut self) -> Result<Statement, IplError> {
+        let lokasi = self.current().lokasi.clone();
+        self.advance();
+
+        let nilai = self.parse_expression(Precedence::Lowest)?;
+
+        Ok(Statement::Lempar { nilai, lokasi })
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> Result<Expression, IplError> {

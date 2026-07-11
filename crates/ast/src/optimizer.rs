@@ -108,6 +108,22 @@ fn optimize_statement(stmt: Statement) -> Vec<Statement> {
                 lokasi,
             }]
         }
+        Statement::CobaTangkap { coba_body, error_ident, tangkap_body, lokasi } => {
+            let opt_coba = coba_body.into_iter().flat_map(optimize_statement).collect();
+            let opt_tangkap = tangkap_body.into_iter().flat_map(optimize_statement).collect();
+            vec![Statement::CobaTangkap {
+                coba_body: opt_coba,
+                error_ident,
+                tangkap_body: opt_tangkap,
+                lokasi,
+            }]
+        }
+        Statement::Lempar { nilai, lokasi } => {
+            vec![Statement::Lempar {
+                nilai: optimize_expression(nilai),
+                lokasi,
+            }]
+        }
     }
 }
 

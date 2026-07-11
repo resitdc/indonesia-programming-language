@@ -21,6 +21,9 @@ pub enum Token {
     Kosong,     // kosong
     Maka,       // maka
     Selesai,    // selesai
+    Coba,       // coba
+    Tangkap,    // tangkap
+    Lempar,     // lempar
 
     LebihDari,       // lebih dari
     KurangDari,      // kurang dari
@@ -95,6 +98,9 @@ impl Token {
             Token::Titik => "titik '.'".to_string(),
             
             Token::EOF => "akhir file".to_string(),
+            Token::Coba => "'coba'".to_string(),
+            Token::Tangkap => "'tangkap'".to_string(),
+            Token::Lempar => "'lempar'".to_string(),
             _ => format!("{:?}", self),
         }
     }
@@ -123,6 +129,9 @@ impl Token {
             "dan" => Some(Token::Dan),
             "atau" => Some(Token::Atau),
             "bukan" => Some(Token::Bukan),
+            "coba" => Some(Token::Coba),
+            "tangkap" => Some(Token::Tangkap),
+            "lempar" => Some(Token::Lempar),
             _ => None,
         }
     }

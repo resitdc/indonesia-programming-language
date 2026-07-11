@@ -26,6 +26,9 @@ pub enum OpCode {
     GetIndex,
     MakeArray,   // operand: 2 bytes (element count)
     MakeKamus,   // operand: 2 bytes (pair count)
+    SetupCatch,  // operand: 2 bytes (jump offset)
+    PopCatch,
+    Throw,
 }
 
 impl OpCode {
@@ -56,6 +59,9 @@ impl OpCode {
             22 => Some(OpCode::GetIndex),
             23 => Some(OpCode::MakeArray),
             24 => Some(OpCode::MakeKamus),
+            25 => Some(OpCode::SetupCatch),
+            26 => Some(OpCode::PopCatch),
+            27 => Some(OpCode::Throw),
             _ => None,
         }
     }

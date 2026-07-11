@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::value::{Value, FungsiBawaanVM, VmContext};
+use crate::value::{Value, FungsiBawaanVM};
 use crate::heap::HeapData;
 
 pub fn register(vm: &mut crate::machine::VM) {

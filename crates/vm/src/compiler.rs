@@ -170,6 +170,35 @@ impl<'a> Compiler<'a> {
                 }
                 self.chunk.write_opcode(OpCode::Return, lokasi);
             }
+            Statement::CobaTangkap { coba_body, error_ident, tangkap_body, lokasi } => {
+                let setup_catch_offset = self.emit_jump(OpCode::SetupCatch, lokasi);
+
+                for stmt in coba_body {
+                    self.compile_statement(stmt)?;
+                }
+
+                self.chunk.write_opcode(OpCode::PopCatch, lokasi);
+                let jump_over_catch = self.emit_jump(OpCode::Jump, lokasi);
+
+                self.patch_jump(setup_catch_offset);
+
+                // Here, the error value is at the top of the stack.
+                // We need to store it in the error_ident variable.
+                let name_idx = self.heap.alloc(HeapData::String(error_ident));
+                let const_name_idx = self.chunk.write_constant(Value::String(name_idx));
+                self.chunk.write_opcode(OpCode::StoreVar, lokasi);
+                self.chunk.write_u16(const_name_idx, lokasi);
+
+                for stmt in tangkap_body {
+                    self.compile_statement(stmt)?;
+                }
+
+                self.patch_jump(jump_over_catch);
+            }
+            Statement::Lempar { nilai, lokasi } => {
+                self.compile_expression(nilai)?;
+                self.chunk.write_opcode(OpCode::Throw, lokasi);
+            }
         }
         Ok(())
     }

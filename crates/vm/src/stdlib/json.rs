@@ -1,7 +1,7 @@
 use crate::machine::VM;
 use crate::value::{Value, FungsiBawaanVM, VmContext};
 use std::collections::HashMap;
-use crate::heap::{Heap, HeapData};
+use crate::heap::HeapData;
 use serde_json::Value as JsonValue;
 
 fn convert_to_value(ctx: &mut dyn VmContext, json: &JsonValue) -> Value {

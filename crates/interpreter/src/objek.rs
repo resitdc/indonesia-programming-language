@@ -12,6 +12,7 @@ pub enum Objek {
     Boolean(bool),
     Kosong,
     Kembalikan(Box<Objek>),
+    Pengecualian(Box<Objek>),
     Fungsi {
         parameter: Vec<String>,
         body: Vec<Statement>,
@@ -90,6 +91,7 @@ impl PartialEq for Objek {
             (Objek::Boolean(a), Objek::Boolean(b)) => a == b,
             (Objek::Kosong, Objek::Kosong) => true,
             (Objek::Kembalikan(a), Objek::Kembalikan(b)) => a == b,
+            (Objek::Pengecualian(a), Objek::Pengecualian(b)) => a == b,
             (Objek::Array(a), Objek::Array(b)) => *a.borrow() == *b.borrow(),
             (Objek::Kamus(a), Objek::Kamus(b)) => *a.borrow() == *b.borrow(),
             _ => false,
@@ -111,6 +113,7 @@ impl fmt::Display for Objek {
             Objek::Boolean(val) => write!(f, "{}", if *val { "benar" } else { "salah" }),
             Objek::Kosong => write!(f, "kosong"),
             Objek::Kembalikan(val) => write!(f, "{}", val),
+            Objek::Pengecualian(val) => write!(f, "Pengecualian: {}", val),
             Objek::Fungsi { .. } => write!(f, "[Fungsi kustom]"),
             Objek::FungsiBawaan(_) => write!(f, "[Fungsi bawaan]"),
             Objek::MetodeBawaan(_) => write!(f, "[Metode bawaan]"),

@@ -47,6 +47,16 @@ pub enum Statement {
         nilai: Vec<Expression>,
         lokasi: Lokasi,
     },
+    CobaTangkap {
+        coba_body: Vec<Statement>,
+        error_ident: String,
+        tangkap_body: Vec<Statement>,
+        lokasi: Lokasi,
+    },
+    Lempar {
+        nilai: Expression,
+        lokasi: Lokasi,
+    },
     Expression(Expression),
 }
 

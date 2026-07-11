@@ -10,3 +10,17 @@ buat siswa = [
 ]
 tampilkan siswa
 tampilkan "hot reload works"
+
+fungsi bagikan(a, b)
+    jika b == 0
+        lempar "Tidak bisa membagi dengan nol!"
+    selesai
+    kembalikan a / b
+selesai
+
+coba
+    buat hasil = bagikan(10, 0)
+    tampilkan "10 / 0 = " + hasil
+tangkap (error)
+    tampilkan "Berhasil ditangkap! Pesan: " + error
+selesai

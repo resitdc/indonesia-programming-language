@@ -1,5 +1,5 @@
 use crate::machine::VM;
-use crate::value::{Value, FungsiBawaanVM, VmContext};
+use crate::value::{Value, FungsiBawaanVM};
 use crate::heap::HeapData;
 use std::collections::HashMap;
 
@@ -97,7 +97,7 @@ pub fn register(vm: &mut VM) {
                         }
                     }
                     None => {
-                        let mut resp = tiny_http::Response::from_string("Not Found")
+                        let resp = tiny_http::Response::from_string("Not Found")
                             .with_status_code(404);
                         let _ = request.respond(resp);
                     }
