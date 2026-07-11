@@ -26,6 +26,10 @@ mkdir -p "${STAGING_DIR}/usr/local/share/rpl/docs"
 cp "${ROOT_DIR}/target/release/rpl" "${STAGING_DIR}/usr/local/bin/rpl"
 chmod 755 "${STAGING_DIR}/usr/local/bin/rpl"
 
+# Ad-hoc codesign to prevent macOS Gatekeeper malware warning
+codesign --force --deep -s - "${STAGING_DIR}/usr/local/bin/rpl"
+xattr -cr "${STAGING_DIR}/usr/local/bin/rpl"
+
 # Copy resources
 cp "${ROOT_DIR}"/examples/*.rpl "${STAGING_DIR}/usr/local/share/rpl/examples/" 2>/dev/null || true
 cp -r "${ROOT_DIR}/documentation/"* "${STAGING_DIR}/usr/local/share/rpl/docs/" 2>/dev/null || true

@@ -119,10 +119,10 @@ jobs:
         run: choco install innosetup -y
 
       - name: 🏗️ Build Inno Setup Installer
-        shell: bash
+        shell: cmd
         run: |
-          cp installer/inno/rpl-setup.iss staging/
-          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppArch=${{ matrix.arch }} staging/rpl-setup.iss
+          copy installer\inno\rpl-setup.iss staging\
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DAppArch=${{ matrix.arch }} staging\rpl-setup.iss
 
       - name: 📤 Upload Windows Installer
         uses: actions/upload-artifact@v5
@@ -156,8 +156,10 @@ jobs:
           name: ${{ matrix.artifact }}
           path: target/release/
 
-      - name: 🔧 Make Binary Executable
-        run: chmod +x target/release/rpl
+      - name: 🔧 Make Binary Executable & Ad-hoc Codesign
+        run: |
+          chmod +x target/release/rpl
+          codesign --force --deep -s - target/release/rpl
 
       - name: 🏗️ Build DMG
         run: |
