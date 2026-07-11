@@ -64,7 +64,7 @@ impl IplError {
                 format_error(&format!("Tipe data tidak cocok: {}", pesan), lokasi, saran, source_code)
             }
             IplError::Internal { pesan } => {
-                format!("Kesalahan sistem internal: {}", pesan)
+                format!("\x1b[33mKesalahan sistem internal: {}\x1b[0m", pesan)
             }
         }
     }
@@ -75,7 +75,7 @@ fn format_error(pesan: &str, lokasi: &Lokasi, saran: &Option<String>, source_cod
     let pointer = " ".repeat(lokasi.kolom.saturating_sub(1)) + "^";
 
     let mut output = format!(
-        "Error di baris {}, kolom {}:\n{}\n\n  {} | {}\n  {} | {}",
+        "\x1b[33mError di baris {}, kolom {}:\n{}\n\n  {} | {}\n  {} | {}",
         lokasi.baris,
         lokasi.kolom,
         pesan,
@@ -88,6 +88,8 @@ fn format_error(pesan: &str, lokasi: &Lokasi, saran: &Option<String>, source_cod
     if let Some(s) = saran {
         output.push_str(&format!("\n\nSaran: {}", s));
     }
+
+    output.push_str("\x1b[0m");
 
     output
 }
