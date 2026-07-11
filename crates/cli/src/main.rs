@@ -19,6 +19,8 @@ struct Cli {
 enum Commands {
     Run {
         file: PathBuf,
+        #[arg(short, long)]
+        watch: bool,
     },
     Repl,
     Serve {
@@ -31,37 +33,85 @@ enum Commands {
     },
 }
 
+fn run_file(file: &PathBuf) -> Result<bool> {
+    let kode_sumber = fs::read_to_string(file)
+        .with_context(|| format!("Gagal membaca file: {}", file.display()))?;
+
+    let mut lexer = Lexer::new(&kode_sumber);
+    let tokens = match lexer.tokenize() {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("{}", e.tampilkan(&kode_sumber));
+            return Ok(false);
+        }
+    };
+
+    let mut parser = IplParser::new(tokens);
+    let program = match parser.parse_program() {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("{}", e.tampilkan(&kode_sumber));
+            return Ok(false);
+        }
+    };
+
+    let mut interpreter = Interpreter::baru();
+    match interpreter.eval_program(program) {
+        Ok(hasil) => {
+            if hasil != interpreter::objek::Objek::Kosong {
+                println!("{}", hasil);
+            }
+            Ok(true)
+        }
+        Err(e) => {
+            eprintln!("{}", e.tampilkan(&kode_sumber));
+            Ok(false)
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Run { file } => {
-            let kode_sumber = fs::read_to_string(file)
-                .with_context(|| format!("Gagal membaca file: {}", file.display()))?;
-
-            let mut lexer = Lexer::new(&kode_sumber);
-            let tokens = lexer.tokenize().unwrap_or_else(|e| {
-                eprintln!("{}", e.tampilkan(&kode_sumber));
-                std::process::exit(1);
-            });
-
-            let mut parser = IplParser::new(tokens);
-            let program = parser.parse_program().unwrap_or_else(|e| {
-                eprintln!("{}", e.tampilkan(&kode_sumber));
-                std::process::exit(1);
-            });
-
-            let mut interpreter = Interpreter::baru();
-            match interpreter.eval_program(program) {
-                Ok(hasil) => {
-                    if hasil != interpreter::objek::Objek::Kosong {
-                        println!("{}", hasil);
-                    }
-                }
-                Err(e) => {
-                    eprintln!("{}", e.tampilkan(&kode_sumber));
+        Commands::Run { file, watch } => {
+            if !*watch {
+                let success = run_file(file)?;
+                if !success {
                     std::process::exit(1);
+                }
+            } else {
+                use notify::{Watcher, RecursiveMode};
+                use std::sync::mpsc::channel;
+                use std::time::Duration;
+
+                print!("{}[2J{}[1;1H", 27 as char, 27 as char); // Clear screen
+                println!("\x1b[32m⏳ Memulai watch mode untuk {}...\x1b[0m", file.display());
+                let _ = run_file(file);
+                println!("\n\x1b[32m👀 Menunggu perubahan file...\x1b[0m");
+
+                let (tx, rx) = channel();
+                let mut watcher = notify::recommended_watcher(tx)?;
+                watcher.watch(file, RecursiveMode::NonRecursive)?;
+
+                let mut last_run = std::time::Instant::now();
+
+                for res in rx {
+                    match res {
+                        Ok(event) => {
+                            if event.kind.is_modify() {
+                                if last_run.elapsed() > Duration::from_millis(500) {
+                                    last_run = std::time::Instant::now();
+                                    print!("{}[2J{}[1;1H", 27 as char, 27 as char); // Clear screen
+                                    println!("\x1b[32m🔄 File berubah, menjalankan ulang...\x1b[0m\n");
+                                    let _ = run_file(file);
+                                    println!("\n\x1b[32m👀 Menunggu perubahan file...\x1b[0m");
+                                }
+                            }
+                        }
+                        Err(e) => eprintln!("Watch error: {:?}", e),
+                    }
                 }
             }
         }

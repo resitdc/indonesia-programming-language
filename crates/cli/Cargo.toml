@@ -11,3 +11,4 @@ parser = { path = "../parser" }
 interpreter = { path = "../interpreter" }
 web = { path = "../web" }
 tokio = { version = "1.0", features = ["full"] }
+notify = "8.2.0"
