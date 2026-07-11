@@ -1,6 +1,6 @@
 [package]
 name = "runtime"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 
 [dependencies]
@@ -9,6 +9,6 @@ lexer = { path = "../lexer" }
 parser = { path = "../parser" }
 ast = { path = "../ast" }
 vm = { path = "../vm" }
-errors = { version = "0.1.0", path = "../errors" }
+errors = { version = "1.0.0", path = "../errors" }
 interpreter = { path = "../interpreter" }
 web = { path = "../web" }

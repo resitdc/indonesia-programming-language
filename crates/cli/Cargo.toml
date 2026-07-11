@@ -1,7 +1,11 @@
 [package]
 name = "rpl"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
+description = "Rakoda Programming Language - Bahasa pemrograman berbasis Indonesia untuk siswa SMK"
+authors = ["Restu Dwi Cahyo"]
+license = "MIT"
+repository = "https://github.com/resitdc/rakoda-programming-language"
 
 [dependencies]
 clap = { workspace = true }
@@ -9,3 +13,23 @@ anyhow = { workspace = true }
 tokio = { version = "1.0", features = ["full"] }
 notify = "8.2.0"
 runtime = { path = "../runtime" }
+
+[package.metadata.deb]
+maintainer = "Restu Dwi Cahyo"
+copyright = "2026, Restu Dwi Cahyo"
+depends = "$auto"
+section = "devel"
+priority = "optional"
+assets = [
+    ["target/release/rpl", "usr/bin/", "755"],
+    ["examples/*.rpl", "usr/share/rpl/examples/", "644"],
+    ["documentation/**/*", "usr/share/rpl/docs/", "644"],
+    ["LICENSE", "usr/share/doc/rpl/", "644"],
+]
+
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/rpl", dest = "/usr/bin/rpl", mode = "755" },
+    { source = "examples/*.rpl", dest = "/usr/share/rpl/examples/", mode = "644" },
+    { source = "LICENSE", dest = "/usr/share/doc/rpl/LICENSE", mode = "644" },
+]

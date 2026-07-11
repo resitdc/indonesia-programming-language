@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dokumentasi Rakoda Programming Language (RPL)</title>
+    <meta name="description" content="Dokumentasi resmi Rakoda Programming Language (RPL), bahasa pemrograman ramah siswa SMK untuk mempelajari logika pemrograman, web server, API, dan konkuren tanpa pusing.">
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- PrismJS Dark Theme -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+</head>
+<body>
+
+    <header>
+        <a href="#" class="logo-container">
+            <div class="logo-icon">R</div>
+            <span class="logo-text">RPL</span>
+            <span class="logo-badge">v1.0.0</span>
+        </a>
+        <div class="header-links">
+            <a href="#pengenalan" class="header-link">Mulai</a>
+            <a href="#web" class="header-link">Web Server</a>
+            <a href="https://github.com/resitdc/rakoda-programming-language" target="_blank" class="btn-github">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+                GitHub
+            </a>
+            <button class="mobile-nav-toggle" id="navToggle" aria-label="Toggle Navigation">☰</button>
+        </div>
+    </header>
+
+    <div class="layout-container">
+        <aside id="sidebar">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" class="search-input" placeholder="Cari dokumentasi...">
+            </div>
+            
+            <nav>
+                <div class="nav-group">
+                    <div class="nav-title">Mulai Cepat</div>
+                    <ul class="nav-links">
+                        <li><a href="#pengenalan" class="nav-item-link">Pengenalan</a></li>
+                        <li><a href="#instalasi" class="nav-item-link">Instalasi & CLI</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-title">Sintaksis Dasar</div>
+                    <ul class="nav-links">
+                        <li><a href="#variabel-tipe" class="nav-item-link">Variabel & Tipe Data</a></li>
+                        <li><a href="#operator" class="nav-item-link">Operator</a></li>
+                        <li><a href="#kontrol-alur" class="nav-item-link">Kondisi & Perulangan</a></li>
+                        <li><a href="#error-handling" class="nav-item-link">Penanganan Error</a></li>
+                        <li><a href="#konkurensi" class="nav-item-link">Konkurensi (Tugas)</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-title">Pustaka Bawaan (Stdlib)</div>
+                    <ul class="nav-links">
+                        <li><a href="#stdlib-matematika" class="nav-item-link">matematika</a></li>
+                        <li><a href="#stdlib-string" class="nav-item-link">string</a></li>
+                        <li><a href="#stdlib-list" class="nav-item-link">list</a></li>
+                        <li><a href="#stdlib-json" class="nav-item-link">json</a></li>
+                        <li><a href="#stdlib-waktu" class="nav-item-link">waktu</a></li>
+                        <li><a href="#stdlib-file" class="nav-item-link">file</a></li>
+                        <li><a href="#stdlib-env" class="nav-item-link">env</a></li>
+                        <li><a href="#stdlib-http" class="nav-item-link">http (Client)</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-title">Pengembangan Web</div>
+                    <ul class="nav-links">
+                        <li><a href="#web-dasar" class="nav-item-link">RPL Web Server</a></li>
+                        <li><a href="#web-lanjut" class="nav-item-link">Fitur Lanjutan (Proxy & Rate Limit)</a></li>
+                        <li><a href="#web-state" class="nav-item-link">Cookie & Session</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <main>
+            <!-- Pengenalan -->
+            <section id="pengenalan">
+                <h1>Rakoda Programming Language (RPL)</h1>
+                <p><strong>Rakoda Programming Language (RPL)</strong> adalah bahasa pemrograman yang dirancang khusus untuk mempermudah siswa SMK (khususnya jurusan RPL) dalam memahami esensi algoritma pemrograman tanpa kerumitan sintaksis asing. Menggunakan kata-kata instruksi berbahasa Indonesia yang natural, RPL memadukan kemudahan belajar dengan performa tangguh berbasis Bytecode Virtual Machine (VM).</p>
+                
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Sintaks Bahasa Indonesia</div>
+                        <p class="card-desc">Logika alur menggunakan kata seperti <code>jika</code>, <code>fungsi</code>, dan <code>selesai</code> agar intuitif bagi pemula.</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Mesin Virtual Kustom</div>
+                        <p class="card-desc">Eksekusi super cepat dengan parser, compiler bytecode, dan VM kustom berbasis Rust dengan Garbage Collector (GC).</p>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Siap untuk Web Modern</div>
+                        <p class="card-desc">Dilengkapi web server native berkecepatan tinggi dengan fitur kompresi, rate limiter, proxy, cookie, dan session.</p>
+                    </div>
+                </div>
+
+                <div class="callout note">
+                    <div class="callout-title">💡 Mengapa RPL?</div>
+                    <p>Siswa seringkali kesulitan mempelajari konsep lanjutan seperti Web Routing, API Gateway, atau Session karena sintaksis asinkronus (async/await) yang berbelit. RPL menyembunyikan kompleksitas tersebut secara aman lewat pendekatan konkuren yang sinkronus.</p>
+                </div>
+            </section>
+
+            <!-- Instalasi & CLI -->
+            <section id="instalasi">
+                <h2>Instalasi & CLI</h2>
+                <p>Ekosistem RPL dibangun menggunakan Rust dan didistribusikan sebagai satu file executable <code>rpl</code> yang serbaguna.</p>
+                
+                <h3>Menjalankan Kode Program</h3>
+                <p>Gunakan perintah <code>run</code> untuk mengeksekusi file program berekstensi <code>.rpl</code>:</p>
+                <pre><code class="language-bash">rpl run program.rpl</code></pre>
+                
+                <h3>Watch Mode (Hot Reload)</h3>
+                <p>Ingin server otomatis restart saat Anda mengedit kode? Tambahkan argumen <code>--watch</code> atau <code>-w</code>:</p>
+                <pre><code class="language-bash">rpl run program.rpl --watch</code></pre>
+                
+                <h3>Sub-perintah CLI</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Perintah CLI</th>
+                            <th>Deskripsi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>rpl run &lt;file&gt;</code></td>
+                            <td>Mengeksekusi kode RPL menggunakan Virtual Machine (Default).</td>
+                        </tr>
+                        <tr>
+                            <td><code>rpl run &lt;file&gt; --interpreter</code></td>
+                            <td>Mengeksekusi kode langsung lewat pohon AST (Alternatif).</td>
+                        </tr>
+                        <tr>
+                            <td><code>rpl repl</code></td>
+                            <td>Membuka mode interaktif Command Line (REPL).</td>
+                        </tr>
+                        <tr>
+                            <td><code>rpl fmt &lt;file&gt;</code></td>
+                            <td>Merapikan format penulisan file RPL otomatis.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Variabel & Tipe Data -->
+            <section id="variabel-tipe">
+                <h2>Variabel & Tipe Data</h2>
+                <p>Di dalam RPL, variabel dideklarasikan menggunakan kata kunci <code>buat</code> dan bersifat dinamis (*dynamically typed*).</p>
+                
+                <pre><code class="language-rpl">// Contoh Deklarasi Variabel
+buat nama = "Restu Dwi"
+buat umur = 26
+buat adalahAdmin = benar
+buat dataSiswa = kosong // Menyatakan ketiadaan nilai (null)</code></pre>
+
+                <h3>Tipe Data Utama</h3>
+                <ul>
+                    <li><strong>Angka (Number)</strong>: Bilangan desimal maupun bulat (contoh: <code>10</code>, <code>3.14</code>).</li>
+                    <li><strong>Teks (String)</strong>: Kumpulan karakter dibungkus tanda kutip ganda (contoh: <code>"Halo Dunia"</code>).</li>
+                    <li><strong>Boolean</strong>: Nilai logika, ditulis dengan <code>benar</code> (true) atau <code>salah</code> (false).</li>
+                    <li><strong>Daftar (Array)</strong>: Kumpulan elemen berindeks dimulai dari 0 (contoh: <code>[1, "dua", benar]</code>).</li>
+                    <li><strong>Kamus (Kamus/Dictionary)</strong>: Pasangan kunci dan nilai (contoh: <code>{ "nama": "Ahmad", "nilai": 90 }</code>).</li>
+                </ul>
+
+                <h3>Mengakses Kamus & Array</h3>
+                <pre><code class="language-rpl">buat nilaiSiswa = [80, 95, 70]
+tampilkan nilaiSiswa[1] // Output: 95
+
+buat profil = { "kota": "Bandung", "sekolah": "SMK 1" }
+tampilkan profil.kota     // Output: Bandung
+tampilkan profil["kota"]  // Output: Bandung</code></pre>
+            </section>
+
+            <!-- Operator -->
+            <section id="operator">
+                <h2>Operator</h2>
+                <p>Gunakan operator aritmatika, perbandingan, dan logika bawaan untuk mengolah data.</p>
+                
+                <h3>Operator Aritmatika</h3>
+                <p>Mendukung tambah (<code>+</code>), kurang (<code>-</code>), kali (<code>*</code>), bagi (<code>/</code>), dan sisa bagi (<code>%</code> atau keyword <code>mod</code>).</p>
+                
+                <h3>Operator Perbandingan & Logika</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Operator</th>
+                            <th>Artinya</th>
+                            <th>Keyword Alternatif</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>==</code></td>
+                            <td>Sama Dengan</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><code>!=</code></td>
+                            <td>Tidak Sama Dengan</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><code>&gt;</code>, <code>&gt;=</code></td>
+                            <td>Lebih Dari, Minimal</td>
+                            <td><code>minimal</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>&lt;</code>, <code>&lt;=</code></td>
+                            <td>Kurang Dari, Maksimal</td>
+                            <td><code>maksimal</code></td>
+                        </tr>
+                        <tr>
+                            <td><code>dan</code></td>
+                            <td>Logika DAN (AND)</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><code>atau</code></td>
+                            <td>Logika ATAU (OR)</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><code>bukan</code></td>
+                            <td>Negasi / Kebalikan (NOT)</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Kondisi & Perulangan -->
+            <section id="kontrol-alur">
+                <h2>Kondisi & Perulangan</h2>
+                <p>RPL mendukung penulisan blok kode kontrol alur yang fleksibel. Anda dapat memilih menggunakan tanda kurung kurawal <code>{}</code> atau kata kunci <code>maka</code> yang diakhiri dengan <code>selesai</code>.</p>
+                
+                <h3>Kondisi (Percabangan)</h3>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-title">Gaya Kata Kunci (maka...selesai)</div>
+                        <pre><code class="language-rpl">jika umur >= 17 maka
+    tampilkan "Bisa membuat KTP"
+jika tidak
+    tampilkan "Belum cukup umur"
+selesai</code></pre>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Gaya Kurawal {}</div>
+                        <pre><code class="language-rpl">jika umur >= 17 {
+    tampilkan "Bisa membuat KTP"
+} jika tidak {
+    tampilkan "Belum cukup umur"
+}</code></pre>
+                    </div>
+                </div>
+
+                <h3>Perulangan (Loop)</h3>
+                <p>Perulangan menggunakan instruksi <code>selama</code>:</p>
+                <pre><code class="language-rpl">buat hitung = 1
+selama hitung <= 3 maka
+    tampilkan "Hitungan ke: " + hitung
+    hitung = hitung + 1
+selesai</code></pre>
+            </section>
+
+            <!-- Penanganan Error -->
+            <section id="error-handling">
+                <h2>Penanganan Error (Exception)</h2>
+                <p>Bahasa pemrograman RPL mendeteksi error secara cerdas dan memberikan pesan ramah pemula. Anda juga dapat menggunakan blok <code>coba-tangkap</code> untuk mencegah aplikasi terhenti saat menemui kegagalan.</p>
+                
+                <h3>Blok Coba-Tangkap (Try-Catch)</h3>
+                <pre><code class="language-rpl">fungsi pembagian(a, b)
+    jika b == 0 maka
+        lempar "Kesalahan: Pembagian dengan nol!"
+    selesai
+    kembalikan a / b
+selesai
+
+coba
+    buat hasil = pembagian(10, 0)
+    tampilkan hasil
+tangkap (error)
+    tampilkan "Error ditangkap: " + error
+selesai</code></pre>
+            </section>
+
+            <!-- Konkurensi -->
+            <section id="konkurensi">
+                <h2>Konkurensi (Tugas Background)</h2>
+                <p>Ingin menjalankan beberapa operasi berat bersamaan (seperti fetch API atau query file) tanpa menangguhkan web server utama? RPL menyediakan modul <code>tugas</code>.</p>
+                
+                <pre><code class="language-rpl">// Jalankan tugas secara paralel di thread terpisah
+buat tugas1 = tugas.jalankan(fungsi() {
+    waktu.tunggu(2000) // Tidur 2 detik
+    kembalikan "Tugas 1 Selesai!"
+})
+
+buat tugas2 = tugas.jalankan(fungsi() {
+    waktu.tunggu(1000) // Tidur 1 detik
+    kembalikan "Tugas 2 Selesai!"
+})
+
+// Tunggu hasilnya saat dibutuhkan
+tampilkan tugas.tunggu(tugas2)
+tampilkan tugas.tunggu(tugas1)</code></pre>
+            </section>
+
+            <!-- Stdlib -->
+            <section id="stdlib-matematika">
+                <h2>Modul Bawaan</h2>
+                <p>RPL menyediakan sekumpulan modul siap pakai untuk menyelesaikan tugas-tugas pemrograman sehari-hari.</p>
+                
+                <h3><code>matematika</code></h3>
+                <p>Melakukan pengolahan angka.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fungsi</th>
+                            <th>Hasil / Contoh Penggunaan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>matematika.tambah(a, b)</code></td>
+                            <td>Mengembalikan hasil penjumlahan <code>a + b</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>matematika.kurang(a, b)</code></td>
+                            <td>Mengembalikan hasil pengurangan <code>a - b</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>matematika.kali(a, b)</code></td>
+                            <td>Mengembalikan hasil perkalian <code>a * b</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>matematika.bagi(a, b)</code></td>
+                            <td>Mengembalikan hasil pembagian <code>a / b</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>matematika.pangkat(basis, eksponen)</code></td>
+                            <td>Mengembalikan nilai pangkat <code>basis^eksponen</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>matematika.bulatkan(x)</code></td>
+                            <td>Membulatkan angka desimal terdekat (contoh: <code>3.5 -> 4</code>).</td>
+                        </tr>
+                        <tr>
+                            <td><code>matematika.acak(min, max)</code></td>
+                            <td>Menghasilkan angka acak antara min dan max.</td>
+                        </tr>
+                        <tr>
+                            <td><code>matematika.akar(x)</code></td>
+                            <td>Menghitung akar kuadrat dari <code>x</code>.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="stdlib-string">
+                <h3><code>string</code></h3>
+                <p>Memanipulasi dan mengonversi tipe teks.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fungsi</th>
+                            <th>Deskripsi / Hasil</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>string.panjang(teks)</code></td>
+                            <td>Mengembalikan panjang karakter dari teks.</td>
+                        </tr>
+                        <tr>
+                            <td><code>string.besar(teks)</code></td>
+                            <td>Mengubah teks menjadi huruf KAPITAL semua.</td>
+                        </tr>
+                        <tr>
+                            <td><code>string.kecil(teks)</code></td>
+                            <td>Mengubah teks menjadi huruf kecil semua.</td>
+                        </tr>
+                        <tr>
+                            <td><code>string.potong(teks, mulai, selesai)</code></td>
+                            <td>Memotong substring dari indeks <code>mulai</code> hingga <code>selesai</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>string.ganti(teks, cari, ganti)</code></td>
+                            <td>Mengganti bagian teks tertentu dengan teks baru.</td>
+                        </tr>
+                        <tr>
+                            <td><code>string.dari(nilai)</code></td>
+                            <td>Mengonversi tipe data apa pun (Kamus, Array, dll) menjadi teks String.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="stdlib-list">
+                <h3><code>list</code></h3>
+                <p>Mengelola struktur data Array/Daftar.</p>
+                <ul>
+                    <li><code>list.tambah(array, elemen)</code>: Menyisipkan elemen baru ke bagian akhir array.</li>
+                    <li><code>list.hapus(array, indeks)</code>: Menghapus elemen pada indeks tertentu dan mengembalikannya.</li>
+                    <li><code>list.panjang(array)</code>: Mengambil total jumlah elemen di dalam array.</li>
+                    <li><code>list.ambil(array, indeks)</code>: Mengambil elemen pada indeks tanpa menghapusnya.</li>
+                </ul>
+            </pre>
+            </section>
+
+            <section id="stdlib-json">
+                <h3><code>json</code></h3>
+                <p>Melakukan konversi struktur data Kamus/Array RPL ke format teks JSON.</p>
+                <pre><code class="language-rpl">buat user = { "id": 1, "nama": "Rian" }
+
+// Serialisasi ke JSON string
+buat json_str = json.stringify(user) 
+tampilkan json_str // Output: {"id":1,"nama":"Rian"}
+
+// Deserialisasi dari JSON string kembali ke Kamus RPL
+buat data_kamus = json.parse(json_str)
+tampilkan data_kamus.nama // Output: Rian</code></pre>
+            </section>
+
+            <section id="stdlib-waktu">
+                <h3><code>waktu</code></h3>
+                <p>Mengambil parameter waktu sistem.</p>
+                <ul>
+                    <li><code>waktu.sekarang()</code>: Timestamp Unix saat ini (detik).</li>
+                    <li><code>waktu.string()</code>: Format tanggal & jam terbaca (<code>YYYY-MM-DD HH:MM:SS</code>).</li>
+                    <li><code>waktu.tunggu(milidetik)</code>: Menunda eksekusi proses selama durasi yang ditentukan.</li>
+                    <li><code>waktu.tahun()</code>, <code>waktu.bulan()</code>, <code>waktu.tanggal()</code>: Mendapatkan kalender hari ini.</li>
+                    <li><code>waktu.jam()</code>, <code>waktu.menit()</code>, <code>waktu.detik()</code>: Mendapatkan waktu jam saat ini.</li>
+                </ul>
+            </section>
+
+            <section id="stdlib-file">
+                <h3><code>file</code></h3>
+                <p>Membaca dan menulis berkas lokal.</p>
+                <pre><code class="language-rpl">// Menulis file
+file.tulis("catatan.txt", "Belajar RPL menyenangkan")
+
+// Memeriksa file
+jika file.ada("catatan.txt") maka
+    // Membaca file
+    buat isi = file.baca("catatan.txt")
+    tampilkan isi
+selesai
+
+// Menghapus file
+file.hapus("catatan.txt")</code></pre>
+            </section>
+
+            <section id="stdlib-env">
+                <h3><code>env</code></h3>
+                <p>Mengelola konfigurasi Environment Variables.</p>
+                <ul>
+                    <li><code>env.get("NAMA_KUNCI")</code>: Mengambil nilai *env* sistem.</li>
+                    <li><code>env.set("NAMA_KUNCI", "Nilai")</code>: Menetapkan/Mengubah nilai *env*.</li>
+                    <li><code>env.load(".env")</code>: Membaca berkas `.env` eksternal dan memuat isinya ke variabel lingkungan secara massal.</li>
+                </ul>
+            </section>
+
+            <section id="stdlib-http">
+                <h3><code>http</code> (Client)</h3>
+                <p>Mengirimkan permintaan jaringan (*HTTP requests*) ke web service eksternal.</p>
+                <pre><code class="language-rpl">buat respon = http.get("https://api.github.com/users/resitdc")
+tampilkan "Status API: " + respon.status
+tampilkan "Hasil Body: " + respon.body</code></pre>
+            </section>
+
+            <!-- Web Server Dasar -->
+            <section id="web-dasar">
+                <h2>RPL Web Server</h2>
+                <p>RPL menyediakan server web native berperforma tinggi. Anda dapat mendefinisikan rute dan langsung meluncurkan web server hanya dengan beberapa baris kode.</p>
+                
+                <pre><code class="language-rpl">// Mendefinisikan Rute GET
+web.get("/", fungsi(req) {
+    kembalikan "<h1>Halo dari RPL Web Server!</h1>"
+})
+
+// Menerima rute dengan data JSON / Tubuh request
+web.post("/api/data", fungsi(req) {
+    buat data = json.parse(req.tubuh)
+    tampilkan "Menerima kiriman: " + data.nama
+    kembalikan { "status": "sukses", "pesan": "data disimpan" }
+})
+
+// Jalankan server di port 4000
+web.jalankan(4000)</code></pre>
+
+                <div class="callout tip">
+                    <div class="callout-title">🚀 Hot Reload Otomatis</div>
+                    <p>Jalankan server Anda dengan perintah <code>rpl run server.rpl --watch</code>. Setiap kali Anda mengubah kode rute, server akan merestart otomatis secara instan dalam milidetik!</p>
+                </div>
+            </section>
+
+            <!-- Fitur Web Server Lanjutan -->
+            <section id="web-lanjut">
+                <h2>Fitur Lanjutan Web Server</h2>
+                <p>Untuk kebutuhan produksi, RPL dibekali fitur keamanan dan optimasi tangguh di balik layar yang dapat dikonfigurasi langsung dari file kode RPL Anda.</p>
+                
+                <h3>1. Kompresi Otomatis (Gzip / Brotli)</h3>
+                <p>Mengompresi dokumen HTML/JSON secara <i>on-the-fly</i> jika didukung oleh browser klien (berdasarkan header <code>Accept-Encoding</code>):</p>
+                <pre><code class="language-rpl">web.kompresi(benar) // Mengaktifkan optimasi bandwidth</code></pre>
+
+                <h3>2. Rate Limiting (Pencegah DDoS)</h3>
+                <p>Membatasi request berlebihan dari satu IP address per detik untuk mengamankan server dari banjir traffic:</p>
+                <pre><code class="language-rpl">web.ratelimit(5) // Maksimal 5 permintaan/detik per IP. Melampaui ini mendapat status 429.</code></pre>
+
+                <h3>3. Reverse Proxy (API Gateway)</h3>
+                <p>Meneruskan path request tertentu ke backend eksternal. Berguna untuk menyembunyikan API utama atau menghindari isu CORS:</p>
+                <pre><code class="language-rpl">// Meneruskan request yang berawalan /api ke server JSONPlaceholder secara otomatis
+web.proxy("/api", "https://jsonplaceholder.typicode.com")</code></pre>
+            </section>
+
+            <!-- Cookie & Session -->
+            <section id="web-state">
+                <h2>Cookie & Session Management</h2>
+                <p>Kini Anda dapat membuat aplikasi web interaktif yang memiliki fitur login (*stateful*) menggunakan manajemen cookie dan session yang aman.</p>
+                
+                <h3>Penggunaan Cookie</h3>
+                <pre><code class="language-rpl">// Menyimpan cookie di browser (max_age 3600 detik/1 jam bersifat opsional)
+cookie.set("tema", "gelap", 3600)
+
+// Mengambil cookie yang dikirim dari browser
+buat tema_pengguna = cookie.get("tema")
+
+// Menghapus cookie dari browser
+cookie.hapus("tema")</code></pre>
+
+                <h3>Penggunaan Session (Auto-Managed)</h3>
+                <p>Session di RPL sangat praktis karena browser dan server terhubung otomatis melalui cookie <code>RPL_SESSIONID</code> tanpa konfigurasi database tambahan:</p>
+                <pre><code class="language-rpl">// 1. Menyimpan data login ke session di server
+session.set("user_id", 1002)
+session.set("peran", "admin")
+
+// Mengatur umur session (misal aktif selama 1 jam)
+session.set_expired(3600)
+
+// 2. Mengambil data session di rute lain
+buat user = session.get("user_id")
+jika user == kosong maka
+    tampilkan "Silakan login terlebih dahulu!"
+selesai
+
+// 3. Menghapus data session saat logout
+session.hapus("user_id")</code></pre>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Rakoda Programming Language. Dipersembahkan oleh Tim Pengembang RPL.</p>
+    </footer>
+
+    <!-- PrismJS for syntax highlight -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    
+    <script>
+        // Custom Prism grammar for RPL
+        Prism.languages.rpl = {
+            'comment': /\/\/.*/,
+            'string': {
+                pattern: /"(?:\\.|[^\\\x02-\x1f"])*"/,
+                greedy: true
+            },
+            'keyword': /\b(?:buat|tampilkan|cetak|masukkan|jika|jika tidak|fungsi|kembalikan|selama|ulangi|berhenti|lanjut|impor|gabung|benar|salah|kosong|maka|selesai|minimal|maksimal|dan|atau|bukan|coba|tangkap|lempar)\b/,
+            'number': /\b\d+(?:\.\d+)?\b/,
+            'function': /\b[a-zA-Z_]\w*(?=\()/,
+            'operator': /[-+*\/%=<>!&|]+/
+        };
+
+        // Mobile Nav Toggle
+        const navToggle = document.getElementById('navToggle');
+        const sidebar = document.getElementById('sidebar');
+        navToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+
+        // Search Filter
+        const searchInput = document.getElementById('searchInput');
+        const navLinks = document.querySelectorAll('.nav-item-link');
+        
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            navLinks.forEach(link => {
+                const text = link.textContent.toLowerCase();
+                const parentLi = link.parentElement;
+                if (text.includes(val)) {
+                    parentLi.style.display = 'block';
+                } else {
+                    parentLi.style.display = 'none';
+                }
+            });
+        });
+
+        // Highlight Active Link on Scroll
+        const sections = document.querySelectorAll('section');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 120;
+                if (window.scrollY >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').slice(1) === current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+
+        // Copy Code to Clipboard button
+        document.querySelectorAll('pre').forEach(block => {
+            const btn = document.createElement('button');
+            btn.className = 'copy-btn';
+            btn.textContent = 'Salin';
+            block.appendChild(btn);
+            
+            btn.addEventListener('click', () => {
+                const code = block.querySelector('code').innerText;
+                navigator.clipboard.writeText(code).then(() => {
+                    btn.textContent = 'Tersalin!';
+                    setTimeout(() => btn.textContent = 'Salin', 2000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

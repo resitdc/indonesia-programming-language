@@ -96,7 +96,7 @@ checksum = "d92bec98840b8f03a5ff5413de5293bfcd8bf96467cf5452609f939ec6f5de16"
 
 [[package]]
 name = "ast"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "errors",
 ]
@@ -419,7 +419,7 @@ dependencies = [
 
 [[package]]
 name = "errors"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "thiserror",
 ]
@@ -765,7 +765,7 @@ dependencies = [
 
 [[package]]
 name = "interpreter"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "ast",
  "base64",
@@ -825,7 +825,7 @@ dependencies = [
 
 [[package]]
 name = "lexer"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "errors",
 ]
@@ -992,7 +992,7 @@ dependencies = [
 
 [[package]]
 name = "parser"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "ast",
  "errors",
@@ -1131,7 +1131,7 @@ dependencies = [
 
 [[package]]
 name = "rpl"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1142,7 +1142,7 @@ dependencies = [
 
 [[package]]
 name = "runtime"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "ast",
@@ -1620,7 +1620,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vm"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "ast",
  "brotli",
@@ -1698,7 +1698,7 @@ dependencies = [
 
 [[package]]
 name = "web"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "axum",
