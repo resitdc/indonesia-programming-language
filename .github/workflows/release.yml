@@ -211,6 +211,7 @@ jobs:
       - name: 🏗️ Build AppImage
         run: |
           chmod +x installer/linux/build-appimage.sh
+          export APPIMAGE_EXTRACT_AND_RUN=1
           installer/linux/build-appimage.sh
 
       - name: 📤 Upload Linux Packages
