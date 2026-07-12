@@ -1,0 +1,4 @@
+// File utama
+buat ml = pakai "modul_lain.rpl"
+
+tampilkan(ml.sapa("Dunia"))

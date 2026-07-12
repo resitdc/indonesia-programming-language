@@ -14,4 +14,9 @@ jika hash_md5 bukan "" maka
     tampilkan("Kriptografi MD5 berfungsi dengan baik!")
 selesai
 
+buat aktif = 1
+jika aktif adalah 1 maka
+    tampilkan("Alias 'adalah' berfungsi dengan baik!")
+selesai
+
 tampilkan("Selesai.\n")

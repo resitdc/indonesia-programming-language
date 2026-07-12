@@ -78,7 +78,7 @@
       "patterns": [
         {
           "name": "keyword.control.rpl",
-          "match": "\\b(jika|maka|jika tidak|selama|ulangi|dalam|selesai|coba|tangkap|lempar|impor|gabung)\\b"
+          "match": "\\b(jika|maka|jika tidak|selama|ulangi|dalam|selesai|coba|tangkap|lempar|impor|gabung|pakai)\\b"
         },
         {
           "name": "keyword.declaration.rpl",
@@ -110,7 +110,7 @@
       "patterns": [
         {
           "name": "keyword.operator.rpl",
-          "match": "(\\+|-|\\*|/|%|==|!=|>|<|>=|<=|&&|\\|\\||=)"
+          "match": "(\\+|-|\\*|/|%|==|!=|>|<|>=|<=|&&|\\|\\||=|\\badalah\\b|\\bbukan\\b)"
         }
       ]
     },
