@@ -1,0 +1,8 @@
+buat main = fungsi()
+    log.info("Aplikasi dimulai. Memuat konfigurasi...")
+    log.debug("Memori dialokasikan:", 1024, "KB")
+    log.peringatan("Koneksi internet lambat, mencoba ulang...")
+    log.salah("Gagal terhubung ke database di localhost:5432!")
+selesai
+
+main()

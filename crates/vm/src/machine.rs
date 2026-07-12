@@ -663,4 +663,17 @@ impl VmContext for VM {
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self
     }
+    
+    fn current_lokasi(&self) -> Option<errors::Lokasi> {
+        self.current_lokasi()
+    }
+    
+    fn current_function_name(&self) -> String {
+        if let Some(frame) = self.frames.last() {
+            if let crate::heap::HeapData::Fungsi(f) = &self.heap.objects[frame.fungsi].data {
+                return f.nama.clone();
+            }
+        }
+        "utama".to_string()
+    }
 }

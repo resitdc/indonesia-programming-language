@@ -13,6 +13,7 @@ pub mod tugas;
 pub mod string;
 pub mod db;
 pub mod kripto;
+pub mod log;
 
 use crate::machine::VM;
 
@@ -32,4 +33,5 @@ pub fn register_all(vm: &mut VM) {
     string::register(vm);
     db::register(vm);
     kripto::register(vm);
+    log::register(vm);
 }

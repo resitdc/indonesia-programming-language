@@ -8,6 +8,8 @@ pub trait VmContext {
     fn spawn_task(&mut self, func: Value) -> Result<usize, String>;
     fn join_task(&mut self, task_id: usize) -> Result<Value, String>;
     fn as_any(&mut self) -> &mut dyn std::any::Any;
+    fn current_lokasi(&self) -> Option<errors::Lokasi>;
+    fn current_function_name(&self) -> String;
 }
 
 pub type NativeFnVM = fn(&mut dyn VmContext, Vec<Value>) -> Result<Value, String>;
