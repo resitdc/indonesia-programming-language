@@ -35,11 +35,11 @@ pub fn register(vm: &mut VM) {
                 let session_id = get_or_create_session(ctx);
                 
                 // Get or create session kamus
-                let kamus_idx = if let Some((_, idx)) = ctx.get_heap_mut().web_state.sessions.get(&session_id) {
+                let kamus_idx = if let Some((_, idx)) = ctx.get_heap_mut().web_state.sessions.lock().unwrap().get(&session_id) {
                     *idx
                 } else {
                     let new_kamus_idx = ctx.get_heap_mut().alloc(HeapData::Kamus(HashMap::new()));
-                    ctx.get_heap_mut().web_state.sessions.insert(session_id.clone(), (None, new_kamus_idx));
+                    ctx.get_heap_mut().web_state.sessions.lock().unwrap().insert(session_id.clone(), (None, new_kamus_idx));
                     new_kamus_idx
                 };
                 
@@ -68,7 +68,7 @@ pub fn register(vm: &mut VM) {
                     let mut k_idx = 0;
                     let mut found = false;
                     
-                    if let Some((exp_opt, kamus_idx)) = ctx.get_heap_mut().web_state.sessions.get(&sid) {
+                    if let Some((exp_opt, kamus_idx)) = ctx.get_heap_mut().web_state.sessions.lock().unwrap().get(&sid) {
                         // Check if expired
                         if let Some(exp) = exp_opt {
                             if Instant::now() > *exp {
@@ -82,7 +82,7 @@ pub fn register(vm: &mut VM) {
                     }
                     
                     if expired {
-                        ctx.get_heap_mut().web_state.sessions.remove(&sid);
+                        ctx.get_heap_mut().web_state.sessions.lock().unwrap().remove(&sid);
                         return Ok(Value::Kosong);
                     }
                     
@@ -111,7 +111,7 @@ pub fn register(vm: &mut VM) {
                 let key = ctx.get_heap_mut().get_string(*k_idx).clone();
                 let session_id_opt = ctx.get_heap_mut().web_state.active_session_id.clone();
                 if let Some(sid) = session_id_opt {
-                    let kamus_idx_opt = ctx.get_heap_mut().web_state.sessions.get(&sid).map(|(_, idx)| *idx);
+                    let kamus_idx_opt = ctx.get_heap_mut().web_state.sessions.lock().unwrap().get(&sid).map(|(_, idx)| *idx);
                     if let Some(idx) = kamus_idx_opt {
                         ctx.get_heap_mut().get_kamus_mut(idx).remove(&key);
                     }
@@ -140,11 +140,13 @@ pub fn register(vm: &mut VM) {
             let target_time = Instant::now() + Duration::from_secs(durasi);
             
             // update session store
-            if let Some((exp_opt, _)) = ctx.get_heap_mut().web_state.sessions.get_mut(&session_id) {
+            let sessions_arc = ctx.get_heap_mut().web_state.sessions.clone();
+            let mut sessions = sessions_arc.lock().unwrap();
+            if let Some((exp_opt, _)) = sessions.get_mut(&session_id) {
                 *exp_opt = Some(target_time);
             } else {
                 let new_kamus_idx = ctx.get_heap_mut().alloc(HeapData::Kamus(HashMap::new()));
-                ctx.get_heap_mut().web_state.sessions.insert(session_id.clone(), (Some(target_time), new_kamus_idx));
+                sessions.insert(session_id.clone(), (Some(target_time), new_kamus_idx));
             }
             
             // update cookie expiration

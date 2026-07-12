@@ -7,6 +7,7 @@ pub trait VmContext {
     fn execute_function(&mut self, func: Value, args: Vec<Value>) -> Result<Value, String>;
     fn spawn_task(&mut self, func: Value) -> Result<usize, String>;
     fn join_task(&mut self, task_id: usize) -> Result<Value, String>;
+    fn as_any(&mut self) -> &mut dyn std::any::Any;
 }
 
 pub type NativeFnVM = fn(&mut dyn VmContext, Vec<Value>) -> Result<Value, String>;

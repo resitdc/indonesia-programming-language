@@ -51,7 +51,7 @@ pub struct WebState {
     // Value represents Kamus data in memory but wait, Value itself is an index.
     // So session data needs to be stored somewhere. We can store it as a Kamus inside WebState itself instead of in the VM Heap?
     // Actually, storing it in the VM Heap is fine, but since we are modifying WebState across requests, we can just store `HashMap<String, usize>` where usize is the Kamus Heap index.
-    pub sessions: HashMap<String, (Option<std::time::Instant>, usize)>,
+    pub sessions: std::sync::Arc<std::sync::Mutex<HashMap<String, (Option<std::time::Instant>, usize)>>>,
     
     pub active_session_id: Option<String>,
     pub active_cookies: HashMap<String, String>,
@@ -61,7 +61,7 @@ pub struct WebState {
 impl Default for WebState {
     fn default() -> Self {
         Self {
-            sessions: HashMap::new(),
+            sessions: std::sync::Arc::new(std::sync::Mutex::new(HashMap::new())),
             active_session_id: None,
             active_cookies: HashMap::new(),
             cookies_to_set: Vec::new(),
@@ -90,7 +90,7 @@ pub struct Heap {
     pub web_static_dirs: HashMap<String, String>,
     pub web_config: WebConfig,
     pub web_state: WebState,
-    pub web_cache: WebCache,
+    pub web_cache: std::sync::Arc<std::sync::Mutex<WebCache>>,
     pub db_connection: Option<Arc<Mutex<DatabaseConnection>>>,
     pub db_query_state: DbQueryState,
     pub db_module_idx: Option<usize>,
@@ -112,7 +112,7 @@ impl Heap {
             web_static_dirs: HashMap::new(),
             web_config: WebConfig::default(),
             web_state: WebState::default(),
-            web_cache: WebCache::default(),
+            web_cache: std::sync::Arc::new(std::sync::Mutex::new(WebCache::default())),
             db_connection: None,
             db_query_state: DbQueryState::default(),
             db_module_idx: None,
@@ -272,16 +272,20 @@ impl Heap {
     
     pub fn mark_sessions_and_cache(&mut self) {
         let mut session_indices = Vec::new();
-        for (_, (_, idx)) in &self.web_state.sessions {
-            session_indices.push(*idx);
+        if let Ok(sessions) = self.web_state.sessions.lock() {
+            for (_, (_, idx)) in sessions.iter() {
+                session_indices.push(*idx);
+            }
         }
         for idx in session_indices {
             self.mark(idx);
         }
         
         let mut cache_indices = Vec::new();
-        for idx in self.web_cache.templates.values() {
-            cache_indices.push(*idx);
+        if let Ok(cache) = self.web_cache.lock() {
+            for idx in cache.templates.values() {
+                cache_indices.push(*idx);
+            }
         }
         for idx in cache_indices {
             self.mark(idx);

@@ -659,4 +659,8 @@ impl VmContext for VM {
             Err(format!("Tiket tugas dengan ID {} tidak ditemukan.", task_id))
         }
     }
+    
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
 }
