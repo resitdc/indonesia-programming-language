@@ -73,17 +73,29 @@ impl<'a> Compiler<'a> {
 
     pub fn compile(mut self, program: Program) -> Result<Chunk, String> {
         let dummy_lokasi = Lokasi { baris: 1, kolom: 1 };
-        for stmt in program.statements {
+        let len = program.statements.len();
+        for (i, stmt) in program.statements.into_iter().enumerate() {
+            if i == len - 1 {
+                if let Statement::Expression(expr) = &stmt {
+                    self.compile_expression(expr.clone())?;
+                    self.chunk.write_opcode(OpCode::Return, dummy_lokasi);
+                    continue;
+                }
+            }
             self.compile_statement(stmt)?;
         }
-        self.chunk.write_opcode(OpCode::Return, dummy_lokasi);
+        if self.chunk.code.last() != Some(&(OpCode::Return as u8)) {
+            self.chunk.write_opcode(OpCode::Return, dummy_lokasi);
+        }
         Ok(self.chunk)
     }
 
     fn compile_statement(&mut self, stmt: Statement) -> Result<(), String> {
         match stmt {
             Statement::Expression(expr) => {
+                let lok = *expr.lokasi();
                 self.compile_expression(expr)?;
+                self.chunk.write_opcode(OpCode::Pop, lok);
             }
             Statement::DeklarasiVariabel { nama, nilai, lokasi } | Statement::Assignment { nama, nilai, lokasi } => {
                 self.compile_expression(nilai)?;
@@ -143,7 +155,15 @@ impl<'a> Compiler<'a> {
             }
             Statement::DeklarasiFungsi { nama, parameter, body, lokasi } => {
                 let mut fn_compiler = Compiler::new(self.heap);
-                for stmt in body {
+                let body_len = body.len();
+                for (i, stmt) in body.into_iter().enumerate() {
+                    if i == body_len - 1 {
+                        if let Statement::Expression(expr) = &stmt {
+                            fn_compiler.compile_expression(expr.clone())?;
+                            fn_compiler.chunk.write_opcode(OpCode::Return, lokasi);
+                            continue;
+                        }
+                    }
                     fn_compiler.compile_statement(stmt)?;
                 }
                 
@@ -310,7 +330,15 @@ impl<'a> Compiler<'a> {
             }
             Expression::FungsiAnonim { parameter, body, lokasi } => {
                 let mut fn_compiler = Compiler::new(self.heap);
-                for stmt in body {
+                let body_len = body.len();
+                for (i, stmt) in body.into_iter().enumerate() {
+                    if i == body_len - 1 {
+                        if let Statement::Expression(expr) = &stmt {
+                            fn_compiler.compile_expression(expr.clone())?;
+                            fn_compiler.chunk.write_opcode(OpCode::Return, lokasi);
+                            continue;
+                        }
+                    }
                     fn_compiler.compile_statement(stmt)?;
                 }
                 

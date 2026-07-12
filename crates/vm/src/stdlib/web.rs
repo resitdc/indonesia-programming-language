@@ -7,6 +7,29 @@ use std::io::{Read, Write};
 use flate2::write::GzEncoder;
 use flate2::Compression;
 
+fn value_to_json(val: &Value, heap: &crate::heap::Heap) -> serde_json::Value {
+    match val {
+        Value::Kosong => serde_json::Value::Null,
+        Value::Angka(n) => serde_json::json!(*n),
+        Value::Boolean(b) => serde_json::Value::Bool(*b),
+        Value::String(idx) => serde_json::Value::String(heap.get_string(*idx).clone()),
+        Value::Array(idx) => {
+            let arr = heap.get_array(*idx);
+            let json_arr: Vec<serde_json::Value> = arr.iter().map(|v| value_to_json(v, heap)).collect();
+            serde_json::Value::Array(json_arr)
+        }
+        Value::Kamus(idx) => {
+            let dict = heap.get_kamus(*idx);
+            let mut map = serde_json::Map::new();
+            for (k, v) in dict.iter() {
+                map.insert(k.clone(), value_to_json(v, heap));
+            }
+            serde_json::Value::Object(map)
+        }
+        _ => serde_json::Value::String(val.to_string(heap)),
+    }
+}
+
 pub fn register(vm: &mut VM) {
     let mut web_map = HashMap::new();
     
@@ -62,6 +85,44 @@ pub fn register(vm: &mut VM) {
     };
     let proxy_idx = vm.heap.alloc(HeapData::FungsiBawaan(proxy_func));
     web_map.insert("proxy".to_string(), Value::FungsiBawaan(proxy_idx));
+
+    let render_func = FungsiBawaanVM {
+        nama: "render".to_string(),
+        func: |ctx, args| {
+            if args.is_empty() || args.len() > 2 {
+                return Err("Fungsi 'web.render' membutuhkan 1 atau 2 argumen (file, data)".to_string());
+            }
+            
+            let file_name = match &args[0] {
+                Value::String(idx) => ctx.get_heap_mut().get_string(*idx).clone(),
+                _ => return Err("Argumen pertama harus berupa string (nama file)".to_string()),
+            };
+            
+            let data_arg = if args.len() == 2 {
+                args[1].clone()
+            } else {
+                Value::Kosong
+            };
+            
+            let file_content = match std::fs::read_to_string(&file_name) {
+                Ok(content) => content,
+                Err(e) => return Err(format!("Gagal membaca file template '{}': {}", file_name, e)),
+            };
+            
+            let template_code = interpreter::template::preprocess_template_to_function(&file_content);
+            
+            let func_val = ctx.compile_source(&template_code)?;
+            
+            match ctx.execute_function(func_val, vec![data_arg]) {
+                Ok(val) => Ok(val),
+                Err(e) => Err(format!("Gagal me-render template: {}", e)),
+            }
+        },
+    };
+    let render_idx = vm.heap.alloc(HeapData::FungsiBawaan(render_func));
+    web_map.insert("render".to_string(), Value::FungsiBawaan(render_idx));
+    web_map.insert("view".to_string(), Value::FungsiBawaan(render_idx));
+    web_map.insert("tampilkan_halaman".to_string(), Value::FungsiBawaan(render_idx));
 
     // HTTP method routes
     let get_func = FungsiBawaanVM {
@@ -179,8 +240,23 @@ pub fn register(vm: &mut VM) {
             let mut rate_limits: HashMap<String, (Instant, u32)> = HashMap::new();
                 
             'req_loop: for mut request in server.incoming_requests() {
-                let url = request.url().to_string();
+                let full_url = request.url().to_string();
                 let method = request.method().as_str().to_string();
+                
+                let (url, query_string) = match full_url.split_once('?') {
+                    Some((u, q)) => (u.to_string(), q.to_string()),
+                    None => (full_url.clone(), String::new()),
+                };
+                
+                let mut query_params = HashMap::new();
+                for pair in query_string.split('&') {
+                    if pair.is_empty() { continue; }
+                    if let Some((k, v)) = pair.split_once('=') {
+                        query_params.insert(k.to_string(), v.to_string());
+                    } else {
+                        query_params.insert(pair.to_string(), "".to_string());
+                    }
+                }
                 
                 // --- AWAL REQUEST: Bersihkan state & parse cookies ---
                 ctx.get_heap_mut().web_state.active_cookies.clear();
@@ -318,6 +394,15 @@ pub fn register(vm: &mut VM) {
                             let body_str = ctx.get_heap_mut().alloc(HeapData::String(body));
                             req_map.insert("tubuh".to_string(), Value::String(body_str));
                             
+                            // Add kueri
+                            let mut kueri_map = HashMap::new();
+                            for (k, v) in &query_params {
+                                let v_idx = ctx.get_heap_mut().alloc(HeapData::String(v.clone()));
+                                kueri_map.insert(k.clone(), Value::String(v_idx));
+                            }
+                            let kueri_idx = ctx.get_heap_mut().alloc(HeapData::Kamus(kueri_map));
+                            req_map.insert("kueri".to_string(), Value::Kamus(kueri_idx));
+                            
                             // Add params
                             if !params.is_empty() {
                                 let mut params_map = HashMap::new();
@@ -337,9 +422,34 @@ pub fn register(vm: &mut VM) {
                         
                         match hasil {
                             Ok(val) => {
-                                let val_string = val.to_string(ctx.get_heap_mut());
-                                let is_json = matches!(val, Value::Kamus(_) | Value::Array(_));
-                                let content_type = if is_json { "application/json" } else { "text/html" };
+                                let mut response_status = 200;
+                                let mut val_string = String::new();
+                                let mut content_type = "text/html";
+
+                                if let Value::Kamus(idx) = val {
+                                    let dict = ctx.get_heap_mut().get_kamus(idx).clone();
+                                    if dict.contains_key("status") && (dict.contains_key("json") || dict.contains_key("tubuh")) {
+                                        if let Some(Value::Angka(s)) = dict.get("status") {
+                                            response_status = *s as u16;
+                                        }
+                                        if let Some(json_val) = dict.get("json") {
+                                            val_string = value_to_json(json_val, ctx.get_heap_mut()).to_string();
+                                            content_type = "application/json";
+                                        } else if let Some(Value::String(s_idx)) = dict.get("tubuh") {
+                                            val_string = ctx.get_heap_mut().get_string(*s_idx).clone();
+                                        } else if let Some(v) = dict.get("tubuh") {
+                                            val_string = v.to_string(ctx.get_heap_mut());
+                                        }
+                                    } else {
+                                        val_string = value_to_json(&val, ctx.get_heap_mut()).to_string();
+                                        content_type = "application/json";
+                                    }
+                                } else if let Value::Array(_) = val {
+                                    val_string = value_to_json(&val, ctx.get_heap_mut()).to_string();
+                                    content_type = "application/json";
+                                } else {
+                                    val_string = val.to_string(ctx.get_heap_mut());
+                                }
                                 
                                 let mut accept_encoding = String::new();
                                 for h in request.headers() {
@@ -365,7 +475,7 @@ pub fn register(vm: &mut VM) {
                                     r
                                 } else {
                                     tiny_http::Response::from_string(val_string)
-                                };
+                                }.with_status_code(response_status);
                                 
                                 response.add_header(tiny_http::Header::from_bytes(&b"Content-Type"[..], content_type.as_bytes()).unwrap());
                                 

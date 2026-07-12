@@ -1,0 +1,19 @@
+web.get("/api/data", fungsi(req)
+    kembalikan {
+        "status": 201,
+        "json": {
+            "pesan": "Berhasil dibuat",
+            "id": 123
+        }
+    }
+selesai)
+
+web.get("/api/notfound", fungsi(req)
+    kembalikan {
+        "status": 404,
+        "tubuh": "Tidak ditemukan"
+    }
+selesai)
+
+tampilkan("Jalankan di http://localhost:8080/api/data dan /api/notfound")
+web.jalankan(8080)

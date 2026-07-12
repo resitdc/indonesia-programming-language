@@ -3,6 +3,7 @@ use crate::heap::Heap;
 
 pub trait VmContext {
     fn get_heap_mut(&mut self) -> &mut Heap;
+    fn compile_source(&mut self, source: &str) -> Result<Value, String>;
     fn execute_function(&mut self, func: Value, args: Vec<Value>) -> Result<Value, String>;
     fn spawn_task(&mut self, func: Value) -> Result<usize, String>;
     fn join_task(&mut self, task_id: usize) -> Result<Value, String>;

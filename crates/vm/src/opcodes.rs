@@ -31,6 +31,7 @@ pub enum OpCode {
     Throw,
     Negate,
     LoadModule,  // operand: 2 bytes (index to constant pool string for module path)
+    Pop,
 }
 
 impl OpCode {
@@ -66,6 +67,7 @@ impl OpCode {
             27 => Some(OpCode::Throw),
             28 => Some(OpCode::Negate),
             29 => Some(OpCode::LoadModule),
+            30 => Some(OpCode::Pop),
             _ => None,
         }
     }

@@ -511,6 +511,9 @@ impl VM {
                     let new_idx = self.heap.alloc(HeapData::Kamus(map));
                     self.stack.push(Value::Kamus(new_idx));
                 }
+                OpCode::Pop => {
+                    self.stack.pop();
+                }
                 OpCode::SetupCatch => {
                     let offset = self.frames.last_mut().unwrap().read_short(&self.heap) as usize;
                     self.catch_handlers.push(CatchHandler {
@@ -552,6 +555,27 @@ use crate::value::VmContext;
 impl VmContext for VM {
     fn get_heap_mut(&mut self) -> &mut Heap {
         &mut self.heap
+    }
+
+    fn compile_source(&mut self, source: &str) -> Result<Value, String> {
+        let mut lexer = lexer::Lexer::new(source);
+        let tokens = lexer.tokenize().map_err(|e| format!("{:?}", e))?;
+        
+        let mut parser = parser::Parser::new(tokens);
+        let program = parser.parse_program().map_err(|e| format!("{:?}", e))?;
+        
+        // We create a new chunk by compiling the program
+        let mut compiler = crate::compiler::Compiler::baru_dengan_base_path(&mut self.heap, None);
+        let chunk = compiler.compile(program).map_err(|e| e)?;
+        
+        let start_stack = self.stack.len();
+        self.execute(chunk).map_err(|(e, _)| e)?;
+        
+        if self.stack.len() > start_stack {
+            Ok(self.stack.pop().unwrap())
+        } else {
+            Ok(Value::Kosong)
+        }
     }
 
     fn execute_function(&mut self, func_val: Value, args: Vec<Value>) -> Result<Value, String> {
