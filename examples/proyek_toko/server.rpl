@@ -6,7 +6,9 @@ db.hubungkan("sqlite://toko.db")
 
 // 1. Rute Frontend (HTML)
 web.get("/", fungsi(req)
-    web.render("tampilan/index.rpl.html")
+
+    kembalikan data 
+    // web.render("tampilan/index.rpl.html")
 selesai)
 
 // 2. Rute API - GET Produk (Menampilkan Semua Data dengan JOIN)
