@@ -129,7 +129,7 @@ impl Token {
             "dan" => Some(Token::Dan),
             "atau" => Some(Token::Atau),
             "bukan" => Some(Token::Bukan),
-            "adalah" => Some(Token::SamaDengan),
+            "adalah" | "isinya" => Some(Token::SamaDengan),
             "coba" => Some(Token::Coba),
             "tangkap" => Some(Token::Tangkap),
             "lempar" => Some(Token::Lempar),

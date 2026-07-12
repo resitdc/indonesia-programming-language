@@ -1,0 +1,10 @@
+// Rute Terpusat (Centralized Router)
+buat produk_ctrl = pakai "kontroler/produk.rpl"
+buat tampilan_ctrl = pakai "kontroler/tampilan.rpl"
+
+buat daftarkan = fungsi()
+    web.get("/", tampilan_ctrl.beranda)
+    web.get("/api/produk", produk_ctrl.ambil_semua)
+    web.post("/api/produk", produk_ctrl.tambah)
+    web.delete("/api/produk/:id", produk_ctrl.hapus)
+selesai
