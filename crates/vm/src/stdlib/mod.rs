@@ -12,6 +12,7 @@ pub mod session;
 pub mod tugas;
 pub mod string;
 pub mod db;
+pub mod kripto;
 
 use crate::machine::VM;
 
@@ -30,4 +31,5 @@ pub fn register_all(vm: &mut VM) {
     tugas::register(vm);
     string::register(vm);
     db::register(vm);
+    kripto::register(vm);
 }

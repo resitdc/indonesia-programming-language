@@ -7,6 +7,8 @@ pub struct Lexer {
     posisi: usize,
     baris: usize,
     kolom: usize,
+    brace_count: usize,
+    template_stack: Vec<usize>,
 }
 
 impl Lexer {
@@ -16,6 +18,8 @@ impl Lexer {
             posisi: 0,
             baris: 1,
             kolom: 1,
+            brace_count: 0,
+            template_stack: Vec::new(),
         }
     }
 
@@ -150,9 +154,34 @@ impl Lexer {
                 ')' => { self.advance(); Token::KurungTutup }
                 '[' => { self.advance(); Token::KurungSikuBuka }
                 ']' => { self.advance(); Token::KurungSikuTutup }
-                '{' => { self.advance(); Token::KurawalBuka }
-                '}' => { self.advance(); Token::KurawalTutup }
+                '{' => { 
+                    self.advance(); 
+                    self.brace_count += 1;
+                    Token::KurawalBuka 
+                }
+                '}' => { 
+                    self.advance(); 
+                    if self.brace_count > 0 {
+                        self.brace_count -= 1;
+                        Token::KurawalTutup 
+                    } else if let Some(old_count) = self.template_stack.pop() {
+                        self.brace_count = old_count;
+                        tokens.push(SpannedToken { token: Token::KurungTutup, lokasi: lokasi_awal.clone() });
+                        tokens.push(SpannedToken { token: Token::Tambah, lokasi: lokasi_awal.clone() });
+                        let tks = self.read_template_string(lokasi_awal)?;
+                        tokens.extend(tks);
+                        continue;
+                    } else {
+                        Token::KurawalTutup
+                    }
+                }
                 '"' => self.read_string()?,
+                '`' => {
+                    self.advance();
+                    let tks = self.read_template_string(lokasi_awal)?;
+                    tokens.extend(tks);
+                    continue;
+                }
                 _ if c.is_alphabetic() || c == '_' => self.read_identifier_or_keyword(),
                 _ if c.is_ascii_digit() => self.read_number()?,
                 _ => {
@@ -215,6 +244,72 @@ impl Lexer {
             pesan: "String tidak ditutup (lupa tanda kutip \")".to_string(),
             lokasi: lokasi_awal,
             saran: Some("Tambahkan tanda kutip (\") di akhir string.".to_string()),
+        })
+    }
+
+    fn read_template_string(&mut self, lokasi_awal: Lokasi) -> Result<Vec<SpannedToken>, RplError> {
+        let mut string_val = String::new();
+        let mut tokens = Vec::new();
+
+        while let Some(c) = self.current_char() {
+            if c == '\\' {
+                self.advance();
+                if let Some(escaped) = self.current_char() {
+                    match escaped {
+                        'n' => string_val.push('\n'),
+                        'r' => string_val.push('\r'),
+                        't' => string_val.push('\t'),
+                        '\\' => string_val.push('\\'),
+                        '`' => string_val.push('`'),
+                        '$' => string_val.push('$'),
+                        _ => {
+                            string_val.push('\\');
+                            string_val.push(escaped);
+                        }
+                    }
+                    self.advance();
+                }
+            } else if c == '`' {
+                self.advance();
+                tokens.push(SpannedToken {
+                    token: Token::String(string_val),
+                    lokasi: lokasi_awal,
+                });
+                return Ok(tokens);
+            } else if c == '$' {
+                self.advance();
+                if self.current_char() == Some('{') {
+                    self.advance(); // lewati '{'
+                    
+                    tokens.push(SpannedToken {
+                        token: Token::String(string_val),
+                        lokasi: lokasi_awal.clone(),
+                    });
+                    tokens.push(SpannedToken {
+                        token: Token::Tambah,
+                        lokasi: lokasi_awal.clone(),
+                    });
+                    tokens.push(SpannedToken {
+                        token: Token::KurungBuka,
+                        lokasi: lokasi_awal,
+                    });
+                    
+                    self.template_stack.push(self.brace_count);
+                    self.brace_count = 0;
+                    return Ok(tokens);
+                } else {
+                    string_val.push('$');
+                }
+            } else {
+                string_val.push(c);
+                self.advance();
+            }
+        }
+
+        Err(RplError::Sintaks {
+            pesan: "Template literal tidak ditutup (lupa tanda backtick `)".to_string(),
+            lokasi: lokasi_awal,
+            saran: Some("Tambahkan tanda backtick (`) di akhir string template.".to_string()),
         })
     }
 

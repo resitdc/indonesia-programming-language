@@ -1,0 +1,17 @@
+// Uji Kriptografi (MD5 & SHA-256)
+tampilkan("--- UJI KRIPTOGRAFI ---")
+buat pesan = "Rakoda Programming Language"
+
+buat hash_md5 = kripto.md5(pesan)
+tampilkan("Pesan: " + pesan)
+tampilkan("MD5: " + hash_md5)
+
+buat hash_sha = kripto.sha256(pesan)
+tampilkan("SHA-256: " + hash_sha)
+
+// Verifikasi (Hash MD5 untuk "Rakoda Programming Language" biasanya unik)
+jika hash_md5 bukan "" maka
+    tampilkan("Kriptografi MD5 berfungsi dengan baik!")
+selesai
+
+tampilkan("Selesai.\n")

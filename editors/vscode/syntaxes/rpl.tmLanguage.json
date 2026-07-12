@@ -9,6 +9,9 @@
       "include": "#strings"
     },
     {
+      "include": "#template_strings"
+    },
+    {
       "include": "#keywords"
     },
     {
@@ -16,6 +19,9 @@
     },
     {
       "include": "#numbers"
+    },
+    {
+      "include": "#operators"
     },
     {
       "include": "#functions"
@@ -38,6 +44,33 @@
         {
           "name": "constant.character.escape.rpl",
           "match": "\\\\."
+        }
+      ]
+    },
+    "template_strings": {
+      "name": "string.quoted.other.rpl",
+      "begin": "`",
+      "end": "`",
+      "patterns": [
+        {
+          "name": "constant.character.escape.rpl",
+          "match": "\\\\."
+        },
+        {
+          "name": "meta.template.expression.rpl",
+          "begin": "\\$\\{",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.template-expression.begin.rpl" }
+          },
+          "end": "\\}",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.template-expression.end.rpl" }
+          },
+          "patterns": [
+            {
+              "include": "$self"
+            }
+          ]
         }
       ]
     },
@@ -73,6 +106,14 @@
         }
       ]
     },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.rpl",
+          "match": "(\\+|-|\\*|/|%|==|!=|>|<|>=|<=|&&|\\|\\||=)"
+        }
+      ]
+    },
     "functions": {
       "patterns": [
         {
@@ -85,6 +126,6 @@
         }
       ]
     }
-  ],
+  },
   "scopeName": "source.rpl"
 }

@@ -1,0 +1,25 @@
+// Uji Template Literals (Interpolasi String)
+tampilkan("--- UJI TEMPLATE LITERALS ---")
+
+buat nama = "Budi"
+buat umur = 17
+buat sekolah = "SMKN 1"
+
+// 1. Template literal dasar tanpa interpolasi
+buat teks1 = `Ini adalah teks biasa menggunakan backtick`
+tampilkan(teks1)
+
+// 2. Template literal dengan interpolasi sederhana
+buat teks2 = `Halo, nama saya ${nama}. Saya berumur ${umur} tahun.`
+tampilkan(teks2)
+
+// 3. Template literal dengan ekspresi kompleks
+buat teks3 = `Tahun depan, saya akan berumur ${umur + 1} tahun.`
+tampilkan(teks3)
+
+// 4. Template literal dengan dictionary di dalamnya (menguji brace counting)
+buat murid = { "nama": "Rina", "kelas": 12 }
+buat teks4 = `Teman saya bernama ${murid["nama"]} dari kelas ${murid["kelas"]}.`
+tampilkan(teks4)
+
+tampilkan("\nSelesai.")

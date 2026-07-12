@@ -19,7 +19,7 @@ enum Precedence {
 fn token_precedence(token: &Token) -> Precedence {
     match token {
         Token::Dan | Token::Atau => Precedence::AndOr,
-        Token::SamaDengan | Token::TidakSamaDengan => Precedence::Equals,
+        Token::SamaDengan | Token::TidakSamaDengan | Token::Bukan => Precedence::Equals,
         Token::LebihDari | Token::KurangDari | Token::Minimal | Token::Maksimal => Precedence::LessGreater,
         Token::Tambah | Token::Kurang => Precedence::Sum,
         Token::Kali | Token::Bagi | Token::Mod => Precedence::Product,
@@ -507,7 +507,7 @@ impl Parser {
             Token::Minimal => InfixOperator::Minimal,
             Token::Maksimal => InfixOperator::Maksimal,
             Token::SamaDengan => InfixOperator::SamaDengan,
-            Token::TidakSamaDengan => InfixOperator::TidakSamaDengan,
+            Token::TidakSamaDengan | Token::Bukan => InfixOperator::TidakSamaDengan,
             Token::Dan => InfixOperator::Dan,
             Token::Atau => InfixOperator::Atau,
             _ => unreachable!(),
