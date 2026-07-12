@@ -89,6 +89,22 @@ pub fn register(vm: &mut VM) {
                 _ => return Err("Argumen SQL harus berupa teks".to_string()),
             };
 
+            let mut sqlite_params: Vec<rusqlite::types::Value> = vec![];
+            if args.len() > 1 {
+                if let Value::Array(arr_idx) = &args[1] {
+                    let arr = vm.get_heap_mut().get_array(*arr_idx).clone();
+                    for val in arr {
+                        sqlite_params.push(match val {
+                            Value::Angka(n) => rusqlite::types::Value::Real(n),
+                            Value::String(idx) => rusqlite::types::Value::Text(vm.get_heap_mut().get_string(idx).clone()),
+                            Value::Boolean(b) => rusqlite::types::Value::Integer(if b { 1 } else { 0 }),
+                            Value::Kosong => rusqlite::types::Value::Null,
+                            _ => rusqlite::types::Value::Text(val.to_string(vm.get_heap_mut())),
+                        });
+                    }
+                }
+            }
+
             let conn_mutex = match &vm.get_heap_mut().db_connection {
                 Some(c) => c.clone(),
                 None => return Err("Koneksi database belum dibuka. Panggil db.hubungkan() terlebih dahulu".to_string()),
@@ -98,15 +114,49 @@ pub fn register(vm: &mut VM) {
             
             let affected = match &mut *conn_lock {
                 DatabaseConnection::Sqlite(c) => {
-                    c.execute(&sql, []).map_err(|e| format!("SQLite Error: {}", e))? as f64
+                    c.execute(&sql, rusqlite::params_from_iter(sqlite_params)).map_err(|e| format!("SQLite Error: {}", e))? as f64
                 },
                 DatabaseConnection::Mysql(c) => {
                     use mysql::prelude::Queryable;
-                    c.query_drop(&sql).map_err(|e| format!("MySQL Error: {}", e))?;
+                    // Fallback to string replacement for now if params exist
+                    let mut final_sql = sql.clone();
+                    if args.len() > 1 {
+                        if let Value::Array(arr_idx) = &args[1] {
+                            let arr = vm.get_heap_mut().get_array(*arr_idx).clone();
+                            for val in arr {
+                                let val_str = match val {
+                                    Value::Angka(n) => n.to_string(),
+                                    Value::String(idx) => format!("'{}'", vm.get_heap_mut().get_string(idx).replace("'", "''")),
+                                    Value::Boolean(b) => if b { "1".to_string() } else { "0".to_string() },
+                                    Value::Kosong => "NULL".to_string(),
+                                    _ => "''".to_string(),
+                                };
+                                final_sql = final_sql.replacen("?", &val_str, 1);
+                            }
+                        }
+                    }
+                    c.query_drop(&final_sql).map_err(|e| format!("MySQL Error: {}", e))?;
                     c.affected_rows() as f64
                 },
                 DatabaseConnection::Postgres(c) => {
-                    c.execute(&sql, &[]).map_err(|e| format!("Postgres Error: {}", e))? as f64
+                    // Fallback to string replacement for now if params exist
+                    let mut final_sql = sql.clone();
+                    if args.len() > 1 {
+                        if let Value::Array(arr_idx) = &args[1] {
+                            let arr = vm.get_heap_mut().get_array(*arr_idx).clone();
+                            for val in arr {
+                                let val_str = match val {
+                                    Value::Angka(n) => n.to_string(),
+                                    Value::String(idx) => format!("'{}'", vm.get_heap_mut().get_string(idx).replace("'", "''")),
+                                    Value::Boolean(b) => if b { "TRUE".to_string() } else { "FALSE".to_string() },
+                                    Value::Kosong => "NULL".to_string(),
+                                    _ => "''".to_string(),
+                                };
+                                final_sql = final_sql.replacen("?", &val_str, 1);
+                            }
+                        }
+                    }
+                    c.execute(&final_sql, &[]).map_err(|e| format!("Postgres Error: {}", e))? as f64
                 }
             };
 
@@ -125,6 +175,21 @@ pub fn register(vm: &mut VM) {
                 Value::String(idx) => vm.get_heap_mut().get_string(*idx).clone(),
                 _ => return Err("Argumen SQL harus berupa teks".to_string()),
             };
+            let mut sqlite_params: Vec<rusqlite::types::Value> = vec![];
+            if args.len() > 1 {
+                if let Value::Array(arr_idx) = &args[1] {
+                    let arr = vm.get_heap_mut().get_array(*arr_idx).clone();
+                    for val in arr {
+                        sqlite_params.push(match val {
+                            Value::Angka(n) => rusqlite::types::Value::Real(n),
+                            Value::String(idx) => rusqlite::types::Value::Text(vm.get_heap_mut().get_string(idx).clone()),
+                            Value::Boolean(b) => rusqlite::types::Value::Integer(if b { 1 } else { 0 }),
+                            Value::Kosong => rusqlite::types::Value::Null,
+                            _ => rusqlite::types::Value::Text(val.to_string(vm.get_heap_mut())),
+                        });
+                    }
+                }
+            }
 
             enum DbValue {
                 Null,
@@ -146,7 +211,7 @@ pub fn register(vm: &mut VM) {
                     DatabaseConnection::Sqlite(c) => {
                         let mut stmt = c.prepare(&sql).map_err(|e| format!("SQLite Error: {}", e))?;
                         let cols: Vec<String> = stmt.column_names().iter().map(|s| s.to_string()).collect();
-                        let mut rows = stmt.query([]).map_err(|e| format!("SQLite Error: {}", e))?;
+                        let mut rows = stmt.query(rusqlite::params_from_iter(sqlite_params)).map_err(|e| format!("SQLite Error: {}", e))?;
                         while let Some(row) = rows.next().map_err(|e| format!("SQLite Error: {}", e))? {
                             let mut dict_vals = HashMap::new();
                             for (i, col_name) in cols.iter().enumerate() {
@@ -165,7 +230,23 @@ pub fn register(vm: &mut VM) {
                     },
                     DatabaseConnection::Mysql(c) => {
                         use mysql::prelude::Queryable;
-                        let rows: Vec<mysql::Row> = c.query(&sql).map_err(|e| format!("MySQL Error: {}", e))?;
+                        let mut final_sql = sql.clone();
+                        if args.len() > 1 {
+                            if let Value::Array(arr_idx) = &args[1] {
+                                let arr = vm.get_heap_mut().get_array(*arr_idx).clone();
+                                for val in arr {
+                                    let val_str = match val {
+                                        Value::Angka(n) => n.to_string(),
+                                        Value::String(idx) => format!("'{}'", vm.get_heap_mut().get_string(idx).replace("'", "''")),
+                                        Value::Boolean(b) => if b { "1".to_string() } else { "0".to_string() },
+                                        Value::Kosong => "NULL".to_string(),
+                                        _ => "''".to_string(),
+                                    };
+                                    final_sql = final_sql.replacen("?", &val_str, 1);
+                                }
+                            }
+                        }
+                        let rows: Vec<mysql::Row> = c.query(&final_sql).map_err(|e| format!("MySQL Error: {}", e))?;
                         for row in rows {
                             let mut dict_vals = HashMap::new();
                             for (i, col) in row.columns().iter().enumerate() {
@@ -191,7 +272,23 @@ pub fn register(vm: &mut VM) {
                         }
                     },
                     DatabaseConnection::Postgres(c) => {
-                        let rows = c.query(&sql, &[]).map_err(|e| format!("Postgres Error: {}", e))?;
+                        let mut final_sql = sql.clone();
+                        if args.len() > 1 {
+                            if let Value::Array(arr_idx) = &args[1] {
+                                let arr = vm.get_heap_mut().get_array(*arr_idx).clone();
+                                for val in arr {
+                                    let val_str = match val {
+                                        Value::Angka(n) => n.to_string(),
+                                        Value::String(idx) => format!("'{}'", vm.get_heap_mut().get_string(idx).replace("'", "''")),
+                                        Value::Boolean(b) => if b { "TRUE".to_string() } else { "FALSE".to_string() },
+                                        Value::Kosong => "NULL".to_string(),
+                                        _ => "''".to_string(),
+                                    };
+                                    final_sql = final_sql.replacen("?", &val_str, 1);
+                                }
+                            }
+                        }
+                        let rows = c.query(&final_sql, &[]).map_err(|e| format!("Postgres Error: {}", e))?;
                         for row in rows {
                             let mut dict_vals = HashMap::new();
                             for (i, col) in row.columns().iter().enumerate() {
