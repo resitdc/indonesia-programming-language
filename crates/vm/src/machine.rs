@@ -49,6 +49,7 @@ pub struct VM {
     pub tasks: HashMap<usize, std::thread::JoinHandle<(Result<Value, String>, Heap)>>,
     pub next_task_id: usize,
     pub catch_handlers: Vec<CatchHandler>,
+    pub next_gc_threshold: usize,
 }
 
 impl Default for VM {
@@ -68,6 +69,7 @@ impl VM {
             tasks: HashMap::new(),
             next_task_id: 1,
             catch_handlers: Vec::new(),
+            next_gc_threshold: 1000,
         }
     }
 
@@ -81,6 +83,7 @@ impl VM {
             tasks: HashMap::new(),
             next_task_id: 1,
             catch_handlers: self.catch_handlers.clone(),
+            next_gc_threshold: 1000,
         }
     }
 
@@ -106,7 +109,7 @@ impl VM {
             }
         }
         
-        self.heap.mark_sessions();
+        self.heap.mark_sessions_and_cache();
         
         let before = self.heap.allocated_count;
         self.heap.sweep();
@@ -115,6 +118,8 @@ impl VM {
         if before > after {
             // println!("[GC] Dibersihkan: {} objek", before - after); // Disabled to keep output clean, but can be enabled for debugging
         }
+        
+        self.next_gc_threshold = std::cmp::max(1000, self.heap.allocated_count * 2);
     }
 
 
@@ -155,7 +160,7 @@ impl VM {
     fn run(&mut self, initial_frames: usize) -> Result<(), (String, Option<Lokasi>)> {
         loop {
             // Trigger GC if we allocated a lot
-            if self.heap.allocated_count > 1000 {
+            if self.heap.allocated_count > self.next_gc_threshold {
                 self.gc_collect();
             }
 

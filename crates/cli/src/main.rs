@@ -28,8 +28,6 @@ enum Commands {
     Repl,
     Serve {
         file: PathBuf,
-        #[arg(short, long, default_value_t = 4000)]
-        port: u16,
     },
     Fmt {
         file: PathBuf,
@@ -109,15 +107,47 @@ async fn main() -> Result<()> {
         Some(Commands::Repl) => {
             println!("Memulai sesi REPL RPL. Ketik 'berhenti' untuk keluar.");
         }
-        Some(Commands::Serve { file, port }) => {
-            if let Err(e) = runtime::serve(file.clone(), *port).await {
-                let msg = e.to_string();
-                if msg.contains("Address already in use") || msg.contains("os error 48") {
-                    eprintln!("\x1b[33mError: Port sudah digunakan oleh program lain.\x1b[0m");
-                } else {
-                    eprintln!("\x1b[33mError: {}\x1b[0m", msg);
+        Some(Commands::Serve { file }) => {
+            use notify::{Watcher, RecursiveMode};
+            use std::sync::mpsc::channel;
+            use std::time::Duration;
+            
+            print!("{}[2J{}[1;1H", 27 as char, 27 as char);
+            println!("\x1b[32m🚀 Memulai Server Mode (Live Reload) untuk {}...\x1b[0m", file.display());
+            
+            let mut child = std::process::Command::new(std::env::current_exe().unwrap())
+                .arg("run")
+                .arg(file)
+                .spawn()?;
+                
+            let (tx, rx) = channel();
+            let mut watcher = notify::recommended_watcher(tx)?;
+            watcher.watch(&std::env::current_dir()?, RecursiveMode::Recursive)?;
+            
+            let mut last_run = std::time::Instant::now();
+            
+            for res in rx {
+                match res {
+                    Ok(event) => {
+                        if event.kind.is_modify() {
+                            if last_run.elapsed() > Duration::from_millis(500) {
+                                last_run = std::time::Instant::now();
+                                
+                                let _ = child.kill();
+                                let _ = child.wait();
+                                
+                                print!("{}[2J{}[1;1H", 27 as char, 27 as char);
+                                println!("\x1b[32m🔄 Perubahan terdeteksi! Merestart server...\x1b[0m\n");
+                                
+                                child = std::process::Command::new(std::env::current_exe().unwrap())
+                                    .arg("run")
+                                    .arg(file)
+                                    .spawn()?;
+                            }
+                        }
+                    }
+                    Err(e) => eprintln!("Watch error: {:?}", e),
                 }
-                std::process::exit(1);
             }
         }
         Some(Commands::Fmt { file }) => {

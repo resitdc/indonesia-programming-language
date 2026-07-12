@@ -75,6 +75,12 @@ pub struct DbQueryState {
     pub kondisi: Vec<(String, String, Value)>, // kolom, operator, nilai
 }
 
+#[derive(Clone, Default)]
+pub struct WebCache {
+    pub templates: HashMap<String, usize>,
+    pub static_files: HashMap<String, (String, Vec<u8>)>,
+}
+
 #[derive(Clone)]
 pub struct Heap {
     pub objects: Vec<HeapObject>,
@@ -84,6 +90,7 @@ pub struct Heap {
     pub web_static_dirs: HashMap<String, String>,
     pub web_config: WebConfig,
     pub web_state: WebState,
+    pub web_cache: WebCache,
     pub db_connection: Option<Arc<Mutex<DatabaseConnection>>>,
     pub db_query_state: DbQueryState,
     pub db_module_idx: Option<usize>,
@@ -105,6 +112,7 @@ impl Heap {
             web_static_dirs: HashMap::new(),
             web_config: WebConfig::default(),
             web_state: WebState::default(),
+            web_cache: WebCache::default(),
             db_connection: None,
             db_query_state: DbQueryState::default(),
             db_module_idx: None,
@@ -262,12 +270,20 @@ impl Heap {
         }
     }
     
-    pub fn mark_sessions(&mut self) {
+    pub fn mark_sessions_and_cache(&mut self) {
         let mut session_indices = Vec::new();
         for (_, (_, idx)) in &self.web_state.sessions {
             session_indices.push(*idx);
         }
         for idx in session_indices {
+            self.mark(idx);
+        }
+        
+        let mut cache_indices = Vec::new();
+        for idx in self.web_cache.templates.values() {
+            cache_indices.push(*idx);
+        }
+        for idx in cache_indices {
             self.mark(idx);
         }
     }

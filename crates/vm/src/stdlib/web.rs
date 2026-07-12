@@ -105,15 +105,23 @@ pub fn register(vm: &mut VM) {
             } else {
                 Value::Kosong
             };
-            
-            let file_content = match std::fs::read_to_string(&file_name) {
-                Ok(content) => content,
-                Err(e) => return Err(format!("Gagal membaca file template '{}': {}", file_name, e)),
+            let func_val = if let Some(cached_idx) = ctx.get_heap_mut().web_cache.templates.get(&file_name) {
+                Value::Fungsi(*cached_idx, 0)
+            } else {
+                let file_content = match std::fs::read_to_string(&file_name) {
+                    Ok(content) => content,
+                    Err(e) => return Err(format!("Gagal membaca file template '{}': {}", file_name, e)),
+                };
+                
+                let template_code = interpreter::template::preprocess_template_to_function(&file_content);
+                let compiled_func = ctx.compile_source(&template_code)?;
+                
+                if let Value::Fungsi(idx, _) = compiled_func {
+                    ctx.get_heap_mut().web_cache.templates.insert(file_name.clone(), idx);
+                }
+                
+                compiled_func
             };
-            
-            let template_code = interpreter::template::preprocess_template_to_function(&file_content);
-            
-            let func_val = ctx.compile_source(&template_code)?;
             
             match ctx.execute_function(func_val, vec![data_arg]) {
                 Ok(val) => Ok(val),
@@ -348,6 +356,14 @@ pub fn register(vm: &mut VM) {
                         let full_path = std::path::Path::new(folder).join(file_path);
                         
                         if full_path.exists() && full_path.is_file() {
+                            let path_str = full_path.to_string_lossy().to_string();
+                            
+                            // Check cache first
+                            if let Some((content_type, content)) = ctx.get_heap_mut().web_cache.static_files.get(&path_str) {
+                                static_response = Some((content.clone(), content_type.clone()));
+                                break;
+                            }
+                            
                             if let Ok(content) = std::fs::read(&full_path) {
                                 let content_type = match full_path.extension().and_then(|e| e.to_str()) {
                                     Some("html") => "text/html; charset=utf-8",
@@ -364,7 +380,11 @@ pub fn register(vm: &mut VM) {
                                     Some("ttf") => "font/ttf",
                                     _ => "application/octet-stream",
                                 };
-                                static_response = Some((content, content_type));
+                                
+                                // Insert to cache
+                                ctx.get_heap_mut().web_cache.static_files.insert(path_str, (content_type.to_string(), content.clone()));
+                                
+                                static_response = Some((content, content_type.to_string()));
                                 break;
                             }
                         }
