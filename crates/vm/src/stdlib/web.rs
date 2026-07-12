@@ -6,6 +6,8 @@ use std::time::Instant;
 use std::io::{Read, Write};
 use flate2::write::GzEncoder;
 use flate2::Compression;
+use std::fs;
+use std::path::Path;
 
 fn value_to_json(val: &Value, heap: &crate::heap::Heap) -> serde_json::Value {
     match val {
@@ -389,29 +391,83 @@ pub fn register(vm: &mut VM) {
                             let method_str = ctx.get_heap_mut().alloc(HeapData::String(method.clone()));
                             req_map.insert("metode".to_string(), Value::String(method_str));
                             
-                            let mut body = String::new();
-                            let _ = request.as_reader().read_to_string(&mut body);
-                            let body_str = ctx.get_heap_mut().alloc(HeapData::String(body.clone()));
+                            let mut raw_body = Vec::new();
+                            let _ = request.as_reader().read_to_end(&mut raw_body);
+                            
+                            let body_string = String::from_utf8_lossy(&raw_body).to_string();
+                            let body_str = ctx.get_heap_mut().alloc(HeapData::String(body_string.clone()));
                             req_map.insert("tubuh".to_string(), Value::String(body_str));
                             
                             // Cek header Content-Type
                             let mut is_json = false;
+                            let mut multipart_boundary = None;
                             for header in request.headers() {
                                 if header.field.equiv("Content-Type") {
-                                    if header.value.as_str().contains("application/json") {
+                                    let val = header.value.as_str();
+                                    if val.contains("application/json") {
                                         is_json = true;
-                                        break;
+                                    } else if val.contains("multipart/form-data") {
+                                        if let Some(idx) = val.find("boundary=") {
+                                            multipart_boundary = Some(val[idx + 9..].to_string());
+                                        }
                                     }
                                 }
                             }
                             
                             // Auto parsing JSON
-                            if is_json && !body.is_empty() {
-                                if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body) {
+                            if is_json && !body_string.is_empty() {
+                                if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_string) {
                                     let rpl_val = crate::stdlib::json::convert_to_value(ctx, &json_val);
                                     req_map.insert("json".to_string(), rpl_val);
                                 }
                             }
+                            
+                            // Parse Multipart
+                            let mut form_map = HashMap::new();
+                            let mut file_map = HashMap::new();
+                            
+                            if let Some(boundary) = multipart_boundary {
+                                let parts = parse_multipart(&raw_body, &boundary);
+                                let tmp_dir = ".rpl_tmp";
+                                let _ = fs::create_dir_all(tmp_dir);
+                                
+                                for (name, filename, content_type, data) in parts {
+                                    if let Some(fname) = filename {
+                                        let unique_name = format!("{}_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis(), fname);
+                                        let path = format!("{}/{}", tmp_dir, unique_name);
+                                        if fs::write(&path, &data).is_ok() {
+                                            let mut file_info = HashMap::new();
+                                            
+                                            let nama_idx = ctx.get_heap_mut().alloc(HeapData::String(fname));
+                                            file_info.insert("nama".to_string(), Value::String(nama_idx));
+                                            
+                                            let path_idx = ctx.get_heap_mut().alloc(HeapData::String(path));
+                                            file_info.insert("path".to_string(), Value::String(path_idx));
+                                            
+                                            let ukuran = data.len() as f64;
+                                            file_info.insert("ukuran".to_string(), Value::Angka(ukuran));
+                                            
+                                            if let Some(ct) = content_type {
+                                                let tipe_idx = ctx.get_heap_mut().alloc(HeapData::String(ct));
+                                                file_info.insert("tipe".to_string(), Value::String(tipe_idx));
+                                            }
+                                            
+                                            let info_idx = ctx.get_heap_mut().alloc(HeapData::Kamus(file_info));
+                                            file_map.insert(name, Value::Kamus(info_idx));
+                                        }
+                                    } else {
+                                        let text_val = String::from_utf8_lossy(&data).to_string();
+                                        let str_idx = ctx.get_heap_mut().alloc(HeapData::String(text_val));
+                                        form_map.insert(name, Value::String(str_idx));
+                                    }
+                                }
+                            }
+                            
+                            let form_idx = ctx.get_heap_mut().alloc(HeapData::Kamus(form_map));
+                            req_map.insert("form".to_string(), Value::Kamus(form_idx));
+                            
+                            let file_idx = ctx.get_heap_mut().alloc(HeapData::Kamus(file_map));
+                            req_map.insert("file".to_string(), Value::Kamus(file_idx));
                             
                             // Add kueri
                             let mut kueri_map = HashMap::new();
@@ -506,8 +562,40 @@ pub fn register(vm: &mut VM) {
                                 let _ = request.respond(response);
                             }
                             Err(e) => {
-                                let err_resp = tiny_http::Response::from_string(format!("Internal Server Error: {}", e))
+                                let html = format!(r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>RPL Error: 500</title>
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #222; margin: 0; padding: 2rem; color: #fff; }}
+        .container {{ background-color: #fff; color: #1f2937; padding: 2rem; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto; }}
+        h1 {{ color: #dc2626; margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 1.8rem; border-bottom: 2px solid #fee2e2; padding-bottom: 1rem; }}
+        .req-info {{ background-color: #f3f4f6; padding: 0.5rem 1rem; border-radius: 6px; font-family: monospace; font-size: 1rem; color: #374151; display: inline-block; margin-bottom: 1.5rem; border: 1px solid #d1d5db; }}
+        .error-message {{ background-color: #fee2e2; border-left: 4px solid #dc2626; padding: 1rem; font-family: monospace; font-size: 1rem; overflow-x: auto; white-space: pre-wrap; line-height: 1.5; border-radius: 0 4px 4px 0; color: #991b1b;}}
+        .footer {{ margin-top: 2rem; font-size: 0.875rem; color: #6b7280; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 1rem; }}
+        .brand {{ font-weight: bold; color: #ef4444; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Terjadi Kesalahan Internal Server (500)</h1>
+        <p>Aplikasi Anda mengalami masalah saat memproses request berikut:</p>
+        <div class="req-info">{} {}</div>
+        
+        <h3 style="margin-bottom: 0.5rem; color: #1f2937;">Pesan Error:</h3>
+        <div class="error-message">{}</div>
+        
+        <div class="footer">
+            <span class="brand">Rakoda Programming Language (RPL)</span> Web Framework
+        </div>
+    </div>
+</body>
+</html>"#, method, full_url, e);
+                                
+                                let mut err_resp = tiny_http::Response::from_string(html)
                                     .with_status_code(500);
+                                err_resp.add_header(tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"text/html; charset=utf-8"[..]).unwrap());
                                 let _ = request.respond(err_resp);
                             }
                         }
@@ -566,4 +654,66 @@ fn find_route(heap: &crate::heap::Heap, url: &str, method: &str) -> (Option<Valu
     }
     
     (None, HashMap::new())
+}
+
+fn find_subsequence(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    haystack.windows(needle.len()).position(|window| window == needle)
+}
+
+fn parse_multipart(raw: &[u8], boundary: &str) -> Vec<(String, Option<String>, Option<String>, Vec<u8>)> {
+    let mut parts = Vec::new();
+    let b_bytes = format!("--{}", boundary).into_bytes();
+    
+    let mut current = 0;
+    while let Some(idx) = find_subsequence(&raw[current..], &b_bytes) {
+        let start = current + idx + b_bytes.len();
+        current = start;
+        
+        if raw.len() >= start + 2 && &raw[start..start+2] == b"--" {
+            break; 
+        }
+        
+        if let Some(end_headers) = find_subsequence(&raw[start..], b"\r\n\r\n") {
+            let header_block = &raw[start..start+end_headers];
+            let header_str = String::from_utf8_lossy(header_block);
+            
+            let data_start = start + end_headers + 4;
+            if let Some(next_b) = find_subsequence(&raw[data_start..], &b_bytes) {
+                let mut data_end = data_start + next_b;
+                if data_end >= 2 && &raw[data_end-2..data_end] == b"\r\n" {
+                    data_end -= 2;
+                }
+                
+                let data = &raw[data_start..data_end];
+                
+                let mut name = String::new();
+                let mut filename = None;
+                let mut content_type = None;
+                
+                for line in header_str.split("\r\n") {
+                    if line.to_lowercase().starts_with("content-disposition:") {
+                        let parts_split: Vec<&str> = line.split(';').collect();
+                        for p in parts_split {
+                            let p = p.trim();
+                            if p.starts_with("name=\"") {
+                                name = p[6..p.len()-1].to_string();
+                            } else if p.starts_with("filename=\"") {
+                                filename = Some(p[10..p.len()-1].to_string());
+                            }
+                        }
+                    } else if line.to_lowercase().starts_with("content-type:") {
+                        content_type = Some(line[13..].trim().to_string());
+                    }
+                }
+                
+                if !name.is_empty() {
+                    parts.push((name, filename, content_type, data.to_vec()));
+                }
+                current = data_start + next_b; 
+            } else {
+                break;
+            }
+        }
+    }
+    parts
 }

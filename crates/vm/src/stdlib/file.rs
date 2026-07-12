@@ -69,6 +69,27 @@ pub fn register(vm: &mut VM) {
     let ada_idx = vm.heap.alloc(HeapData::FungsiBawaan(ada_func));
     module_dict.insert("ada".to_string(), Value::FungsiBawaan(ada_idx));
 
+    let pindah_func = FungsiBawaanVM {
+        nama: "pindah".to_string(),
+        func: |ctx, args| {
+            if args.len() != 2 {
+                return Err("Fungsi 'pindah' membutuhkan 2 argumen: path_asal dan path_tujuan".to_string());
+            }
+            if let (Value::String(asal_idx), Value::String(tujuan_idx)) = (&args[0], &args[1]) {
+                let asal = ctx.get_heap_mut().get_string(*asal_idx).clone();
+                let tujuan = ctx.get_heap_mut().get_string(*tujuan_idx).clone();
+                match fs::rename(&asal, &tujuan) {
+                    Ok(_) => Ok(Value::Kosong),
+                    Err(e) => Err(format!("Gagal memindahkan file dari '{}' ke '{}': {}", asal, tujuan, e)),
+                }
+            } else {
+                Err("Path asal dan tujuan harus berupa teks".to_string())
+            }
+        },
+    };
+    let pindah_idx = vm.heap.alloc(HeapData::FungsiBawaan(pindah_func));
+    module_dict.insert("pindah".to_string(), Value::FungsiBawaan(pindah_idx));
+
     let hapus_func = FungsiBawaanVM {
         nama: "hapus".to_string(),
         func: |ctx, args| {
