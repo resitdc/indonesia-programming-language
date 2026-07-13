@@ -66,10 +66,11 @@ async fn handle_request(file: PathBuf) -> Html<String> {
     };
 
     let mut parser = RplParser::new(tokens);
-    let program = match parser.parse_program() {
-        Ok(p) => p,
-        Err(e) => return Html(format!("<pre>{}</pre>", e.tampilkan(&kode_sumber))),
-    };
+    let mut program = parser.parse_program();
+    let errors = std::mem::take(&mut program.errors);
+    if let Some(e) = errors.into_iter().next() {
+        return Html(format!("<pre>{}</pre>", e.tampilkan(&kode_sumber)));
+    }
 
     let mut interpreter = Interpreter::baru_dengan_capture();
     interpreter.base_path = file.parent().map(|p| p.to_path_buf());

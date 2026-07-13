@@ -1,4 +1,4 @@
-use errors::Lokasi;
+use errors::{Lokasi, Pos, Span};
 // ini penting gaes, ini kamusnya
 
 #[derive(Debug, PartialEq, Clone)]
@@ -141,5 +141,11 @@ impl Token {
 #[derive(Debug, PartialEq, Clone)]
 pub struct SpannedToken {
     pub token: Token,
-    pub lokasi: Lokasi,
+    pub span: Span,
+}
+
+impl SpannedToken {
+    pub fn lokasi(&self) -> Lokasi {
+        Lokasi::from(self.span)
+    }
 }

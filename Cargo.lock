@@ -2142,12 +2142,15 @@ version = "3.0.0"
 dependencies = [
  "anyhow",
  "clap",
+ "lexer",
  "notify",
+ "parser",
  "reqwest",
  "runtime",
  "serde",
  "serde_json",
  "tokio",
+ "typechecker",
  "zip",
 ]
 
@@ -2901,6 +2904,16 @@ name = "twox-hash"
 version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ea3136b675547379c4bd395ca6b938e5ad3c3d20fad76e7fe85f9e0d011419c"
+
+[[package]]
+name = "typechecker"
+version = "0.1.0"
+dependencies = [
+ "ast",
+ "errors",
+ "lexer",
+ "parser",
+]
 
 [[package]]
 name = "typenum"

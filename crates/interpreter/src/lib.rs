@@ -241,6 +241,7 @@ impl Interpreter {
                 let eval_nilai = self.eval_expression(nilai)?;
                 Ok(Objek::Pengecualian(Box::new(eval_nilai)))
             }
+            Statement::Error(_) => Ok(Objek::Kosong),
         }
     }
 
@@ -343,12 +344,14 @@ impl Interpreter {
                 })?;
 
                 let mut parser = parser::Parser::new(tokens);
-                let program = parser.parse_program().map_err(|mut e| {
+                let mut program = parser.parse_program();
+                let errors = std::mem::take(&mut program.errors);
+                if let Some(mut e) = errors.into_iter().next() {
                     if let RplError::Sintaks { pesan, .. } = &mut e {
                         *pesan = format!("Di dalam modul '{}': {}", path_str, pesan);
                     }
-                    e
-                })?;
+                    return Err(e);
+                }
 
                 let new_base_path = final_path.parent().map(|p| p.to_path_buf());
 

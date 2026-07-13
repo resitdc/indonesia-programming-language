@@ -41,12 +41,11 @@ pub fn run_source(
     };
 
     let mut parser = RplParser::new(tokens);
-    let program = match parser.parse_program() {
-        Ok(p) => p,
-        Err(e) => {
-            return Err(e.tampilkan(kode_sumber));
-        }
-    };
+    let mut program = parser.parse_program();
+    let errors = std::mem::take(&mut program.errors);
+    if let Some(e) = errors.into_iter().next() {
+        return Err(e.tampilkan(kode_sumber));
+    }
 
     let program = ast::optimizer::optimize_program(program);
 

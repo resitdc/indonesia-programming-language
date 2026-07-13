@@ -43,6 +43,11 @@ enum Commands {
     Kill {
         port: u16,
     },
+    #[command(alias = "check")]
+    /// Cek error sintaks tanpa menjalankan program
+    Cek {
+        file: PathBuf,
+    },
 }
 
 fn main() -> Result<()> {
@@ -227,6 +232,91 @@ fn main() -> Result<()> {
                         port
                     );
                 }
+            }
+        }
+        Some(Commands::Cek { file }) => {
+            let kode_sumber = std::fs::read_to_string(file)
+                .map_err(|_| anyhow::anyhow!("Gagal membaca file: {}", file.display()))?;
+
+            let mut lexer = lexer::Lexer::new(&kode_sumber);
+            let mut errors = Vec::new();
+
+            let tokens = match lexer.tokenize() {
+                Ok(t) => t,
+                Err(e) => {
+                    errors.push(e.tampilkan(&kode_sumber));
+                    if errors.is_empty() {
+                        anyhow::bail!("{}", e.tampilkan(&kode_sumber));
+                    }
+                    Vec::new()
+                }
+            };
+
+            if !tokens.is_empty() {
+                let mut parser = parser::Parser::new(tokens);
+                let program = parser.parse_program();
+
+                if !program.errors.is_empty() {
+                    for e in &program.errors {
+                        errors.push(e.tampilkan(&kode_sumber));
+                    }
+                }
+
+                // Type checking (jika parse sukses tanpa error)
+                if errors.is_empty() {
+                    let mut checker = typechecker::TypeChecker::new();
+                    let result = checker.check(&program);
+
+                    if !result.errors.is_empty() {
+                        for e in &result.errors {
+                            let msg = format!(
+                                "\x1b[1;36m--> \x1b[0m\x1b[1m{}:{}:{}\x1b[0m\n  \x1b[1;33mtype error\x1b[0m: {}",
+                                file.display(),
+                                e.lokasi.baris,
+                                e.lokasi.kolom,
+                                e.pesan
+                            );
+                            let full = if let Some(ref saran) = e.saran {
+                                format!("{}\n  \x1b[1;32m💡 bantuan:\x1b[0m {}", msg, saran)
+                            } else {
+                                msg
+                            };
+                            errors.push(full);
+                        }
+                    }
+                }
+
+                if errors.is_empty() && !program.statements.is_empty() {
+                    println!(
+                        "\x1b[1;32m✓ Aman:\x1b[0m {} tidak memiliki error. ({} deklarasi ditemukan)",
+                        file.display(),
+                        program.statements.len()
+                    );
+                } else {
+                    eprintln!(
+                        "\x1b[1;31m✗ Ditemukan {} error:\x1b[0m",
+                        errors.len()
+                    );
+                    for (i, e) in errors.iter().enumerate() {
+                        eprintln!("  {}", e);
+                        if i < errors.len() - 1 {
+                            eprintln!();
+                        }
+                    }
+                    std::process::exit(1);
+                }
+            } else if !errors.is_empty() {
+                eprintln!(
+                    "\x1b[1;31m✗ Ditemukan {} error:\x1b[0m",
+                    errors.len()
+                );
+                for (i, e) in errors.iter().enumerate() {
+                    eprintln!("  {}", e);
+                    if i < errors.len() - 1 {
+                        eprintln!();
+                    }
+                }
+                std::process::exit(1);
             }
         }
         None => {

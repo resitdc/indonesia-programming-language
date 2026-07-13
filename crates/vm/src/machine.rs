@@ -618,7 +618,11 @@ impl VmContext for VM {
         let tokens = lexer.tokenize().map_err(|e| format!("{:?}", e))?;
 
         let mut parser = parser::Parser::new(tokens);
-        let program = parser.parse_program().map_err(|e| format!("{:?}", e))?;
+        let mut program = parser.parse_program();
+        let errors = std::mem::take(&mut program.errors);
+        if let Some(e) = errors.into_iter().next() {
+            return Err(format!("{:?}", e));
+        }
 
         // We create a new chunk by compiling the program
         let compiler = crate::compiler::Compiler::baru_dengan_base_path(&mut self.heap, None);

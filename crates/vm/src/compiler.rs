@@ -279,6 +279,9 @@ impl<'a> Compiler<'a> {
                 self.compile_expression(nilai)?;
                 self.chunk.write_opcode(OpCode::Throw, lokasi);
             }
+            Statement::Error(_) => {
+                // Error recovery node — tidak menghasilkan bytecode
+            }
         }
         Ok(())
     }
@@ -487,9 +490,10 @@ impl<'a> Compiler<'a> {
                     .map_err(|e| format!("Error lexer di '{}': {:?}", path_str, e))?;
 
                 let mut parser = parser::Parser::new(tokens);
-                let program = parser
-                    .parse_program()
-                    .map_err(|e| format!("Error parser di '{}': {:?}", path_str, e))?;
+                let mut program = parser.parse_program();
+                if let Some(e) = program.errors.into_iter().next() {
+                    return Err(format!("Error parser di '{}': {:?}", path_str, e));
+                }
 
                 let new_base_path = final_path.parent().map(|p| p.to_path_buf());
                 let mut fn_compiler = Compiler::baru_dengan_file(

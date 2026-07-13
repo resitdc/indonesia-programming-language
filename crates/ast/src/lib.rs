@@ -1,9 +1,12 @@
-use errors::Lokasi;
+use errors::{Lokasi, RplError};
 pub mod optimizer;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone)]
 pub struct Program {
     pub statements: Vec<Statement>,
+    /// Error-error yang dikumpulkan selama parsing (non-fatal).
+    /// Kosong = sukses penuh. Ada isi = tetap ada AST, tapi sebagian mungkin error node.
+    pub errors: Vec<RplError>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -58,6 +61,8 @@ pub enum Statement {
         lokasi: Lokasi,
     },
     Expression(Expression),
+    /// Marker untuk potongan kode yang gagal diparse (error recovery).
+    Error(Lokasi),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -127,6 +132,12 @@ pub enum InfixOperator {
     TidakSamaDengan,
     Dan,
     Atau,
+}
+
+impl PartialEq for Program {
+    fn eq(&self, other: &Self) -> bool {
+        self.statements == other.statements
+    }
 }
 
 impl std::fmt::Display for InfixOperator {

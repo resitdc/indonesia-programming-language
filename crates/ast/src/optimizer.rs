@@ -150,6 +150,9 @@ fn optimize_statement(stmt: Statement) -> Vec<Statement> {
                 lokasi,
             }]
         }
+        Statement::Error(lokasi) => {
+            vec![Statement::Error(lokasi)]
+        }
     }
 }
 

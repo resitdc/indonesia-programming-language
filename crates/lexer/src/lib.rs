@@ -1,5 +1,5 @@
 pub mod token;
-use errors::{Lokasi, RplError};
+use errors::{Lokasi, Pos, RplError, Span};
 use token::{SpannedToken, Token};
 
 pub struct Lexer {
@@ -7,6 +7,8 @@ pub struct Lexer {
     posisi: usize,
     baris: usize,
     kolom: usize,
+    /// Offset dalam byte sejak awal source code.
+    offset: usize,
     brace_count: usize,
     template_stack: Vec<usize>,
 }
@@ -18,6 +20,7 @@ impl Lexer {
             posisi: 0,
             baris: 1,
             kolom: 1,
+            offset: 0,
             brace_count: 0,
             template_stack: Vec::new(),
         }
@@ -31,8 +34,10 @@ impl Lexer {
         self.chars.get(self.posisi + 1).copied()
     }
 
+    /// Maju satu karakter, update baris/kolom/offset.
     fn advance(&mut self) {
         if let Some(c) = self.current_char() {
+            self.offset += c.len_utf8();
             if c == '\n' {
                 self.baris += 1;
                 self.kolom = 1;
@@ -41,6 +46,16 @@ impl Lexer {
             }
             self.posisi += 1;
         }
+    }
+
+    /// Ambil posisi saat ini.
+    fn current_pos(&self) -> Pos {
+        Pos::new(self.baris, self.kolom, self.offset)
+    }
+
+    /// Buat Span dari posisi awal sampai posisi saat ini.
+    fn make_span(&self, start: Pos) -> Span {
+        Span::new(start, self.current_pos())
     }
 
     fn skip_whitespace(&mut self) {
@@ -63,7 +78,7 @@ impl Lexer {
                 None => break,
             };
 
-            let lokasi_awal = Lokasi::new(self.baris, self.kolom);
+            let lokasi_awal = self.current_pos();
 
             let token = match c {
                 '+' => {
@@ -142,7 +157,7 @@ impl Lexer {
                     } else {
                         return Err(RplError::Sintaks {
                             pesan: "Diharapkan '&&' untuk DAN.".to_string(),
-                            lokasi: lokasi_awal,
+                            lokasi: Lokasi::from(lokasi_awal),
                             saran: None,
                         });
                     }
@@ -155,7 +170,7 @@ impl Lexer {
                     } else {
                         return Err(RplError::Sintaks {
                             pesan: "Diharapkan '||' untuk ATAU.".to_string(),
-                            lokasi: lokasi_awal,
+                            lokasi: Lokasi::from(lokasi_awal),
                             saran: None,
                         });
                     }
@@ -206,11 +221,11 @@ impl Lexer {
                         self.brace_count = old_count;
                         tokens.push(SpannedToken {
                             token: Token::KurungTutup,
-                            lokasi: lokasi_awal,
+                            span: self.make_span(lokasi_awal),
                         });
                         tokens.push(SpannedToken {
                             token: Token::Tambah,
-                            lokasi: lokasi_awal,
+                            span: self.make_span(lokasi_awal),
                         });
                         let tks = self.read_template_string(lokasi_awal)?;
                         tokens.extend(tks);
@@ -219,7 +234,7 @@ impl Lexer {
                         Token::KurawalTutup
                     }
                 }
-                '"' => self.read_string()?,
+                '"' => self.read_string(lokasi_awal)?,
                 '`' => {
                     self.advance();
                     let tks = self.read_template_string(lokasi_awal)?;
@@ -227,40 +242,41 @@ impl Lexer {
                     continue;
                 }
                 _ if c.is_alphabetic() || c == '_' => self.read_identifier_or_keyword(),
-                _ if c.is_ascii_digit() => self.read_number()?,
+                _ if c.is_ascii_digit() => self.read_number(lokasi_awal)?,
                 _ => {
                     let err_char = c.to_string();
                     self.advance();
                     return Err(RplError::Sintaks {
                         pesan: format!("Karakter tidak dikenali: '{}'", err_char),
-                        lokasi: Lokasi::new(self.baris, self.kolom - 1),
+                        lokasi: Lokasi::from(self.current_pos()),
                         saran: Some("Mungkin kamu tidak sengaja mengetik karakter ini? Pastikan hanya menggunakan simbol dan teks yang valid.".to_string()),
                     });
                 }
             };
 
+            let span = self.make_span(lokasi_awal);
+
             tokens.push(SpannedToken {
+                span,
                 token,
-                lokasi: lokasi_awal,
             });
         }
 
         tokens.push(SpannedToken {
             token: Token::EOF,
-            lokasi: Lokasi::new(self.baris, self.kolom),
+            span: self.make_span(self.current_pos()),
         });
 
         Ok(tokens)
     }
 
-    fn read_string(&mut self) -> Result<Token, RplError> {
-        let lokasi_awal = Lokasi::new(self.baris, self.kolom);
-        self.advance();
+    fn read_string(&mut self, lokasi_awal: Pos) -> Result<Token, RplError> {
+        self.advance(); // lewati '"'
         let mut string_val = String::new();
 
         while let Some(c) = self.current_char() {
             if c == '\\' {
-                self.advance(); // lewati '\'
+                self.advance();
                 if let Some(escaped) = self.current_char() {
                     match escaped {
                         'n' => string_val.push('\n'),
@@ -286,12 +302,12 @@ impl Lexer {
 
         Err(RplError::Sintaks {
             pesan: "String tidak ditutup (lupa tanda kutip \")".to_string(),
-            lokasi: lokasi_awal,
+            lokasi: Lokasi::from(lokasi_awal),
             saran: Some("Tambahkan tanda kutip (\") di akhir string.".to_string()),
         })
     }
 
-    fn read_template_string(&mut self, lokasi_awal: Lokasi) -> Result<Vec<SpannedToken>, RplError> {
+    fn read_template_string(&mut self, lokasi_awal: Pos) -> Result<Vec<SpannedToken>, RplError> {
         let mut string_val = String::new();
         let mut tokens = Vec::new();
 
@@ -317,7 +333,7 @@ impl Lexer {
                 self.advance();
                 tokens.push(SpannedToken {
                     token: Token::String(string_val),
-                    lokasi: lokasi_awal,
+                    span: self.make_span(lokasi_awal),
                 });
                 return Ok(tokens);
             } else if c == '$' {
@@ -327,15 +343,15 @@ impl Lexer {
 
                     tokens.push(SpannedToken {
                         token: Token::String(string_val),
-                        lokasi: lokasi_awal,
+                        span: self.make_span(lokasi_awal),
                     });
                     tokens.push(SpannedToken {
                         token: Token::Tambah,
-                        lokasi: lokasi_awal,
+                        span: self.make_span(lokasi_awal),
                     });
                     tokens.push(SpannedToken {
                         token: Token::KurungBuka,
-                        lokasi: lokasi_awal,
+                        span: self.make_span(lokasi_awal),
                     });
 
                     self.template_stack.push(self.brace_count);
@@ -352,7 +368,7 @@ impl Lexer {
 
         Err(RplError::Sintaks {
             pesan: "Template literal tidak ditutup (lupa tanda backtick `)".to_string(),
-            lokasi: lokasi_awal,
+            lokasi: Lokasi::from(lokasi_awal),
             saran: Some("Tambahkan tanda backtick (`) di akhir string template.".to_string()),
         })
     }
@@ -372,6 +388,7 @@ impl Lexer {
         let simpan_posisi = self.posisi;
         let simpan_baris = self.baris;
         let simpan_kolom = self.kolom;
+        let simpan_offset = self.offset;
 
         if text == "jika" {
             self.skip_whitespace();
@@ -390,6 +407,7 @@ impl Lexer {
                 self.posisi = simpan_posisi;
                 self.baris = simpan_baris;
                 self.kolom = simpan_kolom;
+                self.offset = simpan_offset;
             }
         } else if text == "lebih" {
             self.skip_whitespace();
@@ -408,6 +426,7 @@ impl Lexer {
                 self.posisi = simpan_posisi;
                 self.baris = simpan_baris;
                 self.kolom = simpan_kolom;
+                self.offset = simpan_offset;
             }
         } else if text == "kurang" {
             self.skip_whitespace();
@@ -426,6 +445,7 @@ impl Lexer {
                 self.posisi = simpan_posisi;
                 self.baris = simpan_baris;
                 self.kolom = simpan_kolom;
+                self.offset = simpan_offset;
             }
         } else if text == "sama" {
             self.skip_whitespace();
@@ -444,6 +464,7 @@ impl Lexer {
                 self.posisi = simpan_posisi;
                 self.baris = simpan_baris;
                 self.kolom = simpan_kolom;
+                self.offset = simpan_offset;
             }
         } else if text == "tidak" {
             self.skip_whitespace();
@@ -474,11 +495,13 @@ impl Lexer {
                     self.posisi = simpan_posisi;
                     self.baris = simpan_baris;
                     self.kolom = simpan_kolom;
+                    self.offset = simpan_offset;
                 }
             } else {
                 self.posisi = simpan_posisi;
                 self.baris = simpan_baris;
                 self.kolom = simpan_kolom;
+                self.offset = simpan_offset;
             }
         }
 
@@ -489,8 +512,7 @@ impl Lexer {
         }
     }
 
-    fn read_number(&mut self) -> Result<Token, RplError> {
-        let lokasi_awal = Lokasi::new(self.baris, self.kolom);
+    fn read_number(&mut self, lokasi_awal: Pos) -> Result<Token, RplError> {
         let mut number_str = String::new();
         let mut is_float = false;
 
@@ -511,7 +533,7 @@ impl Lexer {
             Ok(val) => Ok(Token::Angka(val)),
             Err(_) => Err(RplError::Sintaks {
                 pesan: format!("Format angka tidak valid: {}", number_str),
-                lokasi: lokasi_awal,
+                lokasi: Lokasi::from(lokasi_awal),
                 saran: Some("Pastikan format angka benar (contoh: 123 atau 12.3).".to_string()),
             }),
         }

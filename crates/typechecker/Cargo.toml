@@ -1,0 +1,16 @@
+[package]
+name = "typechecker"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ast = { path = "../ast" }
+errors = { path = "../errors" }
+
+[dev-dependencies]
+lexer = { path = "../lexer" }
+parser = { path = "../parser" }
+
+[lib]
+name = "typechecker"
+path = "src/lib.rs"

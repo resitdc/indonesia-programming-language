@@ -1,5 +1,45 @@
 use thiserror::Error;
 
+/// Posisi dalam source code.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Pos {
+    pub baris: usize,
+    pub kolom: usize,
+    pub offset: usize,
+}
+
+impl Pos {
+    pub fn new(baris: usize, kolom: usize, offset: usize) -> Self {
+        Self {
+            baris,
+            kolom,
+            offset,
+        }
+    }
+}
+
+/// Rentang posisi dalam source code (start inclusive, end exclusive).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Span {
+    pub start: Pos,
+    pub end: Pos,
+}
+
+impl Span {
+    pub fn new(start: Pos, end: Pos) -> Self {
+        Self { start, end }
+    }
+
+    /// Buat span dari posisi tunggal (untuk token yang hanya satu karakter)
+    pub fn titik(start: Pos) -> Self {
+        Self {
+            start,
+            end: start,
+        }
+    }
+}
+
+/// Lokasi untuk backward compatibility. Akan dihapus setelah migrasi selesai.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Lokasi {
     pub baris: usize,
@@ -12,7 +52,25 @@ impl Lokasi {
     }
 }
 
-#[derive(Error, Debug)]
+impl From<Pos> for Lokasi {
+    fn from(p: Pos) -> Self {
+        Lokasi {
+            baris: p.baris,
+            kolom: p.kolom,
+        }
+    }
+}
+
+impl From<Span> for Lokasi {
+    fn from(s: Span) -> Self {
+        Lokasi {
+            baris: s.start.baris,
+            kolom: s.start.kolom,
+        }
+    }
+}
+
+#[derive(Error, Debug, Clone)]
 pub enum RplError {
     #[error("Sintaks tidak valid: {pesan}")]
     Sintaks {
