@@ -17,7 +17,7 @@ fn log_impl(ctx: &mut dyn VmContext, args: Vec<Value>, level: &str, color: &str)
     
     let time_str = Local::now().format("%Y-%m-%d %H:%M:%S.%3f").to_string();
     
-    let func_name = ctx.current_function_name();
+    let func_name = ctx.current_function_info().0;
     let mut location_info = format!("{}:?", func_name);
     
     if let Some(loc) = ctx.current_lokasi() {
@@ -25,6 +25,13 @@ fn log_impl(ctx: &mut dyn VmContext, args: Vec<Value>, level: &str, color: &str)
     }
     
     println!("{}{:<23} | {:<5} | [{}] | {}\x1b[0m", color, time_str, level.to_uppercase(), location_info, combined_msg);
+    
+    super::dev_dashboard::record_log(super::dev_dashboard::LogTelemetry {
+        timestamp: time_str,
+        level: level.to_string(),
+        message: combined_msg,
+        caller: location_info,
+    });
     
     Ok(Value::Kosong)
 }

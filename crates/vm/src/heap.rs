@@ -77,7 +77,7 @@ pub struct DbQueryState {
 
 #[derive(Clone, Default)]
 pub struct WebCache {
-    pub templates: HashMap<String, usize>,
+    pub templates_code: HashMap<String, String>,
     pub static_files: HashMap<String, (String, Vec<u8>)>,
 }
 
@@ -281,15 +281,7 @@ impl Heap {
             self.mark(idx);
         }
         
-        let mut cache_indices = Vec::new();
-        if let Ok(cache) = self.web_cache.lock() {
-            for idx in cache.templates.values() {
-                cache_indices.push(*idx);
-            }
-        }
-        for idx in cache_indices {
-            self.mark(idx);
-        }
+        // Templates code are just strings, no heap indices to mark.
     }
 
     pub fn sweep(&mut self) {

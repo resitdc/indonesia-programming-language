@@ -52,6 +52,7 @@ pub struct Compiler<'a> {
     pub chunk: Chunk,
     pub heap: &'a mut Heap,
     pub base_path: Option<std::path::PathBuf>,
+    pub current_file: Option<String>,
 }
 
 impl<'a> Compiler<'a> {
@@ -60,6 +61,7 @@ impl<'a> Compiler<'a> {
             chunk: Chunk::new(),
             heap,
             base_path: None,
+            current_file: None,
         }
     }
 
@@ -68,6 +70,16 @@ impl<'a> Compiler<'a> {
             chunk: Chunk::new(),
             heap,
             base_path,
+            current_file: None,
+        }
+    }
+    
+    pub fn baru_dengan_file(heap: &'a mut Heap, base_path: Option<std::path::PathBuf>, current_file: Option<String>) -> Self {
+        Self {
+            chunk: Chunk::new(),
+            heap,
+            base_path,
+            current_file,
         }
     }
 
@@ -154,7 +166,7 @@ impl<'a> Compiler<'a> {
                 self.patch_jump(jump_if_false_offset);
             }
             Statement::DeklarasiFungsi { nama, parameter, body, lokasi } => {
-                let mut fn_compiler = Compiler::new(self.heap);
+                let mut fn_compiler = Compiler::baru_dengan_file(self.heap, self.base_path.clone(), self.current_file.clone());
                 let body_len = body.len();
                 for (i, stmt) in body.into_iter().enumerate() {
                     if i == body_len - 1 {
@@ -179,6 +191,7 @@ impl<'a> Compiler<'a> {
                     nama: nama.clone(),
                     parameter,
                     chunk,
+                    file: self.current_file.clone(),
                 };
                 let fungsi_idx = self.heap.alloc(HeapData::Fungsi(fungsi));
                 let const_idx = self.chunk.write_constant(Value::Fungsi(fungsi_idx, 0));
@@ -329,7 +342,7 @@ impl<'a> Compiler<'a> {
                 self.chunk.write_u16(count as u16, lokasi);
             }
             Expression::FungsiAnonim { parameter, body, lokasi } => {
-                let mut fn_compiler = Compiler::new(self.heap);
+                let mut fn_compiler = Compiler::baru_dengan_file(self.heap, self.base_path.clone(), self.current_file.clone());
                 let body_len = body.len();
                 for (i, stmt) in body.into_iter().enumerate() {
                     if i == body_len - 1 {
@@ -354,6 +367,7 @@ impl<'a> Compiler<'a> {
                     nama: "<anonim>".to_string(),
                     parameter,
                     chunk,
+                    file: self.current_file.clone(),
                 };
                 let fungsi_idx = self.heap.alloc(crate::heap::HeapData::Fungsi(fungsi));
                 let const_idx = self.chunk.write_constant(Value::Fungsi(fungsi_idx, 0));
@@ -402,7 +416,7 @@ impl<'a> Compiler<'a> {
                 let program = parser.parse_program().map_err(|e| format!("Error parser di '{}': {:?}", path_str, e))?;
                 
                 let new_base_path = final_path.parent().map(|p| p.to_path_buf());
-                let mut fn_compiler = Compiler::baru_dengan_base_path(self.heap, new_base_path);
+                let mut fn_compiler = Compiler::baru_dengan_file(self.heap, new_base_path, Some(final_path.to_string_lossy().to_string()));
                 
                 for stmt in program.statements {
                     fn_compiler.compile_statement(stmt)?;
@@ -420,6 +434,7 @@ impl<'a> Compiler<'a> {
                     nama: path_str.clone(),
                     parameter: vec![],
                     chunk,
+                    file: Some(final_path.to_string_lossy().to_string()),
                 };
                 let fungsi_idx = self.heap.alloc(crate::heap::HeapData::Fungsi(fungsi));
                 let func_val = Value::Fungsi(fungsi_idx, 0); // Dummy env_id 0 at compile time

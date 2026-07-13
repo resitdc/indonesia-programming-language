@@ -143,18 +143,22 @@ impl VM {
             nama: "main".to_string(),
             parameter: vec![],
             chunk,
+            file: None,
         };
         let fungsi_idx = self.heap.alloc(HeapData::Fungsi(main_fungsi));
+        
+        let stack_offset = self.stack.len();
+        let initial_frames = self.frames.len();
 
         self.frames.push(CallFrame {
             fungsi: fungsi_idx,
             ip: 0,
-            stack_offset: 0,
+            stack_offset,
             env_id: 0,
             is_module: false,
         });
 
-        self.run(0)
+        self.run(initial_frames)
     }
 
     fn run(&mut self, initial_frames: usize) -> Result<(), (String, Option<Lokasi>)> {
@@ -211,9 +215,14 @@ impl VM {
                     };
                     if let Value::String(name_idx) = name_idx_val {
                         let name = self.heap.get_string(name_idx).clone();
-                        let val = self.environments[env_id].get(&name)
-                            .cloned()
-                            .ok_or_else(|| self.err(format!("Variabel '{}' belum dibuat.", name)))?;
+                        let val = if let Some(v) = self.environments[env_id].get(&name) {
+                            Some(v.clone())
+                        } else if env_id != 0 {
+                            self.environments[0].get(&name).cloned()
+                        } else {
+                            None
+                        };
+                        let val = val.ok_or_else(|| self.err(format!("Variabel '{}' belum dibuat.", name)))?;
                         self.stack.push(val);
                     }
                 }
@@ -615,7 +624,19 @@ impl VmContext for VM {
                         let result = self.stack.pop().unwrap_or(Value::Kosong);
                         Ok(result)
                     }
-                    Err((msg, _lokasi)) => Err(msg),
+                    Err((msg, lokasi)) => {
+                        let mut error_msg = msg.clone();
+                        if let Some(loc) = lokasi {
+                            let (fn_name, fn_file) = self.current_function_info();
+                            let file_str = fn_file.map(|f| format!("di file '{}', ", f)).unwrap_or_default();
+                            error_msg = format!("{} ({}fungsi '{}', baris {}, kolom {})", msg, file_str, fn_name, loc.baris, loc.kolom);
+                            
+                            if msg.contains("Hanya fungsi yang dapat dipanggil") || msg.contains("Bukan fungsi") {
+                                error_msg.push_str("\n\nSaran: Anda mencoba memanggil nilai yang bukan fungsi (misalnya Kosong/null). Ini sering terjadi akibat:\n1. Typo pada nama method/variabel (contoh: log.infos seharusnya log.info).\n2. Tidak menggunakan 'kembalikan' di akhir controller sebelum pemanggilan render.");
+                            }
+                        }
+                        Err(error_msg)
+                    }
                 }
             }
             Value::FungsiBawaan(idx) => {
@@ -668,12 +689,12 @@ impl VmContext for VM {
         self.current_lokasi()
     }
     
-    fn current_function_name(&self) -> String {
+    fn current_function_info(&self) -> (String, Option<String>) {
         if let Some(frame) = self.frames.last() {
             if let crate::heap::HeapData::Fungsi(f) = &self.heap.objects[frame.fungsi].data {
-                return f.nama.clone();
+                return (f.nama.clone(), f.file.clone());
             }
         }
-        "utama".to_string()
+        ("utama".to_string(), None)
     }
 }

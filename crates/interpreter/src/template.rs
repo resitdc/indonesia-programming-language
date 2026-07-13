@@ -69,7 +69,7 @@ pub fn preprocess_template(input: &str) -> String {
 
 pub fn preprocess_template_to_function(input: &str) -> String {
     let mut output = String::new();
-    output.push_str("fungsi(data) {\n");
+    output.push_str("kembalikan fungsi(data) {\n");
     output.push_str("  buat _html = \"\"\n");
     
     let mut i = 0;

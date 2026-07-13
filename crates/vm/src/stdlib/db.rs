@@ -112,6 +112,13 @@ pub fn register(vm: &mut VM) {
 
             let mut conn_lock = conn_mutex.lock().unwrap();
             
+            let start = std::time::Instant::now();
+            let provider = match &mut *conn_lock {
+                DatabaseConnection::Sqlite(_) => "sqlite",
+                DatabaseConnection::Mysql(_) => "mysql",
+                DatabaseConnection::Postgres(_) => "postgres",
+            }.to_string();
+
             let affected = match &mut *conn_lock {
                 DatabaseConnection::Sqlite(c) => {
                     c.execute(&sql, rusqlite::params_from_iter(sqlite_params)).map_err(|e| format!("SQLite Error: {}", e))? as f64
@@ -160,6 +167,18 @@ pub fn register(vm: &mut VM) {
                 }
             };
 
+            let duration_ms = start.elapsed().as_secs_f64() * 1000.0;
+            let caller = format!("{}:{}", vm.current_function_info().0, vm.current_lokasi().map(|l| l.baris).unwrap_or(0));
+            super::dev_dashboard::record_db_query(super::dev_dashboard::DbQueryTelemetry {
+                sql: sql.clone(),
+                duration_ms,
+                rows: 0,
+                affected: affected as usize,
+                provider,
+                caller,
+                timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S.%3f").to_string(),
+            });
+
             Ok(Value::Angka(affected))
         }
     };
@@ -200,12 +219,20 @@ pub fn register(vm: &mut VM) {
 
             let mut intermediate_results: Vec<HashMap<String, DbValue>> = Vec::new();
 
+            let start = std::time::Instant::now();
+            let mut provider = "sqlite".to_string();
+
             {
                 let conn_mutex = match &vm.get_heap_mut().db_connection {
                     Some(c) => c.clone(),
                     None => return Err("Koneksi database belum dibuka. Panggil db.hubungkan() terlebih dahulu".to_string()),
                 };
                 let mut conn_lock = conn_mutex.lock().unwrap();
+                provider = match &mut *conn_lock {
+                    DatabaseConnection::Sqlite(_) => "sqlite",
+                    DatabaseConnection::Mysql(_) => "mysql",
+                    DatabaseConnection::Postgres(_) => "postgres",
+                }.to_string();
                 
                 match &mut *conn_lock {
                     DatabaseConnection::Sqlite(c) => {
@@ -249,21 +276,16 @@ pub fn register(vm: &mut VM) {
                         let rows: Vec<mysql::Row> = c.query(&final_sql).map_err(|e| format!("MySQL Error: {}", e))?;
                         for row in rows {
                             let mut dict_vals = HashMap::new();
-                            for (i, col) in row.columns().iter().enumerate() {
-                                let col_name = col.name_str().into_owned();
-                                let db_val = match row.as_ref(i) {
-                                    Some(mysql::Value::NULL) => DbValue::Null,
-                                    Some(mysql::Value::Int(n)) => DbValue::Int(*n),
-                                    Some(mysql::Value::UInt(n)) => DbValue::Int(*n as i64),
-                                    Some(mysql::Value::Float(f)) => DbValue::Float(*f as f64),
-                                    Some(mysql::Value::Double(d)) => DbValue::Float(*d),
-                                    Some(mysql::Value::Bytes(b)) => {
-                                        if let Ok(s) = String::from_utf8(b.clone()) {
-                                            DbValue::Text(s)
-                                        } else {
-                                            DbValue::Null
-                                        }
-                                    },
+                            for col in row.columns().iter() {
+                                let col_name = col.name_str().to_string();
+                                let idx = row.columns().iter().position(|c| c.name_str() == col_name).unwrap();
+                                let db_val = match &row[idx] {
+                                    mysql::Value::NULL => DbValue::Null,
+                                    mysql::Value::Int(i) => DbValue::Int(*i),
+                                    mysql::Value::UInt(u) => DbValue::Int(*u as i64),
+                                    mysql::Value::Float(f) => DbValue::Float(*f as f64),
+                                    mysql::Value::Double(d) => DbValue::Float(*d),
+                                    mysql::Value::Bytes(b) => DbValue::Text(String::from_utf8_lossy(b).to_string()),
                                     _ => DbValue::Null,
                                 };
                                 dict_vals.insert(col_name, db_val);
@@ -313,6 +335,18 @@ pub fn register(vm: &mut VM) {
                     }
                 };
             }
+
+            let duration_ms = start.elapsed().as_secs_f64() * 1000.0;
+            let caller = format!("{}:{}", vm.current_function_info().0, vm.current_lokasi().map(|l| l.baris).unwrap_or(0));
+            super::dev_dashboard::record_db_query(super::dev_dashboard::DbQueryTelemetry {
+                sql: sql.clone(),
+                duration_ms,
+                rows: intermediate_results.len(),
+                affected: 0,
+                provider,
+                caller,
+                timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S.%3f").to_string(),
+            });
 
             let mut final_results = Vec::new();
             for row in intermediate_results {

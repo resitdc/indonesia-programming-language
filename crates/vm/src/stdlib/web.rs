@@ -8,6 +8,7 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use std::fs;
 use std::path::Path;
+use futures_util::{sink::SinkExt, stream::StreamExt};
 
 fn value_to_json(val: &Value, heap: &crate::heap::Heap) -> serde_json::Value {
     match val {
@@ -105,23 +106,20 @@ pub fn register(vm: &mut VM) {
             } else {
                 Value::Kosong
             };
-            let func_val = if let Some(cached_idx) = ctx.get_heap_mut().web_cache.lock().unwrap().templates.get(&file_name).cloned() {
-                Value::Fungsi(cached_idx, 0)
+            let template_code = if let Some(cached_code) = ctx.get_heap_mut().web_cache.lock().unwrap().templates_code.get(&file_name).cloned() {
+                cached_code
             } else {
                 let file_content = match std::fs::read_to_string(&file_name) {
                     Ok(content) => content,
                     Err(e) => return Err(format!("Gagal membaca file template '{}': {}", file_name, e)),
                 };
                 
-                let template_code = interpreter::template::preprocess_template_to_function(&file_content);
-                let compiled_func = ctx.compile_source(&template_code)?;
-                
-                if let Value::Fungsi(idx, _) = compiled_func {
-                    ctx.get_heap_mut().web_cache.lock().unwrap().templates.insert(file_name.clone(), idx);
-                }
-                
-                compiled_func
+                let code = interpreter::template::preprocess_template_to_function(&file_content);
+                ctx.get_heap_mut().web_cache.lock().unwrap().templates_code.insert(file_name.clone(), code.clone());
+                code
             };
+            
+            let func_val = ctx.compile_source(&template_code)?;
             
             match ctx.execute_function(func_val, vec![data_arg]) {
                 Ok(val) => Ok(val),
@@ -237,11 +235,22 @@ pub fn register(vm: &mut VM) {
             };
             
             let addr = format!("0.0.0.0:{}", port);
-            println!("\x1b[32m🚀 Menjalankan Server Web Async Native RPL (Tokio/Axum) di http://{}\x1b[0m", addr);
             
             let kompresi_aktif = ctx.get_heap_mut().web_config.kompresi;
             
-            let mut app = axum::Router::new().fallback(axum::routing::any(
+            let mut app = axum::Router::new()
+                .route("/__dev", axum::routing::get(|| async {
+                    if crate::stdlib::dev_dashboard::is_dev_mode() {
+                        axum::response::Response::builder()
+                            .header("Content-Type", "text/html")
+                            .body(axum::body::Body::from(crate::stdlib::dev_dashboard::DASHBOARD_HTML))
+                            .unwrap()
+                    } else {
+                        axum::response::Response::builder().status(404).body(axum::body::Body::from("Not Found")).unwrap()
+                    }
+                }))
+                .route("/___dev_ws", axum::routing::get(dev_ws_handler))
+                .fallback(axum::routing::any(
                 |axum::extract::State(vm_state): axum::extract::State<std::sync::Arc<std::sync::Mutex<crate::machine::VM>>>,
                  req: axum::extract::Request| async move {
                     
@@ -304,6 +313,7 @@ pub fn register(vm: &mut VM) {
                     
                     // --- Eksekusi Synchronous RPL di Thread Pool (Spawn Blocking) ---
                     let result = tokio::task::spawn_blocking(move || -> Result<axum::response::Response, String> {
+                        let start = std::time::Instant::now();
                         local_vm.heap.web_state.active_cookies = active_cookies;
                         local_vm.heap.web_state.cookies_to_set.clear();
                         local_vm.heap.web_state.active_session_id = active_session_id;
@@ -452,9 +462,9 @@ pub fn register(vm: &mut VM) {
                                     
                                     if !params.is_empty() {
                                         let mut params_map = HashMap::new();
-                                        for (k, v) in params {
-                                            let v_idx = local_vm.heap.alloc(HeapData::String(v));
-                                            params_map.insert(k, Value::String(v_idx));
+                                        for (k, v) in &params {
+                                            let v_idx = local_vm.heap.alloc(HeapData::String(v.clone()));
+                                            params_map.insert(k.clone(), Value::String(v_idx));
                                         }
                                         let params_idx = local_vm.heap.alloc(HeapData::Kamus(params_map));
                                         req_map.insert("params".to_string(), Value::Kamus(params_idx));
@@ -505,10 +515,83 @@ pub fn register(vm: &mut VM) {
                                             builder = builder.header("Set-Cookie", cookie);
                                         }
                                         
+                                        let duration_ms = start.elapsed().as_secs_f64() * 1000.0;
+                                        let memory_used_kb = (local_vm.heap.allocated_count * 1024) / 1000;
+                                        let response_size = val_string.len();
+                                        
+                                        let telemetry = crate::stdlib::dev_dashboard::RequestTelemetry {
+                                            id: uuid::Uuid::new_v4().to_string(),
+                                            timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S.%3f").to_string(),
+                                            method: method.clone(),
+                                            url: url.clone(),
+                                            status: response_status,
+                                            duration_ms,
+                                            memory_used_kb,
+                                            response_size,
+                                            ip: "127.0.0.1".to_string(),
+                                            user_agent: headers_map.get("user-agent").cloned().unwrap_or_default(),
+                                            request_headers: headers_map.clone(),
+                                            response_headers: {
+                                                let mut m = HashMap::new();
+                                                m.insert("Content-Type".to_string(), content_type.to_string());
+                                                m
+                                            },
+                                            raw_body: String::from_utf8_lossy(&raw_body).to_string(),
+                                            query_params: query_params.clone(),
+                                            route_params: params.clone(),
+                                            lifecycle_events: vec![
+                                                crate::stdlib::dev_dashboard::LifecycleEvent {
+                                                    name: "routing".to_string(),
+                                                    duration_ms: duration_ms * 0.1,
+                                                    memory_used_kb: 0,
+                                                },
+                                                crate::stdlib::dev_dashboard::LifecycleEvent {
+                                                    name: "controller".to_string(),
+                                                    duration_ms: duration_ms * 0.6,
+                                                    memory_used_kb,
+                                                },
+                                                crate::stdlib::dev_dashboard::LifecycleEvent {
+                                                    name: "render".to_string(),
+                                                    duration_ms: duration_ms * 0.3,
+                                                    memory_used_kb: 0,
+                                                },
+                                            ],
+                                        };
+                                        crate::stdlib::dev_dashboard::record_request(telemetry);
+                                        
                                         Ok(builder.body(axum::body::Body::from(val_string)).unwrap())
                                     }
                                     Err(e) => {
-                                        let html = format!(r#"<!DOCTYPE html><html><body><h1>Error 500</h1><pre>{}</pre></body></html>"#, e);
+                                        let html = format!(r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>RPL Error: 500</title>
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #222; margin: 0; padding: 2rem; color: #fff; }}
+        .container {{ background-color: #fff; color: #1f2937; padding: 2rem; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); max-width: 800px; margin: 0 auto; }}
+        h1 {{ color: #dc2626; margin-top: 0; display: flex; align-items: center; gap: 10px; font-size: 1.8rem; border-bottom: 2px solid #fee2e2; padding-bottom: 1rem; }}
+        .req-info {{ background-color: #f3f4f6; padding: 0.5rem 1rem; border-radius: 6px; font-family: monospace; font-size: 1rem; color: #374151; display: inline-block; margin-bottom: 1.5rem; border: 1px solid #d1d5db; }}
+        .error-message {{ background-color: #fee2e2; border-left: 4px solid #dc2626; padding: 1rem; font-family: monospace; font-size: 1rem; overflow-x: auto; white-space: pre-wrap; line-height: 1.5; border-radius: 0 4px 4px 0; color: #991b1b;}}
+        .footer {{ margin-top: 2rem; font-size: 0.875rem; color: #6b7280; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 1rem; }}
+        .brand {{ font-weight: bold; color: #ef4444; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Terjadi Kesalahan Internal Server (500)</h1>
+        <p>Aplikasi Anda mengalami masalah saat memproses request berikut:</p>
+        <div class="req-info">{} {}</div>
+        
+        <h3 style="margin-bottom: 0.5rem; color: #1f2937;">Pesan Error:</h3>
+        <div class="error-message">{}</div>
+        
+        <div class="footer">
+            <span class="brand">Rakoda Programming Language (RPL)</span> Web Framework
+        </div>
+    </div>
+</body>
+</html>"#, method, url, e);
                                         Ok(axum::response::Response::builder().status(500).header("Content-Type", "text/html").body(axum::body::Body::from(html)).unwrap())
                                     }
                                 }
@@ -533,8 +616,23 @@ pub fn register(vm: &mut VM) {
             
             let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
             rt.block_on(async {
-                let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-                let _ = axum::serve(listener, app.with_state(vm_arc)).await;
+                match tokio::net::TcpListener::bind(&addr).await {
+                    Ok(listener) => {
+                        println!("\x1b[32m🚀 Menjalankan Server Web di http://{}\x1b[0m", addr);
+                        let _ = axum::serve(listener, app.with_state(vm_arc)).await;
+                    },
+                    Err(e) => {
+                        if e.kind() == std::io::ErrorKind::AddrInUse {
+                            let port = addr.split(':').last().unwrap_or("");
+                            println!("\x1b[33m\n⚠️  PERINGATAN: Port {} sudah digunakan oleh program lain atau server RPL belum ditutup dengan benar!\x1b[0m", port);
+                            println!("\x1b[33mSilakan tutup program yang berjalan di port tersebut (misal: tekan Ctrl+C pada terminal sebelumnya) atau gunakan port lain di server.rpl Anda.\n\x1b[0m");
+                            std::process::exit(1);
+                        } else {
+                            println!("\x1b[31m\n❌ Gagal memulai server: {}\n\x1b[0m", e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
             });
             
             Ok(Value::Kosong)
@@ -585,4 +683,197 @@ fn find_route(heap: &crate::heap::Heap, url: &str, method: &str) -> (Option<Valu
     }
     
     (None, HashMap::new())
+}
+
+async fn dev_ws_handler(
+    ws: axum::extract::WebSocketUpgrade,
+    axum::extract::State(vm_state): axum::extract::State<std::sync::Arc<std::sync::Mutex<crate::machine::VM>>>,
+) -> impl axum::response::IntoResponse {
+    ws.on_upgrade(move |socket| handle_socket(socket, vm_state))
+}
+
+async fn handle_socket(
+    socket: axum::extract::ws::WebSocket,
+    vm_state: std::sync::Arc<std::sync::Mutex<crate::machine::VM>>,
+) {
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<String>();
+    
+    {
+        let mut senders = crate::stdlib::dev_dashboard::get_ws_broadcast().lock().unwrap();
+        senders.push(tx);
+    }
+    
+    let snapshot = {
+        let vm = vm_state.lock().unwrap();
+        
+        let mut routes_list = Vec::new();
+        for (path, method_map) in &vm.heap.web_routes {
+            for (method, val) in method_map {
+                routes_list.push(serde_json::json!({
+                    "method": method,
+                    "path": path,
+                    "handler": val.to_string(&vm.heap),
+                    "file": "server.rpl",
+                }));
+            }
+        }
+        
+        let mut sessions_list = Vec::new();
+        if let Ok(sess_map) = vm.heap.web_state.sessions.lock() {
+            for (sid, (exp, kamus_idx)) in &*sess_map {
+                let dict = vm.heap.get_kamus(*kamus_idx);
+                for (k, v) in dict {
+                    sessions_list.push(serde_json::json!({
+                        "id": sid,
+                        "key": k,
+                        "val": v.to_string(&vm.heap),
+                        "expires": exp.map(|e| format!("{:?}", e.duration_since(std::time::Instant::now()))),
+                    }));
+                }
+            }
+        }
+        
+        let mut cache_list = Vec::new();
+        if let Ok(cache) = vm.heap.web_cache.lock() {
+            for (k, (ct, content)) in &cache.static_files {
+                cache_list.push(serde_json::json!({
+                    "key": k,
+                    "content_type": ct,
+                    "size": content.len(),
+                }));
+            }
+        }
+        
+        let mut config_map = serde_json::Map::new();
+        for (k, v) in std::env::vars() {
+            if k.starts_with("RPL_") || k == "PORT" || k == "ENV" {
+                config_map.insert(k, serde_json::Value::String(v));
+            }
+        }
+        
+        serde_json::json!({
+            "event": "init",
+            "data": {
+                "project_name": std::env::var("RPL_PROJECT_NAME").unwrap_or_else(|_| "Proyek RPL".to_string()),
+                "routes": routes_list,
+                "sessions": sessions_list,
+                "cache": cache_list,
+                "config": config_map,
+            }
+        })
+    };
+    
+    let (mut ws_tx, mut ws_rx) = socket.split();
+    
+    if ws_tx.send(axum::extract::ws::Message::Text(snapshot.to_string())).await.is_err() {
+        return;
+    }
+    
+    let mut send_task = tokio::spawn(async move {
+        while let Some(msg) = rx.recv().await {
+            if ws_tx.send(axum::extract::ws::Message::Text(msg)).await.is_err() {
+                break;
+            }
+        }
+    });
+    
+    let vm_state_metrics = vm_state.clone();
+    let mut metrics_task = tokio::spawn(async move {
+        let start_time = std::time::Instant::now();
+        loop {
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+            let ram_mb = {
+                let vm = vm_state_metrics.lock().unwrap();
+                (vm.heap.allocated_count as f64 * 0.05)
+            };
+            
+            let uptime_secs = start_time.elapsed().as_secs();
+            let h = uptime_secs / 3600;
+            let m = (uptime_secs % 3600) / 60;
+            let s = uptime_secs % 60;
+            let uptime_str = format!("{:02}:{:02}:{:02}", h, m, s);
+            
+            let payload = serde_json::json!({
+                "event": "metrics",
+                "data": {
+                    "uptime": uptime_str,
+                    "ram": format!("{:.1} MB", ram_mb),
+                    "cpu": 0,
+                    "reqs_sec": 0.0,
+                }
+            }).to_string();
+            
+            crate::stdlib::dev_dashboard::broadcast_message(payload);
+        }
+    });
+    
+    while let Some(Ok(msg)) = ws_rx.next().await {
+        if let axum::extract::ws::Message::Text(text) = msg {
+            if let Ok(cmd) = serde_json::from_str::<serde_json::Value>(&text) {
+                if let Some(action) = cmd.get("action").and_then(|v| v.as_str()) {
+                    match action {
+                        "clear_sessions" => {
+                            if let Ok(mut sess_map) = vm_state.lock().unwrap().heap.web_state.sessions.lock() {
+                                sess_map.clear();
+                            }
+                        },
+                        "delete_session" => {
+                            if let Some(data) = cmd.get("data") {
+                                if let (Some(sid), Some(key)) = (data.get("session_id").and_then(|v| v.as_str()), data.get("key").and_then(|v| v.as_str())) {
+                                    if let Ok(mut sess_map) = vm_state.lock().unwrap().heap.web_state.sessions.lock() {
+                                        if let Some((_, kamus_idx)) = sess_map.get(sid) {
+                                            let mut vm = vm_state.lock().unwrap();
+                                            vm.heap.get_kamus_mut(*kamus_idx).remove(key);
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "clear_cache" => {
+                            if let Ok(mut cache) = vm_state.lock().unwrap().heap.web_cache.lock() {
+                                cache.static_files.clear();
+                                cache.templates_code.clear();
+                            }
+                        },
+                        "delete_cache" => {
+                            if let Some(data) = cmd.get("data") {
+                                if let Some(key) = data.get("key").and_then(|v| v.as_str()) {
+                                    if let Ok(mut cache) = vm_state.lock().unwrap().heap.web_cache.lock() {
+                                        cache.static_files.remove(key);
+                                        cache.templates_code.remove(key);
+                                    }
+                                }
+                            }
+                        },
+                        "replay_request" => {
+                            if let Some(data) = cmd.get("data") {
+                                let method = data.get("method").and_then(|v| v.as_str()).unwrap_or("GET").to_string();
+                                let url = data.get("url").and_then(|v| v.as_str()).unwrap_or("/").to_string();
+                                let body = data.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                                
+                                let port = 3001; 
+                                let client_url = format!("http://localhost:{}{}", port, url);
+                                tokio::spawn(async move {
+                                     let method_str = method.as_str();
+                                     if method_str == "POST" {
+                                         let _ = ureq::post(&client_url).send(&body);
+                                     } else if method_str == "PUT" {
+                                         let _ = ureq::put(&client_url).send(&body);
+                                     } else if method_str == "DELETE" {
+                                         let _ = ureq::delete(&client_url).call();
+                                     } else {
+                                         let _ = ureq::get(&client_url).call();
+                                     }
+                                 });
+                            }
+                        },
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+    
+    send_task.abort();
+    metrics_task.abort();
 }

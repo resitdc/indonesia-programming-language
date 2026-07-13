@@ -14,6 +14,7 @@ pub mod string;
 pub mod db;
 pub mod kripto;
 pub mod log;
+pub mod dev_dashboard;
 
 use crate::machine::VM;
 

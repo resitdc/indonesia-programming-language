@@ -40,10 +40,12 @@ enum Commands {
     Hapus {
         paket: String,
     },
+    Kill {
+        port: u16,
+    },
 }
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     let cli = Cli::parse();
 
     if cli.version {
@@ -130,7 +132,12 @@ async fn main() -> Result<()> {
                 match res {
                     Ok(event) => {
                         if event.kind.is_modify() {
-                            if last_run.elapsed() > Duration::from_millis(500) {
+                            let should_restart = event.paths.iter().any(|path| {
+                                let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
+                                ext == "rpl" || ext == "html"
+                            });
+                            
+                            if should_restart && last_run.elapsed() > Duration::from_millis(500) {
                                 last_run = std::time::Instant::now();
                                 
                                 let _ = child.kill();
@@ -159,10 +166,47 @@ async fn main() -> Result<()> {
             pkg::inisialisasi(&cwd)?;
         }
         Some(Commands::Instal { paket }) => {
-            pkg::instal(paket.clone()).await?;
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                if let Err(e) = pkg::instal(paket.clone()).await {
+                    eprintln!("Gagal instal: {}", e);
+                }
+            });
         }
         Some(Commands::Hapus { paket }) => {
             pkg::hapus(paket)?;
+        }
+        Some(Commands::Kill { port }) => {
+            println!("Mencoba mematikan proses di port {}...", port);
+            let check_output = std::process::Command::new("lsof")
+                .arg("-i")
+                .arg(format!(":{}", port))
+                .arg("-t")
+                .output();
+            
+            match check_output {
+                Ok(output) if !output.stdout.is_empty() => {
+                    let pids = String::from_utf8_lossy(&output.stdout);
+                    let mut success = false;
+                    for pid in pids.trim().split('\n') {
+                        let pid = pid.trim();
+                        if !pid.is_empty() {
+                            if let Ok(status) = std::process::Command::new("kill").arg("-9").arg(pid).status() {
+                                if status.success() {
+                                    println!("\x1b[32mBerhasil mematikan proses (PID: {}) di port {}.\x1b[0m", pid, port);
+                                    success = true;
+                                }
+                            }
+                        }
+                    }
+                    if !success {
+                        println!("\x1b[31mGagal mematikan proses di port {}.\x1b[0m", port);
+                    }
+                }
+                _ => {
+                    println!("\x1b[33mTidak ada proses yang berjalan di port {}.\x1b[0m", port);
+                }
+            }
         }
         None => {
             use clap::CommandFactory;

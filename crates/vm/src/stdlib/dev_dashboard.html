@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPL Dev Dashboard & Laboratorium</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Glassmorphism card */
+        .glass-card {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Tooltip animation */
+        .tooltip {
+            visibility: hidden;
+            position: absolute;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+        .has-tooltip:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="h-full overflow-hidden flex flex-col font-sans">
+    
+    <!-- Top Bar -->
+    <header class="glass-card h-16 flex items-center justify-between px-6 border-b border-gray-800 shrink-0 z-30">
+        <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <i data-lucide="terminal" class="text-white h-5 w-5"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-outfit font-bold tracking-tight text-white flex items-center gap-2">
+                    RPL Dev Dashboard <span class="text-xs bg-indigo-500/20 text-indigo-400 font-sans font-medium px-2 py-0.5 rounded-full">Dev Mode</span>
+                </h1>
+                <p class="text-xs text-gray-400">Proyek: <span id="top-project-name" class="font-medium text-gray-300">Toko Online RPL</span></p>
+            </div>
+        </div>
+        
+        <!-- Live Metrics / Stats -->
+        <div class="hidden md:flex items-center gap-6 text-xs text-gray-400">
+            <div class="flex flex-col">
+                <span class="text-gray-500 uppercase tracking-wider text-[10px]">Runtime</span>
+                <span class="text-gray-200 font-medium font-outfit" id="top-runtime-version">RPL v2.1 (Rust)</span>
+            </div>
+            <div class="h-6 w-px bg-gray-800"></div>
+            <div class="flex flex-col">
+                <span class="text-gray-500 uppercase tracking-wider text-[10px]">Uptime</span>
+                <span class="text-gray-200 font-mono font-medium" id="top-uptime">00:00:00</span>
+            </div>
+            <div class="h-6 w-px bg-gray-800"></div>
+            <div class="flex flex-col">
+                <span class="text-gray-500 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                    RAM Peak
+                    <span class="has-tooltip relative cursor-pointer text-indigo-400">
+                        <i data-lucide="help-circle" class="h-3 w-3 inline"></i>
+                        <span class="tooltip bg-gray-900 border border-gray-700 text-gray-200 text-[11px] p-2 rounded-lg -left-20 top-5 w-44 font-sans font-normal leading-normal">
+                            Penggunaan memori tertinggi semenjak server web pertama kali dijalankan.
+                        </span>
+                    </span>
+                </span>
+                <span class="text-gray-200 font-mono font-medium" id="top-ram">0.0 MB</span>
+            </div>
+            <div class="h-6 w-px bg-gray-800"></div>
+            <div class="flex flex-col">
+                <span class="text-gray-500 uppercase tracking-wider text-[10px]">CPU</span>
+                <span class="text-gray-200 font-mono font-medium" id="top-cpu">0%</span>
+            </div>
+            <div class="h-6 w-px bg-gray-800"></div>
+            <div class="flex flex-col">
+                <span class="text-gray-500 uppercase tracking-wider text-[10px]">Req/Sec</span>
+                <span class="text-gray-200 font-mono font-medium" id="top-reqs">0.0 req/s</span>
+            </div>
+        </div>
+
+        <!-- Mode Toggle & Controls -->
+        <div class="flex items-center gap-3">
+            <button onclick="toggleBeginnerMode()" id="beginner-toggle-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-xs font-semibold hover:bg-indigo-500/20 transition-all">
+                <i data-lucide="graduation-cap" class="h-4 w-4"></i>
+                <span id="beginner-toggle-label">Mode Pemula: Aktif</span>
+            </button>
+            <button onclick="toggleTheme()" class="p-2 rounded-lg border border-gray-800 hover:bg-gray-800 text-gray-300 transition-colors">
+                <i data-lucide="sun" id="theme-icon" class="h-4 w-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 glass-card border-r border-gray-800 shrink-0 hidden lg:flex flex-col justify-between py-4 select-none">
+            <div class="space-y-1 px-3">
+                <div class="text-[10px] uppercase font-bold text-gray-500 px-3 mb-2 tracking-wider">Dashboard Utama</div>
+                
+                <button onclick="switchTab('overview')" class="nav-btn active flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg font-medium transition-all hover:bg-gray-800/50 hover:text-white" data-tab="overview">
+                    <i data-lucide="layout-dashboard" class="h-4 w-4 text-indigo-400"></i> Ringkasan (Overview)
+                </button>
+                <button onclick="switchTab('requests')" class="nav-btn flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg font-medium transition-all hover:bg-gray-800/50 hover:text-white" data-tab="requests">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="network" class="h-4 w-4 text-emerald-400"></i> Monitor Request
+                    </span>
+                    <span id="requests-count-badge" class="bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="switchTab('routes')" class="nav-btn flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg font-medium transition-all hover:bg-gray-800/50 hover:text-white" data-tab="routes">
+                    <i data-lucide="route" class="h-4 w-4 text-pink-400"></i> Rute (Routes)
+                </button>
+                <button onclick="switchTab('sessions')" class="nav-btn flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg font-medium transition-all hover:bg-gray-800/50 hover:text-white" data-tab="sessions">
+                    <i data-lucide="users" class="h-4 w-4 text-amber-400"></i> Sesi & Cookies
+                </button>
+                <button onclick="switchTab('database')" class="nav-btn flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg font-medium transition-all hover:bg-gray-800/50 hover:text-white" data-tab="database">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="database" class="h-4 w-4 text-sky-400"></i> Database (Kueri)
+                    </span>
+                    <span id="queries-count-badge" class="bg-sky-500/10 text-sky-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="switchTab('views')" class="nav-btn flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg font-medium transition-all hover:bg-gray-800/50 hover:text-white" data-tab="views">
+                    <i data-lucide="file-code-2" class="h-4 w-4 text-teal-400"></i> Tampilan (Views)
+                </button>
+                <button onclick="switchTab('logs')" class="nav-btn flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg font-medium transition-all hover:bg-gray-800/50 hover:text-white" data-tab="logs">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="file-text" class="h-4 w-4 text-red-400"></i> Log Aktivitas
+                    </span>
+                    <span id="logs-count-badge" class="bg-red-500/10 text-red-400 text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="switchTab('cache')" class="nav-btn flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg font-medium transition-all hover:bg-gray-800/50 hover:text-white" data-tab="cache">
+                    <i data-lucide="archive" class="h-4 w-4 text-cyan-400"></i> Memori Cache
+                </button>
+                <button onclick="switchTab('config')" class="nav-btn flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg font-medium transition-all hover:bg-gray-800/50 hover:text-white" data-tab="config">
+                    <i data-lucide="settings" class="h-4 w-4 text-gray-400"></i> Konfigurasi
+                </button>
+
+                <div class="text-[10px] uppercase font-bold text-gray-500 px-3 pt-4 mb-2 tracking-wider">Laboratorium Edukasi</div>
+                
+                <button onclick="switchTab('learning')" class="nav-btn flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg font-medium transition-all bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600/20 hover:text-white" data-tab="learning">
+                    <i data-lucide="graduation-cap" class="h-4 w-4 text-indigo-400 animate-pulse"></i> RPL Learning Lab
+                </button>
+            </div>
+            
+            <div class="px-6 text-[11px] text-gray-500 space-y-1">
+                <p>RPL Runtime Engine v2.4</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col overflow-y-auto bg-[#0b0f19] p-6 relative">
+            
+            <!-- Beginner Helper Alert Banner -->
+            <div id="beginner-helper-banner" class="hidden glass-card p-4 rounded-xl border-l-4 border-indigo-500 mb-6 flex gap-3 items-start relative overflow-hidden transition-all">
+                <div class="absolute right-0 top-0 text-[100px] font-bold text-indigo-500/5 select-none pointer-events-none -mr-4 -mt-10 font-outfit">INFO</div>
+                <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 shrink-0">
+                    <i data-lucide="info" class="h-5 w-5"></i>
+                </div>
+                <div class="flex-1 pr-8">
+                    <h3 class="font-outfit font-semibold text-white text-sm" id="beginner-banner-title">Selamat Datang di Laboratorium RPL!</h3>
+                    <p class="text-xs text-gray-300 mt-1 leading-relaxed" id="beginner-banner-desc">Di dashboard ini, kamu bisa melihat setiap gerak-gerik website buatanmu secara realtime. Gunakan tombol 'Mode Pemula' untuk menampilkan penjelasan interaktif di setiap sudut halaman.</p>
+                </div>
+                <button onclick="closeBeginnerBanner()" class="text-gray-400 hover:text-white absolute right-3 top-3">
+                    <i data-lucide="x" class="h-4 w-4"></i>
+                </button>
+            </div>
+
+            <!-- Tab: Overview -->
+            <section id="tab-content-overview" class="tab-pane space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Stat Card 1 -->
+                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Status Server</span>
+                                <h3 class="text-2xl font-outfit font-bold mt-1 text-emerald-400 flex items-center gap-2">
+                                    <span class="h-3 w-3 bg-emerald-400 rounded-full animate-ping"></span> AKTIF
+                                </h3>
+                            </div>
+                            <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl"><i data-lucide="server" class="h-5 w-5"></i></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3 font-mono" id="overview-host-port">http://localhost:3001</p>
+                    </div>
+                    <!-- Stat Card 2 -->
+                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Total Request</span>
+                                <h3 class="text-2xl font-outfit font-bold mt-1 text-white" id="overview-total-requests">0</h3>
+                            </div>
+                            <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl"><i data-lucide="activity" class="h-5 w-5"></i></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3">Rata-rata respons: <span id="overview-avg-response" class="text-gray-300 font-medium">0ms</span></p>
+                    </div>
+                    <!-- Stat Card 3 -->
+                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Kueri Database</span>
+                                <h3 class="text-2xl font-outfit font-bold mt-1 text-white" id="overview-total-queries">0</h3>
+                            </div>
+                            <div class="p-3 bg-sky-500/10 text-sky-400 rounded-xl"><i data-lucide="database" class="h-5 w-5"></i></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3">Status: <span id="overview-db-status" class="text-emerald-400 font-semibold">Tersambung (SQLite)</span></p>
+                    </div>
+                    <!-- Stat Card 4 -->
+                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Sesi Aktif</span>
+                                <h3 class="text-2xl font-outfit font-bold mt-1 text-white" id="overview-active-sessions">0</h3>
+                            </div>
+                            <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl"><i data-lucide="users" class="h-5 w-5"></i></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3">Melacak sesi pengguna via Cookie</p>
+                    </div>
+                </div>
+
+                <!-- Server Detail Table & Interactive Visual -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-card p-6 rounded-2xl lg:col-span-2 space-y-4">
+                        <h2 class="text-md font-outfit font-bold text-white flex items-center gap-2">
+                            <i data-lucide="settings-2" class="h-4 w-4 text-indigo-400"></i> Informasi Mesin (Runtime Metadata)
+                        </h2>
+                        
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="p-4 bg-gray-900/40 rounded-xl border border-gray-800 space-y-1">
+                                <span class="text-xs text-gray-500 uppercase">Sistem Operasi (OS)</span>
+                                <p class="font-medium text-white">macOS / Unix (Darwin)</p>
+                            </div>
+                            <div class="p-4 bg-gray-900/40 rounded-xl border border-gray-800 space-y-1">
+                                <span class="text-xs text-gray-500 uppercase">Server Engine</span>
+                                <p class="font-medium text-white">Axum HTTP & Tokio Cores</p>
+                            </div>
+                            <div class="p-4 bg-gray-900/40 rounded-xl border border-gray-800 space-y-1">
+                                <span class="text-xs text-gray-500 uppercase">RPL Compiler</span>
+                                <p class="font-medium text-white">v2.1.0 (Bytecode Generator)</p>
+                            </div>
+                            <div class="p-4 bg-gray-900/40 rounded-xl border border-gray-800 space-y-1">
+                                <span class="text-xs text-gray-500 uppercase">Database Provider</span>
+                                <p class="font-medium text-white">rusqlite 0.40 (Bundled C-Driver)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Small Heatmap Visual & Quick Stats -->
+                    <div class="glass-card p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div>
+                            <h2 class="text-md font-outfit font-bold text-white flex items-center gap-2">
+                                <i data-lucide="hourglass" class="h-4 w-4 text-pink-400"></i> Alur Kerja Web Terakhir
+                            </h2>
+                            <p class="text-xs text-gray-400 mt-1 leading-normal">Berikut adalah beban kerja/durasi rata-rata sub-proses pada website kamu.</p>
+                        </div>
+                        
+                        <!-- Heatmap Bottleneck Visualizer -->
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-gray-300">Kueri Database</span>
+                                    <span class="text-emerald-400 font-mono font-medium" id="heatmap-db-time">0ms</span>
+                                </div>
+                                <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                                    <div id="heatmap-db-bar" class="bg-emerald-400 h-full w-0 transition-all duration-500"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-gray-300">Template & Layouts</span>
+                                    <span class="text-emerald-400 font-mono font-medium" id="heatmap-render-time">0ms</span>
+                                </div>
+                                <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                                    <div id="heatmap-render-bar" class="bg-emerald-400 h-full w-0 transition-all duration-500"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-gray-300">Penanganan Rute</span>
+                                    <span class="text-emerald-400 font-mono font-medium" id="heatmap-route-time">0ms</span>
+                                </div>
+                                <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                                    <div id="heatmap-route-bar" class="bg-emerald-400 h-full w-0 transition-all duration-500"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-indigo-500/10 border border-indigo-500/20 p-3 rounded-xl flex items-center gap-3 text-xs text-indigo-400 leading-normal">
+                            <i data-lucide="sparkles" class="h-4 w-4 shrink-0"></i>
+                            <p>Proses tercepat ada pada perutean berkat cache template engine RPL.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Requests -->
+            <section id="tab-content-requests" class="tab-pane hidden space-y-6">
+                <!-- Filters Bar -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-4 rounded-xl shrink-0">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <select id="req-filter-method" onchange="applyRequestFilters()" class="bg-gray-800 border border-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:border-indigo-500">
+                            <option value="">Semua Metode</option>
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="DELETE">DELETE</option>
+                        </select>
+                        <select id="req-filter-status" onchange="applyRequestFilters()" class="bg-gray-800 border border-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:border-indigo-500">
+                            <option value="">Semua Status</option>
+                            <option value="200">2xx Sukses</option>
+                            <option value="300">3xx Redirect</option>
+                            <option value="400">4xx Client Error</option>
+                            <option value="500">5xx Server Error</option>
+                        </select>
+                        <input type="text" id="req-search" oninput="applyRequestFilters()" placeholder="Cari URL..." class="bg-gray-800 border border-gray-700 text-gray-200 text-xs px-3 py-1.5 rounded-lg w-48 md:w-64 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <button onclick="clearRequestsLog()" class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors border border-gray-700">
+                        <i data-lucide="trash-2" class="h-3.5 w-3.5"></i> Hapus Histori
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                    <!-- Request List Table -->
+                    <div class="glass-card rounded-2xl overflow-hidden lg:col-span-2">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead class="bg-gray-900/60 border-b border-gray-800 text-gray-400 font-medium">
+                                    <tr>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold">Metode</th>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold">URL</th>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold">Status</th>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold">Durasi</th>
+                                        <th class="p-4 text-xs uppercase tracking-wider font-semibold">Waktu</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="request-list-body" class="divide-y divide-gray-800">
+                                    <tr>
+                                        <td colspan="5" class="p-8 text-center text-gray-500">
+                                            <i data-lucide="inbox" class="h-8 w-8 mx-auto mb-2 opacity-50"></i>
+                                            Belum ada request. Jalankan website RPL kamu.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Request Detail Panel -->
+                    <div id="request-detail-panel" class="glass-card p-6 rounded-2xl space-y-6 hidden sticky top-0">
+                        <div class="flex justify-between items-start border-b border-gray-800 pb-4">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span id="detail-method" class="px-2 py-0.5 text-xs font-bold font-mono rounded">GET</span>
+                                    <span id="detail-status" class="px-2 py-0.5 text-xs font-bold rounded bg-emerald-500/10 text-emerald-400">200 OK</span>
+                                </div>
+                                <h3 id="detail-url" class="text-sm font-semibold font-mono text-white mt-2 break-all">/api/produk</h3>
+                            </div>
+                            <button onclick="closeRequestDetail()" class="p-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white">
+                                <i data-lucide="x" class="h-4 w-4"></i>
+                            </button>
+                        </div>
+
+                        <!-- Mini Navigation Tabs for Detail -->
+                        <div class="flex border-b border-gray-800 text-xs">
+                            <button onclick="switchDetailTab('headers')" class="detail-tab-btn border-b-2 border-indigo-500 text-indigo-400 font-semibold px-4 py-2" data-detail-tab="headers">Headers</button>
+                            <button onclick="switchDetailTab('body')" class="detail-tab-btn text-gray-400 px-4 py-2" data-detail-tab="body">Body (Data)</button>
+                            <button onclick="switchDetailTab('replay')" class="detail-tab-btn text-gray-400 px-4 py-2 flex items-center gap-1" data-detail-tab="replay"><i data-lucide="play" class="h-3 w-3"></i> Replay</button>
+                        </div>
+
+                        <!-- Detail Panel: Headers -->
+                        <div id="detail-content-headers" class="detail-tab-pane space-y-4">
+                            <div class="space-y-2">
+                                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Request Headers</span>
+                                <div id="detail-request-headers" class="bg-gray-900/50 border border-gray-800 p-3 rounded-xl font-mono text-xs text-gray-300 space-y-1 overflow-x-auto max-h-48 overflow-y-auto">
+                                    <!-- Dynamic content -->
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Response Headers</span>
+                                <div id="detail-response-headers" class="bg-gray-900/50 border border-gray-800 p-3 rounded-xl font-mono text-xs text-gray-300 space-y-1 overflow-x-auto max-h-48 overflow-y-auto">
+                                    <!-- Dynamic content -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detail Panel: Body -->
+                        <div id="detail-content-body" class="detail-tab-pane hidden space-y-4">
+                            <div class="space-y-2">
+                                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Raw Payload / JSON</span>
+                                <pre id="detail-body-content" class="bg-gray-900/50 border border-gray-800 p-4 rounded-xl font-mono text-xs text-indigo-300 overflow-x-auto max-h-64 overflow-y-auto break-all">
+                                </pre>
+                            </div>
+                        </div>
+
+                        <!-- Detail Panel: Replay -->
+                        <div id="detail-content-replay" class="detail-tab-pane hidden space-y-4">
+                            <p class="text-xs text-gray-400 leading-relaxed">Kirim ulang request ini secara manual ke server RPL untuk melihat responsnya kembali. Kamu juga bisa mengedit body data sebelum dikirim.</p>
+                            <textarea id="replay-body-input" rows="5" class="w-full bg-gray-900 border border-gray-800 p-3 rounded-xl font-mono text-xs text-indigo-300 focus:outline-none focus:border-indigo-500"></textarea>
+                            <button onclick="executeReplayRequest()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20">
+                                <i data-lucide="send" class="h-3.5 w-3.5"></i> Kirim Ulang Sekarang
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Routes -->
+            <section id="tab-content-routes" class="tab-pane hidden space-y-6">
+                <div class="glass-card p-6 rounded-2xl space-y-4">
+                    <h2 class="text-md font-outfit font-bold text-white flex items-center gap-2">
+                        <i data-lucide="route" class="h-4 w-4 text-pink-400"></i> Rute HTTP Terdaftar
+                    </h2>
+                    <p class="text-xs text-gray-400">Daftar semua URL yang dikenali oleh aplikasi RPL kamu saat ini.</p>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-gray-900/60 border-b border-gray-800 text-gray-400 font-medium">
+                                <tr>
+                                    <th class="p-4 text-xs uppercase">Metode</th>
+                                    <th class="p-4 text-xs uppercase">Path / URL</th>
+                                    <th class="p-4 text-xs uppercase">Handler Fungsi</th>
+                                    <th class="p-4 text-xs uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="routes-list-body" class="divide-y divide-gray-800">
+                                <!-- Dynamic routes -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Sessions -->
+            <section id="tab-content-sessions" class="tab-pane hidden space-y-6">
+                <!-- Session Manager Card -->
+                <div class="glass-card p-6 rounded-2xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-md font-outfit font-bold text-white flex items-center gap-2">
+                            <i data-lucide="users" class="h-4 w-4 text-amber-400"></i> Pengelola Sesi Aktif
+                        </h2>
+                        <button onclick="clearAllSessions()" class="px-3 py-1.5 bg-red-600/10 hover:bg-red-600/20 text-red-400 text-xs font-semibold rounded-lg border border-red-500/20 transition-colors">
+                            Kosongkan Sesi
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-400">Semua sesi pengguna yang tersimpan di memori server. Berguna untuk menyimpan status login atau keranjang belanja.</p>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-gray-900/60 border-b border-gray-800 text-gray-400 font-medium">
+                                <tr>
+                                    <th class="p-4 text-xs uppercase">Session ID</th>
+                                    <th class="p-4 text-xs uppercase">Kunci (Key)</th>
+                                    <th class="p-4 text-xs uppercase">Nilai (Value)</th>
+                                    <th class="p-4 text-xs uppercase">Kadaluarsa</th>
+                                    <th class="p-4 text-xs uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="session-list-body" class="divide-y divide-gray-800">
+                                <!-- Dynamic sessions -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Database -->
+            <section id="tab-content-database" class="tab-pane hidden space-y-6">
+                <!-- SQL Query Log -->
+                <div class="glass-card p-6 rounded-2xl space-y-4">
+                    <h2 class="text-md font-outfit font-bold text-white flex items-center gap-2">
+                        <i data-lucide="database" class="h-4 w-4 text-sky-400"></i> Riwayat Kueri Database (SQL Log)
+                    </h2>
+                    <p class="text-xs text-gray-400">Semua kueri SQL yang dieksekusi oleh interpreter RPL tercatat secara lengkap di bawah ini beserta durasi eksekusinya.</p>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-gray-900/60 border-b border-gray-800 text-gray-400 font-medium">
+                                <tr>
+                                    <th class="p-4 text-xs uppercase">Provider</th>
+                                    <th class="p-4 text-xs uppercase">SQL Query</th>
+                                    <th class="p-4 text-xs uppercase">Baris / Baris Terpengaruh</th>
+                                    <th class="p-4 text-xs uppercase">Durasi</th>
+                                    <th class="p-4 text-xs uppercase">Pemanggil (Caller)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="db-queries-list-body" class="divide-y divide-gray-800 font-mono text-xs">
+                                <!-- Dynamic queries -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Views -->
+            <section id="tab-content-views" class="tab-pane hidden space-y-6">
+                <!-- Rendered Templates & Component Tree -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-card p-6 rounded-2xl space-y-4">
+                        <h2 class="text-md font-outfit font-bold text-white flex items-center gap-2">
+                            <i data-lucide="file-code-2" class="h-4 w-4 text-teal-400"></i> Templating HTML (Views)
+                        </h2>
+                        <p class="text-xs text-gray-400">File HTML statis yang dikompilasi oleh engine RPL untuk dikirimkan ke web browser.</p>
+                        
+                        <div class="space-y-3" id="views-list-container">
+                            <!-- Dynamic views list -->
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl space-y-4">
+                        <h2 class="text-md font-outfit font-bold text-white flex items-center gap-2">
+                            <i data-lucide="git-branch" class="h-4 w-4 text-indigo-400"></i> Struktur Komponen (Visual Tree)
+                        </h2>
+                        <p class="text-xs text-gray-400">Peta visual hierarki komponen yang bersarang (*nested components*) di halaman tokomu.</p>
+                        
+                        <div class="bg-gray-900/40 p-6 rounded-xl border border-gray-800 flex flex-col items-center gap-4 text-xs">
+                            <div class="px-4 py-2 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold rounded-lg font-outfit text-sm">index.rpl.html (Layout Utama)</div>
+                            <i data-lucide="arrow-down" class="h-4 w-4 text-gray-500"></i>
+                            <div class="flex gap-4">
+                                <div class="px-4 py-2 bg-pink-500/10 text-pink-400 border border-pink-500/20 font-semibold rounded-lg">header.rpl (Navigasi)</div>
+                                <div class="px-4 py-2 bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold rounded-lg">footer.rpl (Kaki Halaman)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Logs -->
+            <section id="tab-content-logs" class="tab-pane hidden space-y-6">
+                <div class="glass-card p-6 rounded-2xl space-y-4">
+                    <h2 class="text-md font-outfit font-bold text-white flex items-center gap-2">
+                        <i data-lucide="file-text" class="h-4 w-4 text-red-400"></i> Log Sistem RPL
+                    </h2>
+                    <p class="text-xs text-gray-400">Output logging standar dari aplikasi RPL Anda, berguna untuk menelusuri jalannya eksekusi program.</p>
+                    
+                    <div class="bg-gray-950 border border-gray-800 rounded-xl overflow-hidden font-mono text-xs">
+                        <div class="p-3 bg-gray-900/60 border-b border-gray-800 flex justify-between items-center">
+                            <span class="text-gray-400">Terminal Log Output</span>
+                            <button onclick="clearLogs()" class="text-gray-400 hover:text-white"><i data-lucide="refresh-cw" class="h-4 w-4"></i></button>
+                        </div>
+                        <div id="terminal-logs-container" class="p-4 space-y-2 h-[400px] overflow-y-auto text-gray-300">
+                            <!-- Dynamic log output -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Cache -->
+            <section id="tab-content-cache" class="tab-pane hidden space-y-6">
+                <div class="glass-card p-6 rounded-2xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-md font-outfit font-bold text-white flex items-center gap-2">
+                            <i data-lucide="archive" class="h-4 w-4 text-cyan-400"></i> Memori Cache
+                        </h2>
+                        <button onclick="clearAllCache()" class="px-3 py-1.5 bg-red-600/10 hover:bg-red-600/20 text-red-400 text-xs font-semibold rounded-lg border border-red-500/20 transition-colors">
+                            Kosongkan Cache
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-400">Memori cache terpusat yang digunakan RPL untuk menyimpan file statis (CSS, JS, Gambar) di memori RAM agar server merespons super cepat.</p>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-gray-900/60 border-b border-gray-800 text-gray-400 font-medium">
+                                <tr>
+                                    <th class="p-4 text-xs uppercase">Key (File Path)</th>
+                                    <th class="p-4 text-xs uppercase">Content Type</th>
+                                    <th class="p-4 text-xs uppercase">Ukuran (Size)</th>
+                                    <th class="p-4 text-xs uppercase">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cache-list-body" class="divide-y divide-gray-800">
+                                <!-- Dynamic cache -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Config -->
+            <section id="tab-content-config" class="tab-pane hidden space-y-6">
+                <div class="glass-card p-6 rounded-2xl space-y-4">
+                    <h2 class="text-md font-outfit font-bold text-white flex items-center gap-2">
+                        <i data-lucide="settings" class="h-4 w-4 text-gray-400"></i> Konfigurasi Aplikasi (.env & Web Config)
+                    </h2>
+                    <p class="text-xs text-gray-400">Semua variabel lingkungan (.env) yang dibaca oleh VM saat program dijalankan.</p>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-gray-900/60 border-b border-gray-800 text-gray-400 font-medium">
+                                <tr>
+                                    <th class="p-4 text-xs uppercase font-bold text-gray-400">Variabel</th>
+                                    <th class="p-4 text-xs uppercase font-bold text-gray-400">Nilai (Value)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="config-list-body" class="divide-y divide-gray-800 font-mono text-xs text-indigo-300">
+                                <!-- Dynamic config -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Learning Lab -->
+            <section id="tab-content-learning" class="tab-pane hidden space-y-6">
+                <div class="glass-card p-6 rounded-2xl bg-gradient-to-tr from-indigo-950/40 via-indigo-900/20 to-transparent border-indigo-500/20 space-y-4 relative overflow-hidden">
+                    <div class="absolute right-0 bottom-0 text-[200px] font-bold text-indigo-500/5 select-none pointer-events-none -mr-16 -mt-20 font-outfit">LAB</div>
+                    <h2 class="text-xl font-outfit font-bold text-white flex items-center gap-2">
+                        <i data-lucide="graduation-cap" class="h-6 w-6 text-indigo-400"></i> RPL Learning Lab: Cara Kerja Web Server
+                    </h2>
+                    <p class="text-xs text-gray-300 leading-relaxed max-w-2xl">Mari belajar! Diagram di bawah memvisualisasikan perjalanan request browser ketika memanggil website kamu hingga halaman HTML dikirimkan kembali.</p>
+                    
+                    <!-- Interactive Education Flow Diagram -->
+                    <div class="bg-gray-950/60 border border-gray-800 p-6 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 overflow-x-auto mt-6">
+                        <!-- Step 1 -->
+                        <div onclick="showLearningStep('browser')" class="cursor-pointer hover:border-indigo-400 transition-all p-4 bg-gray-900 border border-gray-800 rounded-xl text-center w-40 flex flex-col items-center gap-2 group">
+                            <div class="h-10 w-10 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:bg-indigo-500 group-hover:text-white transition-all"><i data-lucide="chrome" class="h-5 w-5"></i></div>
+                            <span class="text-xs font-semibold text-white">1. Browser</span>
+                            <span class="text-[10px] text-gray-400">Kirim HTTP Request</span>
+                        </div>
+                        <i data-lucide="arrow-right" class="h-5 w-5 text-gray-600 hidden md:block"></i>
+                        <!-- Step 2 -->
+                        <div onclick="showLearningStep('router')" class="cursor-pointer hover:border-indigo-400 transition-all p-4 bg-gray-900 border border-gray-800 rounded-xl text-center w-40 flex flex-col items-center gap-2 group">
+                            <div class="h-10 w-10 rounded-full bg-pink-500/10 text-pink-400 flex items-center justify-center group-hover:bg-pink-500 group-hover:text-white transition-all"><i data-lucide="route" class="h-5 w-5"></i></div>
+                            <span class="text-xs font-semibold text-white">2. Perutean</span>
+                            <span class="text-[10px] text-gray-400">Cari Rute & Path</span>
+                        </div>
+                        <i data-lucide="arrow-right" class="h-5 w-5 text-gray-600 hidden md:block"></i>
+                        <!-- Step 3 -->
+                        <div onclick="showLearningStep('controller')" class="cursor-pointer hover:border-indigo-400 transition-all p-4 bg-gray-900 border border-gray-800 rounded-xl text-center w-40 flex flex-col items-center gap-2 group">
+                            <div class="h-10 w-10 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all"><i data-lucide="cpu" class="h-5 w-5"></i></div>
+                            <span class="text-xs font-semibold text-white">3. Kontroler</span>
+                            <span class="text-[10px] text-gray-400">Eksekusi Logika</span>
+                        </div>
+                        <i data-lucide="arrow-right" class="h-5 w-5 text-gray-600 hidden md:block"></i>
+                        <!-- Step 4 -->
+                        <div onclick="showLearningStep('db')" class="cursor-pointer hover:border-indigo-400 transition-all p-4 bg-gray-900 border border-gray-800 rounded-xl text-center w-40 flex flex-col items-center gap-2 group">
+                            <div class="h-10 w-10 rounded-full bg-sky-500/10 text-sky-400 flex items-center justify-center group-hover:bg-sky-500 group-hover:text-white transition-all"><i data-lucide="database" class="h-5 w-5"></i></div>
+                            <span class="text-xs font-semibold text-white">4. Database</span>
+                            <span class="text-[10px] text-gray-400">Ambil & Simpan Data</span>
+                        </div>
+                        <i data-lucide="arrow-right" class="h-5 w-5 text-gray-600 hidden md:block"></i>
+                        <!-- Step 5 -->
+                        <div onclick="showLearningStep('view')" class="cursor-pointer hover:border-indigo-400 transition-all p-4 bg-gray-900 border border-gray-800 rounded-xl text-center w-40 flex flex-col items-center gap-2 group">
+                            <div class="h-10 w-10 rounded-full bg-teal-500/10 text-teal-400 flex items-center justify-center group-hover:bg-teal-500 group-hover:text-white transition-all"><i data-lucide="file-code" class="h-5 w-5"></i></div>
+                            <span class="text-xs font-semibold text-white">5. Tampilan</span>
+                            <span class="text-[10px] text-gray-400">Render HTML Page</span>
+                        </div>
+                    </div>
+
+                    <!-- Step Explanation Box -->
+                    <div id="learning-step-explanation" class="bg-gray-900/40 p-6 border border-gray-800 rounded-xl space-y-3 mt-6">
+                        <h3 id="learning-explain-title" class="font-outfit font-bold text-indigo-400 text-sm">Pilih langkah di atas untuk mulai belajar!</h3>
+                        <p id="learning-explain-desc" class="text-xs text-gray-300 leading-relaxed">Setiap langkah di atas memiliki peran penting dalam pembuatan aplikasi web. Klik salah satunya untuk membaca kegunaannya.</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- JS Scripts & Websocket Controller -->
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('tab-content-' + tabName);
+            if (target) target.classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active', 'bg-gray-800/50', 'text-white'));
+            const activeBtn = document.querySelector(`.nav-btn[data-tab="${tabName}"]`);
+            if (activeBtn) activeBtn.classList.add('active', 'bg-gray-800/50', 'text-white');
+        }
+
+        // Beginner mode toggle
+        let beginnerMode = true;
+        function toggleBeginnerMode() {
+            beginnerMode = !beginnerMode;
+            const btn = document.getElementById('beginner-toggle-btn');
+            const label = document.getElementById('beginner-toggle-label');
+            const banner = document.getElementById('beginner-helper-banner');
+
+            if (beginnerMode) {
+                btn.classList.remove('border-gray-700', 'bg-transparent', 'text-gray-400');
+                btn.classList.add('border-indigo-500/30', 'bg-indigo-500/10', 'text-indigo-400');
+                label.innerText = "Mode Pemula: Aktif";
+                banner.classList.remove('hidden');
+            } else {
+                btn.classList.add('border-gray-700', 'bg-transparent', 'text-gray-400');
+                btn.classList.remove('border-indigo-500/30', 'bg-indigo-500/10', 'text-indigo-400');
+                label.innerText = "Mode Pemula: Nonaktif";
+                banner.classList.add('hidden');
+            }
+        }
+
+        function closeBeginnerBanner() {
+            document.getElementById('beginner-helper-banner').classList.add('hidden');
+        }
+
+        // Theme switching
+        let isDark = true;
+        function toggleTheme() {
+            isDark = !isDark;
+            const icon = document.getElementById('theme-icon');
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                document.body.style.backgroundColor = '#0b0f19';
+                document.body.style.color = '#f3f4f6';
+                icon.setAttribute('data-lucide', 'sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.body.style.backgroundColor = '#f8fafc';
+                document.body.style.color = '#0f172a';
+                icon.setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+        }
+
+        // Request Detail Panels
+        let selectedRequest = null;
+        function showRequestDetail(reqId) {
+            const req = requests.find(r => r.id === reqId);
+            if (!req) return;
+            selectedRequest = req;
+
+            document.getElementById('detail-method').innerText = req.method;
+            // Style color based on method
+            const methodBadge = document.getElementById('detail-method');
+            methodBadge.className = "px-2 py-0.5 text-xs font-bold font-mono rounded";
+            if (req.method === 'GET') methodBadge.classList.add('bg-emerald-500/10', 'text-emerald-400');
+            else if (req.method === 'POST') methodBadge.classList.add('bg-blue-500/10', 'text-blue-400');
+            else if (req.method === 'DELETE') methodBadge.classList.add('bg-red-500/10', 'text-red-400');
+
+            document.getElementById('detail-status').innerText = req.status;
+            document.getElementById('detail-url').innerText = req.url;
+
+            // Render Request/Response Headers
+            let reqHeadersHtml = '';
+            for (let [k, v] of Object.entries(req.request_headers)) {
+                reqHeadersHtml += `<div><span class="text-indigo-400">${k}:</span> ${v}</div>`;
+            }
+            document.getElementById('detail-request-headers').innerHTML = reqHeadersHtml || '<span class="text-gray-500">None</span>';
+
+            let resHeadersHtml = '';
+            for (let [k, v] of Object.entries(req.response_headers)) {
+                resHeadersHtml += `<div><span class="text-indigo-400">${k}:</span> ${v}</div>`;
+            }
+            document.getElementById('detail-response-headers').innerHTML = resHeadersHtml || '<span class="text-gray-500">None</span>';
+
+            // Body content
+            document.getElementById('detail-body-content').innerText = req.raw_body || '(Body Kosong)';
+            document.getElementById('replay-body-input').value = req.raw_body || '';
+
+            document.getElementById('request-detail-panel').classList.remove('hidden');
+        }
+
+        function closeRequestDetail() {
+            document.getElementById('request-detail-panel').classList.add('hidden');
+        }
+
+        function switchDetailTab(detailTabName) {
+            document.querySelectorAll('.detail-tab-pane').forEach(el => el.classList.add('hidden'));
+            document.getElementById('detail-content-' + detailTabName).classList.remove('hidden');
+
+            document.querySelectorAll('.detail-tab-btn').forEach(el => el.className = "detail-tab-btn text-gray-400 px-4 py-2");
+            event.target.className = "detail-tab-btn border-b-2 border-indigo-500 text-indigo-400 font-semibold px-4 py-2";
+        }
+
+        // Learning content explanation
+        const learningData = {
+            browser: {
+                title: "1. Web Browser (Klien)",
+                desc: "Browser (seperti Chrome, Safari, atau Firefox) mengirimkan permintaan HTTP (HTTP Request) yang memuat alamat URL, metode (GET, POST), header, dan data input lainnya."
+            },
+            router: {
+                title: "2. Sistem Perutean (Routing)",
+                desc: "RPL menerima request dan mencari apakah rute path tersebut terdaftar (misal: `/api/produk`). Router mencocokkan path dan mengarahkan eksekusi ke Controller terkait."
+            },
+            controller: {
+                title: "3. Kontroler (Business Logic)",
+                desc: "Kontroler adalah fungsi RPL yang memproses instruksi. Mengumpulkan data input dari request, mengautentikasi pengguna, memanggil database, dan menyiapkan data keluaran."
+            },
+            db: {
+                title: "4. Database Query",
+                desc: "Database menyimpan data secara persisten (permanen). Kontroler mengirim query SQL (seperti SELECT atau INSERT) ke database driver untuk mengambil produk atau menyimpan pesanan."
+            },
+            view: {
+                title: "5. Render Tampilan (Views)",
+                desc: "Fungsi `web.template(...)` memadukan template HTML dengan data dinamis hasil proses kontroler, membentuk file HTML utuh yang langsung dipahami browser untuk ditampilkan."
+            }
+        };
+
+        function showLearningStep(stepKey) {
+            const data = learningData[stepKey];
+            if (!data) return;
+
+            document.getElementById('learning-explain-title').innerText = data.title;
+            document.getElementById('learning-explain-desc').innerText = data.desc;
+        }
+
+        // Global lists
+        let requests = [];
+        let dbQueries = [];
+        let logs = [];
+        let routes = [];
+        let sessions = [];
+        let cacheItems = [];
+
+        // WebSocket Connection
+        let ws;
+        function connectWebSocket() {
+            const loc = window.location;
+            const wsUri = (loc.protocol === "https:" ? "wss:" : "ws:") + "//" + loc.host + "/___dev_ws";
+            
+            ws = new WebSocket(wsUri);
+            ws.onopen = () => {
+                console.log("WebSocket Dev Dashboard connected.");
+            };
+
+            ws.onmessage = (event) => {
+                const packet = JSON.parse(event.data);
+                
+                if (packet.event === "init") {
+                    // Load initial snapshot
+                    routes = packet.data.routes;
+                    sessions = packet.data.sessions;
+                    cacheItems = packet.data.cache;
+                    document.getElementById('top-project-name').innerText = packet.data.project_name || "Aplikasi RPL";
+                    
+                    renderRoutes();
+                    renderSessions();
+                    renderCache();
+                    renderConfig(packet.data.config);
+                    renderOverview();
+                } else if (packet.event === "new_request") {
+                    requests.unshift(packet.data);
+                    renderRequests();
+                    updateOverviewStats();
+                } else if (packet.event === "new_query") {
+                    dbQueries.unshift(packet.data);
+                    renderDbQueries();
+                    updateOverviewStats();
+                } else if (packet.event === "new_log") {
+                    logs.push(packet.data);
+                    renderLogs();
+                } else if (packet.event === "metrics") {
+                    // Update CPU, RAM, uptime
+                    document.getElementById('top-uptime').innerText = packet.data.uptime;
+                    document.getElementById('top-ram').innerText = packet.data.ram;
+                    document.getElementById('top-cpu').innerText = packet.data.cpu + "%";
+                    document.getElementById('top-reqs').innerText = packet.data.reqs_sec.toFixed(1) + " req/s";
+                }
+            };
+
+            ws.onclose = () => {
+                console.log("WebSocket disconnected. Reconnecting in 2 seconds...");
+                setTimeout(connectWebSocket, 2000);
+            };
+        }
+
+        // UI Renderers
+        function renderRequests() {
+            const body = document.getElementById('request-list-body');
+            document.getElementById('requests-count-badge').innerText = requests.length;
+            
+            if (requests.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-500">Belum ada request.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = requests.map(r => {
+                let statusColor = "text-emerald-400 bg-emerald-500/10";
+                if (r.status >= 400) statusColor = "text-red-400 bg-red-500/10";
+                else if (r.status >= 300) statusColor = "text-amber-400 bg-amber-500/10";
+
+                let methodColor = "text-emerald-400";
+                if (r.method === "POST") methodColor = "text-blue-400";
+                else if (r.method === "DELETE") methodColor = "text-red-400";
+
+                return `
+                    <tr onclick="showRequestDetail('${r.id}')" class="hover:bg-gray-800/40 cursor-pointer transition-colors border-b border-gray-800">
+                        <td class="p-4 font-bold font-mono ${methodColor} text-xs">${r.method}</td>
+                        <td class="p-4 font-mono text-xs text-white max-w-xs truncate">${r.url}</td>
+                        <td class="p-4"><span class="px-2 py-0.5 rounded text-xs font-semibold ${statusColor}">${r.status}</span></td>
+                        <td class="p-4 text-xs font-mono text-gray-300">${r.duration_ms.toFixed(1)}ms</td>
+                        <td class="p-4 text-xs text-gray-400">${r.timestamp.split(" ")[1]}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderRoutes() {
+            const body = document.getElementById('routes-list-body');
+            if (routes.length === 0) {
+                body.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">Tidak ada rute yang terdaftar.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = routes.map(r => `
+                <tr class="hover:bg-gray-800/20 border-b border-gray-800 text-xs">
+                    <td class="p-4 font-mono font-bold text-indigo-400">${r.method}</td>
+                    <td class="p-4 font-mono text-white">${r.path}</td>
+                    <td class="p-4 text-gray-300 font-mono">${r.handler}</td>
+                    <td class="p-4">
+                        <a href="rpl://open?file=${r.file}" class="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
+                            <i data-lucide="external-link" class="h-3 w-3"></i> Buka Kode
+                        </a>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderSessions() {
+            const body = document.getElementById('session-list-body');
+            if (sessions.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">Sesi kosong.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = sessions.map(s => `
+                <tr class="hover:bg-gray-800/20 border-b border-gray-800 text-xs">
+                    <td class="p-4 font-mono text-gray-400 text-[10px] truncate max-w-[100px]">${s.id}</td>
+                    <td class="p-4 font-semibold text-white">${s.key}</td>
+                    <td class="p-4 font-mono text-amber-300">${JSON.stringify(s.val)}</td>
+                    <td class="p-4 text-gray-400">${s.expires || "Infinity (Browser session)"}</td>
+                    <td class="p-4">
+                        <button onclick="deleteSession('${s.id}', '${s.key}')" class="text-red-400 hover:text-red-300 text-xs font-semibold">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderDbQueries() {
+            const body = document.getElementById('db-queries-list-body');
+            document.getElementById('queries-count-badge').innerText = dbQueries.length;
+
+            if (dbQueries.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">Belum ada aktivitas kueri database.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = dbQueries.map(q => `
+                <tr class="hover:bg-gray-800/20 border-b border-gray-800">
+                    <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/10 text-sky-400 uppercase">${q.provider}</span></td>
+                    <td class="p-4 text-white max-w-sm truncate break-all">${q.sql}</td>
+                    <td class="p-4 text-center text-gray-300">${q.rows || q.affected}</td>
+                    <td class="p-4 text-emerald-400 font-bold">${q.duration_ms.toFixed(2)}ms</td>
+                    <td class="p-4 text-gray-400 text-[10px]">${q.caller}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCache() {
+            const body = document.getElementById('cache-list-body');
+            if (cacheItems.length === 0) {
+                body.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500 font-sans text-xs">Cache kosong.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = cacheItems.map(c => `
+                <tr class="hover:bg-gray-800/20 border-b border-gray-800 text-xs">
+                    <td class="p-4 font-mono text-white">${c.key}</td>
+                    <td class="p-4 font-semibold text-gray-300">${c.content_type}</td>
+                    <td class="p-4 text-gray-400 font-mono">${(c.size / 1024).toFixed(1)} KB</td>
+                    <td class="p-4">
+                        <button onclick="deleteCache('${c.key}')" class="text-red-400 hover:text-red-300 font-semibold">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('terminal-logs-container');
+            document.getElementById('logs-count-badge').innerText = logs.length;
+            
+            container.innerHTML = logs.map(l => {
+                let colorClass = "text-cyan-400";
+                if (l.level === "warn") colorClass = "text-yellow-400";
+                else if (l.level === "error") colorClass = "text-red-400";
+                else if (l.level === "debug") colorClass = "text-purple-400";
+
+                return `
+                    <div class="border-b border-gray-900 pb-1.5 flex justify-between items-start gap-4">
+                        <div class="flex items-start gap-2">
+                            <span class="text-gray-500">[${l.timestamp.split(" ")[1]}]</span>
+                            <span class="${colorClass} font-bold">[${l.level.toUpperCase()}]</span>
+                            <span class="text-gray-200">${l.message}</span>
+                        </div>
+                        <span class="text-[10px] text-gray-500 shrink-0 font-mono">${l.caller}</span>
+                    </div>
+                `;
+            }).join('');
+            
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function renderConfig(config) {
+            const body = document.getElementById('config-list-body');
+            let html = '';
+            for (let [k, v] of Object.entries(config)) {
+                html += `
+                    <tr class="hover:bg-gray-800/10 border-b border-gray-800">
+                        <td class="p-4 font-bold text-gray-300">${k}</td>
+                        <td class="p-4 text-indigo-400">${v}</td>
+                    </tr>
+                `;
+            }
+            body.innerHTML = html || '<tr><td colspan="2" class="p-4 text-center text-gray-500">Tidak ada konfigurasi.</td></tr>';
+        }
+
+        function renderOverview() {
+            updateOverviewStats();
+        }
+
+        function updateOverviewStats() {
+            document.getElementById('overview-total-requests').innerText = requests.length;
+            document.getElementById('overview-total-queries').innerText = dbQueries.length;
+            document.getElementById('overview-active-sessions').innerText = sessions.length;
+
+            // Calculate average response time
+            if (requests.length > 0) {
+                let sum = requests.reduce((acc, r) => acc + r.duration_ms, 0);
+                let avg = sum / requests.length;
+                document.getElementById('overview-avg-response').innerText = avg.toFixed(1) + "ms";
+            }
+
+            // Update bottleneck heatmap representation
+            let avgDb = 0;
+            if (dbQueries.length > 0) {
+                avgDb = dbQueries.reduce((acc, q) => acc + q.duration_ms, 0) / dbQueries.length;
+            }
+            let avgRender = requests.length > 0 ? (requests.reduce((acc, r) => acc + r.duration_ms, 0) / requests.length) * 0.4 : 0;
+            let avgRoute = requests.length > 0 ? (requests.reduce((acc, r) => acc + r.duration_ms, 0) / requests.length) * 0.1 : 0;
+
+            document.getElementById('heatmap-db-time').innerText = avgDb.toFixed(1) + "ms";
+            document.getElementById('heatmap-render-time').innerText = avgRender.toFixed(1) + "ms";
+            document.getElementById('heatmap-route-time').innerText = avgRoute.toFixed(1) + "ms";
+
+            const maxTime = Math.max(avgDb, avgRender, avgRoute, 1.0);
+            
+            // Set heatmap bars & colors
+            setHeatmapBar('heatmap-db-bar', (avgDb / maxTime) * 100);
+            setHeatmapBar('heatmap-render-bar', (avgRender / maxTime) * 100);
+            setHeatmapBar('heatmap-route-bar', (avgRoute / maxTime) * 100);
+        }
+
+        function setHeatmapBar(elementId, percentage) {
+            const bar = document.getElementById(elementId);
+            bar.style.width = percentage + "%";
+            // Color grading (Green -> Yellow -> Red)
+            bar.className = "h-full w-0 transition-all duration-500";
+            if (percentage > 70) bar.classList.add('bg-red-500');
+            else if (percentage > 35) bar.classList.add('bg-amber-400');
+            else bar.classList.add('bg-emerald-400');
+        }
+
+        // Live Actions via WS senders
+        function deleteSession(sid, key) {
+            ws.send(JSON.stringify({
+                action: "delete_session",
+                data: { session_id: sid, key: key }
+            }));
+            sessions = sessions.filter(s => !(s.id === sid && s.key === key));
+            renderSessions();
+        }
+
+        function clearAllSessions() {
+            ws.send(JSON.stringify({ action: "clear_sessions" }));
+            sessions = [];
+            renderSessions();
+        }
+
+        function deleteCache(key) {
+            ws.send(JSON.stringify({
+                action: "delete_cache",
+                data: { key: key }
+            }));
+            cacheItems = cacheItems.filter(c => c.key !== key);
+            renderCache();
+        }
+
+        function clearAllCache() {
+            ws.send(JSON.stringify({ action: "clear_cache" }));
+            cacheItems = [];
+            renderCache();
+        }
+
+        function executeReplayRequest() {
+            const body = document.getElementById('replay-body-input').value;
+            if (!selectedRequest) return;
+
+            ws.send(JSON.stringify({
+                action: "replay_request",
+                data: {
+                    method: selectedRequest.method,
+                    url: selectedRequest.url,
+                    body: body,
+                    headers: selectedRequest.request_headers
+                }
+            }));
+            alert("Replay request terkirim ke server!");
+        }
+
+        function clearRequestsLog() {
+            requests = [];
+            renderRequests();
+            updateOverviewStats();
+        }
+
+        function clearLogs() {
+            logs = [];
+            renderLogs();
+        }
+
+        // Init scripts
+        window.onload = () => {
+            connectWebSocket();
+            lucide.createIcons();
+            // Start uptime counter
+            let start = Date.now();
+            setInterval(() => {
+                let diff = Date.now() - start;
+                let h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+                let m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+                let s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+                document.getElementById('top-uptime').innerText = `${h}:${m}:${s}`;
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
