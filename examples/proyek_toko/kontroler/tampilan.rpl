@@ -2,5 +2,6 @@ buat beranda = fungsi(req)
     buat data = {
         "judul": "Toko RPL"
     }
-    kembalikan web.template("tampilan/index.rpl.html", data)
+    log.info("berhasil menampilkan beranda")
+    web.render("tampilan/index.rpl.html", data)
 selesai

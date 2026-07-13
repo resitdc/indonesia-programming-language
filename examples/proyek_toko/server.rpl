@@ -1,12 +1,10 @@
 tampilkan("Menghubungkan ke database...")
 db.hubungkan("sqlite://toko.db")
 
-// Impor router terpusat
 buat rute = pakai "rute.rpl"
 
-// Daftarkan semua rute
 rute.daftarkan()
 
-buat port = 3001
+buat port = 3012
 tampilkan(`Server Toko API berjalan di http://localhost:${port}`)
 web.jalankan(port)
