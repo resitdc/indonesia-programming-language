@@ -320,10 +320,7 @@ pub fn register(vm: &mut VM) {
                 |axum::extract::State(vm_state): axum::extract::State<std::sync::Arc<std::sync::Mutex<crate::machine::VM>>>,
                  req: axum::extract::Request| async move {
 
-                    let mut local_vm = {
-                        let vm = vm_state.lock().unwrap();
-                        vm.clone_vm()
-                    };
+                    // VM akan di-lock di dalam spawn_blocking untuk thread safety
 
                     let method = req.method().as_str().to_string();
                     let uri = req.uri().clone();
@@ -379,6 +376,7 @@ pub fn register(vm: &mut VM) {
                     // --- Eksekusi Synchronous RPL di Thread Pool (Spawn Blocking) ---
                     let result = tokio::task::spawn_blocking(move || -> Result<axum::response::Response, String> {
                         let start = std::time::Instant::now();
+                        let mut local_vm = vm_state.lock().unwrap();
                         local_vm.heap.web_state.active_cookies = active_cookies;
                         local_vm.heap.web_state.cookies_to_set.clear();
                         local_vm.heap.web_state.active_session_id = active_session_id;
@@ -574,7 +572,8 @@ pub fn register(vm: &mut VM) {
                                             .status(response_status)
                                             .header("Content-Type", content_type);
 
-                                        for cookie in local_vm.heap.web_state.cookies_to_set {
+                                        let cookies_to_set = local_vm.heap.web_state.cookies_to_set.clone();
+                                        for cookie in cookies_to_set {
                                             builder = builder.header("Set-Cookie", cookie);
                                         }
 

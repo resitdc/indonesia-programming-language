@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
+mod commands;
 mod pkg;
 
 #[derive(Parser)]
@@ -58,246 +59,34 @@ fn main() -> Result<()> {
 
     match &cli.command {
         Some(Commands::Run { file, watch }) => {
-            if !*watch {
-                if let Err(e) = runtime::run_file(file) {
-                    eprintln!("{}", e);
-                    std::process::exit(1);
-                }
-            } else {
-                use notify::{RecursiveMode, Watcher};
-                use std::sync::mpsc::channel;
-                use std::time::Duration;
-
-                print!("{}[2J{}[1;1H", 27 as char, 27 as char); // Clear screen
-                println!(
-                    "\x1b[32m⏳ Memulai watch mode untuk {}...\x1b[0m",
-                    file.display()
-                );
-                if let Err(e) = runtime::run_file(file) {
-                    eprintln!("{}", e);
-                }
-                println!("\n\x1b[32m👀 Menunggu perubahan file...\x1b[0m");
-
-                let (tx, rx) = channel();
-                let mut watcher = notify::recommended_watcher(tx)?;
-                watcher.watch(file, RecursiveMode::NonRecursive)?;
-
-                let mut last_run = std::time::Instant::now();
-
-                for res in rx {
-                    match res {
-                        Ok(event) => {
-                            if event.kind.is_modify()
-                                && last_run.elapsed() > Duration::from_millis(500)
-                            {
-                                last_run = std::time::Instant::now();
-                                print!("{}[2J{}[1;1H", 27 as char, 27 as char); // Clear screen
-                                println!("\x1b[32m🔄 File berubah, menjalankan ulang...\x1b[0m\n");
-                                if let Err(e) = runtime::run_file(file) {
-                                    eprintln!("{}", e);
-                                }
-                                println!("\n\x1b[32m👀 Menunggu perubahan file...\x1b[0m");
-                            }
-                        }
-                        Err(e) => eprintln!("Watch error: {:?}", e),
-                    }
-                }
-            }
+            commands::handle_run(file, *watch)?;
         }
         Some(Commands::Repl) => {
-            println!("Memulai sesi REPL RPL. Ketik 'berhenti' untuk keluar.");
+            commands::handle_repl()?;
         }
         Some(Commands::Serve { file }) => {
-            use notify::{RecursiveMode, Watcher};
-            use std::sync::mpsc::channel;
-            use std::time::Duration;
-
-            print!("{}[2J{}[1;1H", 27 as char, 27 as char);
-            println!(
-                "\x1b[32m🚀 Memulai Server Mode (Live Reload) untuk {}...\x1b[0m",
-                file.display()
-            );
-
-            let mut child = std::process::Command::new(std::env::current_exe().unwrap())
-                .arg("run")
-                .arg(file)
-                .spawn()?;
-
-            let (tx, rx) = channel();
-            let mut watcher = notify::recommended_watcher(tx)?;
-            watcher.watch(&std::env::current_dir()?, RecursiveMode::Recursive)?;
-
-            let mut last_run = std::time::Instant::now();
-
-            for res in rx {
-                match res {
-                    Ok(event) => {
-                        if event.kind.is_modify() {
-                            let should_restart = event.paths.iter().any(|path| {
-                                let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
-                                ext == "rpl" || ext == "html"
-                            });
-
-                            if should_restart && last_run.elapsed() > Duration::from_millis(500) {
-                                last_run = std::time::Instant::now();
-
-                                let _ = child.kill();
-                                let _ = child.wait();
-
-                                print!("{}[2J{}[1;1H", 27 as char, 27 as char);
-                                println!(
-                                    "\x1b[32m🔄 Perubahan terdeteksi! Merestart server...\x1b[0m\n"
-                                );
-
-                                child =
-                                    std::process::Command::new(std::env::current_exe().unwrap())
-                                        .arg("run")
-                                        .arg(file)
-                                        .spawn()?;
-                            }
-                        }
-                    }
-                    Err(e) => eprintln!("Watch error: {:?}", e),
-                }
-            }
+            commands::handle_serve(file)?;
         }
         Some(Commands::Fmt { file }) => {
-            println!("Memformat file: {}", file.display());
-            println!("Format selesai (fitur masih dalam pengembangan).");
+            commands::handle_fmt(file)?;
         }
         Some(Commands::Init) => {
-            let cwd = std::env::current_dir()?;
-            pkg::inisialisasi(&cwd)?;
+            commands::handle_init()?;
         }
         Some(Commands::Instal { paket }) => {
-            let rt = tokio::runtime::Runtime::new().unwrap();
+            let rt = tokio::runtime::Runtime::new()?;
             rt.block_on(async {
-                if let Err(e) = pkg::instal(paket.clone()).await {
-                    eprintln!("Gagal instal: {}", e);
-                }
-            });
+                commands::handle_instal(paket.clone()).await
+            })?;
         }
         Some(Commands::Hapus { paket }) => {
-            pkg::hapus(paket)?;
+            commands::handle_hapus(paket)?;
         }
         Some(Commands::Kill { port }) => {
-            println!("Mencoba mematikan proses di port {}...", port);
-            let check_output = std::process::Command::new("lsof")
-                .arg("-i")
-                .arg(format!(":{}", port))
-                .arg("-t")
-                .output();
-
-            match check_output {
-                Ok(output) if !output.stdout.is_empty() => {
-                    let pids = String::from_utf8_lossy(&output.stdout);
-                    let mut success = false;
-                    for pid in pids.trim().split('\n') {
-                        let pid = pid.trim();
-                        if !pid.is_empty()
-                            && let Ok(status) = std::process::Command::new("kill")
-                                .arg("-9")
-                                .arg(pid)
-                                .status()
-                            && status.success()
-                        {
-                            println!(
-                                "\x1b[32mBerhasil mematikan proses (PID: {}) di port {}.\x1b[0m",
-                                pid, port
-                            );
-                            success = true;
-                        }
-                    }
-                    if !success {
-                        println!("\x1b[31mGagal mematikan proses di port {}.\x1b[0m", port);
-                    }
-                }
-                _ => {
-                    println!(
-                        "\x1b[33mTidak ada proses yang berjalan di port {}.\x1b[0m",
-                        port
-                    );
-                }
-            }
+            commands::handle_kill(*port)?;
         }
         Some(Commands::Cek { file }) => {
-            let kode_sumber = std::fs::read_to_string(file)
-                .map_err(|_| anyhow::anyhow!("Gagal membaca file: {}", file.display()))?;
-
-            let mut lexer = lexer::Lexer::new(&kode_sumber);
-            let mut errors = Vec::new();
-
-            let tokens = match lexer.tokenize() {
-                Ok(t) => t,
-                Err(e) => {
-                    errors.push(e.tampilkan(&kode_sumber));
-                    if errors.is_empty() {
-                        anyhow::bail!("{}", e.tampilkan(&kode_sumber));
-                    }
-                    Vec::new()
-                }
-            };
-
-            if !tokens.is_empty() {
-                let mut parser = parser::Parser::new(tokens);
-                let program = parser.parse_program();
-
-                if !program.errors.is_empty() {
-                    for e in &program.errors {
-                        errors.push(e.tampilkan(&kode_sumber));
-                    }
-                }
-
-                // Type checking (jika parse sukses tanpa error)
-                if errors.is_empty() {
-                    let mut checker = typechecker::TypeChecker::new();
-                    let result = checker.check(&program);
-
-                    if !result.errors.is_empty() {
-                        for e in &result.errors {
-                            let msg = format!(
-                                "\x1b[1;36m--> \x1b[0m\x1b[1m{}:{}:{}\x1b[0m\n  \x1b[1;33mtype error\x1b[0m: {}",
-                                file.display(),
-                                e.lokasi.baris,
-                                e.lokasi.kolom,
-                                e.pesan
-                            );
-                            let full = if let Some(ref saran) = e.saran {
-                                format!("{}\n  \x1b[1;32m💡 bantuan:\x1b[0m {}", msg, saran)
-                            } else {
-                                msg
-                            };
-                            errors.push(full);
-                        }
-                    }
-                }
-
-                if errors.is_empty() && !program.statements.is_empty() {
-                    println!(
-                        "\x1b[1;32m✓ Aman:\x1b[0m {} tidak memiliki error. ({} deklarasi ditemukan)",
-                        file.display(),
-                        program.statements.len()
-                    );
-                } else {
-                    eprintln!("\x1b[1;31m✗ Ditemukan {} error:\x1b[0m", errors.len());
-                    for (i, e) in errors.iter().enumerate() {
-                        eprintln!("  {}", e);
-                        if i < errors.len() - 1 {
-                            eprintln!();
-                        }
-                    }
-                    std::process::exit(1);
-                }
-            } else if !errors.is_empty() {
-                eprintln!("\x1b[1;31m✗ Ditemukan {} error:\x1b[0m", errors.len());
-                for (i, e) in errors.iter().enumerate() {
-                    eprintln!("  {}", e);
-                    if i < errors.len() - 1 {
-                        eprintln!();
-                    }
-                }
-                std::process::exit(1);
-            }
+            commands::handle_cek(file)?;
         }
         None => {
             use clap::CommandFactory;

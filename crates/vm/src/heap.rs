@@ -1,16 +1,76 @@
 use crate::value::{FungsiBawaanVM, FungsiVM, Value};
 use mysql::Conn as MysqlConnection;
 use postgres::Client as PostgresClient;
-use rusqlite::Connection as SqliteConnection;
+use r2d2::Pool as R2d2Pool;
+use r2d2_sqlite::SqliteConnectionManager;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 pub type SessionMap = Arc<Mutex<HashMap<String, (Option<std::time::Instant>, usize)>>>;
 
-pub enum DatabaseConnection {
-    Sqlite(SqliteConnection),
-    Mysql(MysqlConnection),
-    Postgres(PostgresClient),
+/// Koneksi database aktif (untuk operasi borrow)
+pub enum DatabaseConnection<'a> {
+    Sqlite(&'a mut rusqlite::Connection),
+    Mysql(&'a mut MysqlConnection),
+    Postgres(&'a mut PostgresClient),
+}
+
+/// Pool koneksi database. SQLite menggunakan r2d2 connection pool untuk
+/// concurrent access, MySQL/Postgres masih single-connection via Arc<Mutex<...>>.
+#[derive(Clone)]
+pub enum DbPool {
+    Sqlite(R2d2Pool<SqliteConnectionManager>),
+    Mysql(Arc<Mutex<MysqlConnection>>),
+    Postgres(Arc<Mutex<PostgresClient>>),
+}
+
+impl DbPool {
+    /// Mendapatkan koneksi dari pool (SQLite) atau lock (MySQL/Postgres).
+    /// Closure `f` menerima `DatabaseConnection` dan mengembalikan Result<T, String>.
+    pub fn with_conn<T>(
+        &self,
+        f: impl FnOnce(DatabaseConnection<'_>) -> Result<T, String>,
+    ) -> Result<T, String> {
+        match self {
+            DbPool::Sqlite(pool) => {
+                let mut conn = pool
+                    .get()
+                    .map_err(|e| format!("Gagal mengambil koneksi dari pool: {}", e))?;
+                f(DatabaseConnection::Sqlite(&mut conn))
+            }
+            DbPool::Mysql(conn_mutex) => {
+                let mut guard = conn_mutex
+                    .lock()
+                    .map_err(|e| format!("Gagal lock MySQL: {}", e))?;
+                f(DatabaseConnection::Mysql(&mut guard))
+            }
+            DbPool::Postgres(conn_mutex) => {
+                let mut guard = conn_mutex
+                    .lock()
+                    .map_err(|e| format!("Gagal lock Postgres: {}", e))?;
+                f(DatabaseConnection::Postgres(&mut guard))
+            }
+        }
+    }
+
+    /// Nama provider database
+    pub fn provider_name(&self) -> &'static str {
+        match self {
+            DbPool::Sqlite(_) => "sqlite",
+            DbPool::Mysql(_) => "mysql",
+            DbPool::Postgres(_) => "postgres",
+        }
+    }
+
+    /// Buat pool SQLite (r2d2) dengan path
+    pub fn new_sqlite_pool(path: &str, pool_size: u32) -> Result<Self, String> {
+        let manager = SqliteConnectionManager::file(path);
+        let pool = R2d2Pool::builder()
+            .max_size(pool_size)
+            .build(manager)
+            .map_err(|e| format!("Gagal membuat pool SQLite: {}", e))?;
+        Ok(DbPool::Sqlite(pool))
+    }
 }
 
 #[derive(Clone)]
@@ -39,12 +99,7 @@ pub struct WebConfig {
 
 #[derive(Clone)]
 pub struct WebState {
-    // SessionID -> (Expired, Data)
-    // Value represents Kamus data in memory but wait, Value itself is an index.
-    // So session data needs to be stored somewhere. We can store it as a Kamus inside WebState itself instead of in the VM Heap?
-    // Actually, storing it in the VM Heap is fine, but since we are modifying WebState across requests, we can just store `HashMap<String, usize>` where usize is the Kamus Heap index.
     pub sessions: SessionMap,
-
     pub active_session_id: Option<String>,
     pub active_cookies: HashMap<String, String>,
     pub cookies_to_set: Vec<String>,
@@ -83,7 +138,7 @@ pub struct Heap {
     pub web_config: WebConfig,
     pub web_state: WebState,
     pub web_cache: std::sync::Arc<std::sync::Mutex<WebCache>>,
-    pub db_connection: Option<Arc<Mutex<DatabaseConnection>>>,
+    pub db_pool: Option<DbPool>,
     pub db_query_state: DbQueryState,
     pub db_module_idx: Option<usize>,
 }
@@ -105,7 +160,7 @@ impl Heap {
             web_config: WebConfig::default(),
             web_state: WebState::default(),
             web_cache: std::sync::Arc::new(std::sync::Mutex::new(WebCache::default())),
-            db_connection: None,
+            db_pool: None,
             db_query_state: DbQueryState::default(),
             db_module_idx: None,
         }
@@ -210,7 +265,6 @@ impl Heap {
         }
         self.objects[idx].is_marked = true;
 
-        // Recursively mark children
         let mut worklist = vec![idx];
 
         while let Some(current) = worklist.pop() {
@@ -309,8 +363,6 @@ impl Heap {
         for idx in session_indices {
             self.mark(idx);
         }
-
-        // Templates code are just strings, no heap indices to mark.
     }
 
     pub fn sweep(&mut self) {
@@ -321,7 +373,7 @@ impl Heap {
             if !self.objects[i].is_marked {
                 self.free(i);
             } else {
-                self.objects[i].is_marked = false; // unmark for next GC cycle
+                self.objects[i].is_marked = false;
             }
         }
     }
