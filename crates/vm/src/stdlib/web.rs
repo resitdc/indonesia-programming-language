@@ -509,15 +509,19 @@ pub fn register(vm: &mut VM) {
                                         }
                                         let body_str = local_vm.heap.alloc(HeapData::String(String::new()));
                                         req_map.insert("tubuh".to_string(), Value::String(body_str));
+                                        req_map.insert("tubuh_mentah".to_string(), Value::String(body_str));
                                     } else {
                                         let body_string = String::from_utf8_lossy(&raw_body).to_string();
                                         let body_str = local_vm.heap.alloc(HeapData::String(body_string.clone()));
-                                        req_map.insert("tubuh".to_string(), Value::String(body_str));
+                                        req_map.insert("tubuh_mentah".to_string(), Value::String(body_str));
 
                                         if is_json && !body_string.is_empty()
                                             && let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_string) {
                                                 let rpl_val = crate::stdlib::json::convert_to_value(&mut local_vm, &json_val);
+                                                req_map.insert("tubuh".to_string(), rpl_val.clone());
                                                 req_map.insert("json".to_string(), rpl_val);
+                                            } else {
+                                                req_map.insert("tubuh".to_string(), Value::String(body_str));
                                             }
                                     }
 

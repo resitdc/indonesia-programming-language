@@ -97,7 +97,10 @@ pub fn preprocess_template_to_function(input: &str) -> String {
                 output.push_str(&format!("  _html = _html + ({})\n", expr.trim()));
                 continue;
             }
-            // Cek tag komponen berdasarkan nama file seperti <header.rpl> atau <header.rpl.html>
+                // Cek tag komponen berdasarkan nama file seperti:
+                //   <header.rpl>              → tampilan/header.rpl.html
+                //   <tampilan:header.rpl>     → tampilan/header.rpl.html
+                //   <kontroler/produk.rpl>    → kontroler/produk.rpl.html
             if i < chars.len()
                 && chars[i] == '<'
                 && i + 1 < chars.len()
@@ -124,6 +127,13 @@ pub fn preprocess_template_to_function(input: &str) -> String {
                     let mut final_path = tag_name.clone();
                     if final_path.ends_with(".rpl") && !final_path.ends_with(".rpl.html") {
                         final_path.push_str(".html");
+                    }
+
+                    // Support format <folder:file.rpl> → folder/file.rpl.html
+                    if let Some(pos) = final_path.find(':') {
+                        let folder = &final_path[..pos];
+                        let file = &final_path[pos + 1..];
+                        final_path = format!("{}/{}", folder, file);
                     }
 
                     let path = if final_path.contains('/') {

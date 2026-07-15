@@ -562,7 +562,11 @@ impl TypeChecker {
                 }
 
                 // Tipe kiri dan kanan harus kompatibel
-                if tipe_kiri != RplType::TidakDiketahui
+                // Pengecualian: operator + mendukung auto-coercion angka → teks
+                let auto_coercion = matches!(operator, InfixOperator::Tambah)
+                    && (tipe_kiri == RplType::String || tipe_kanan == RplType::String);
+                if !auto_coercion
+                    && tipe_kiri != RplType::TidakDiketahui
                     && tipe_kanan != RplType::TidakDiketahui
                     && tipe_kiri != tipe_kanan
                 {
@@ -873,13 +877,21 @@ selesai",
 
     #[test]
     fn test_tipe_tidak_cocok_infix() {
-        let result = check("buat x = 10 + \"halo\"");
+        // Operator - tidak mendukung auto-coercion, jadi 10 - "halo" harus error
+        let result = check("buat x = 10 - \"halo\"");
         assert!(!result.errors.is_empty());
         assert!(
             result.errors[0].pesan.contains("tidak cocok"),
             "Pesan error: {}",
             result.errors[0].pesan
         );
+    }
+
+    #[test]
+    fn test_auto_coercion_angka_teks_diizinkan() {
+        // Operator + antara string dan angka harus diizinkan (auto-coercion)
+        let result = check("buat x = \"nilai: \" + 42");
+        assert!(result.errors.is_empty(), "Auto-coercion angka ke teks seharusnya tidak error: {:?}", result.errors);
     }
 
     #[test]
@@ -921,7 +933,7 @@ tampilkan z",
     #[test]
     fn test_banyak_error_dikumpulkan() {
         let result = check(
-            "buat a = 10 + \"x\"
+            "buat a = 10 - \"x\"
 buat b = bukan 42
 tampilkan c",
         );

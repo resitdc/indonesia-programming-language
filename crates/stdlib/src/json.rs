@@ -77,10 +77,13 @@ fn parse_impl(args: &[NilaiRpl]) -> Result<NilaiRpl, String> {
         return Err("json.parse membutuhkan 1 argumen: teks_json".to_string());
     }
     match &args[0] {
+        // Jika sudah berupa kamus/daftar, langsung kembalikan (sudah ter-parse)
+        NilaiRpl::Kamus(_) | NilaiRpl::Daftar(_) => Ok(args[0].clone()),
+        // Jika teks, parse JSON
         NilaiRpl::Teks(s) => match serde_json::from_str::<Value>(s) {
             Ok(val) => Ok(dari_json(&val)),
             Err(e) => Err(format!("json.parse gagal: {}", e)),
         },
-        _ => Err("json.parse hanya menerima teks".to_string()),
+        _ => Err("json.parse hanya menerima teks atau data yang sudah ter-parse".to_string()),
     }
 }

@@ -10,7 +10,7 @@ buat ambil_semua = fungsi(req)
 selesai
 
 buat tambah = fungsi(req)
-    buat data = json.parse(req.tubuh)
+    buat data = req.tubuh
     buat sql_insert = `INSERT INTO produk (nama_produk, harga, kategori_id) VALUES ('${data.nama_produk}', ${data.harga}, ${data.kategori_id})`
     db.kueri(sql_insert)
     
