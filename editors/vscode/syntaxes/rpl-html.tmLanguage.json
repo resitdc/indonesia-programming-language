@@ -12,17 +12,34 @@
           "name": "keyword.other.rpl"
         }
       },
-      "end": "(\\?)>",
+      "end": "\\?>",
       "endCaptures": {
         "0": {
-          "name": "punctuation.section.embedded.end.rpl"
-        },
-        "1": {
           "name": "punctuation.section.embedded.end.rpl"
         }
       },
       "name": "meta.embedded.block.rpl",
       "contentName": "source.rpl",
+      "patterns": [
+        {
+          "include": "source.rpl"
+        }
+      ]
+    },
+    {
+      "begin": "\\{\\{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.template-expression.begin.rpl-html"
+        }
+      },
+      "end": "\\}\\}",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.template-expression.end.rpl-html"
+        }
+      },
+      "name": "meta.template.expression.rpl-html",
       "patterns": [
         {
           "include": "source.rpl"

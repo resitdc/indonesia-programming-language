@@ -47,6 +47,8 @@ enum Commands {
     Cek {
         file: PathBuf,
     },
+    /// Language Server Protocol (LSP) untuk editor
+    Lsp,
 }
 
 fn main() -> Result<()> {
@@ -87,6 +89,9 @@ fn main() -> Result<()> {
         }
         Some(Commands::Cek { file }) => {
             commands::handle_cek(file)?;
+        }
+        Some(Commands::Lsp) => {
+            commands::handle_lsp()?;
         }
         None => {
             use clap::CommandFactory;

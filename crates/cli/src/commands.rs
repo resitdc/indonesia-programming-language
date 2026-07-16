@@ -265,6 +265,10 @@ fn jalankan_watch(file: &PathBuf, _port: Option<u16>) -> Result<()> {
     Ok(())
 }
 
+pub fn handle_lsp() -> Result<()> {
+    lsp::run_lsp().map_err(|e| anyhow::anyhow!("LSP error: {}", e))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

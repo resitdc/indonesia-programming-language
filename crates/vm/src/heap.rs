@@ -172,32 +172,38 @@ impl Heap {
     }
 
     pub fn alloc(&mut self, data: HeapData) -> usize {
-        self.allocated_count += 1;
-
-        if let Some(idx) = self.free_list_head
-            && let HeapData::Free(next) = self.objects[idx].data
-        {
-            self.free_list_head = if next == usize::MAX { None } else { Some(next) };
-            self.objects[idx] = HeapObject {
-                is_marked: false,
-                data,
-            };
-            return idx;
+        if let Some(idx) = self.free_list_head {
+            if idx < self.objects.len() {
+                let next = if let HeapData::Free(n) = self.objects[idx].data { n } else { usize::MAX };
+                self.free_list_head = if next == usize::MAX { None } else { Some(next) };
+                self.objects[idx] = HeapObject {
+                    is_marked: false,
+                    data,
+                };
+                self.allocated_count += 1;
+                return idx;
+            } else {
+                // Free list corrupted, ignore it
+                self.free_list_head = None;
+            }
         }
-
         let idx = self.objects.len();
         self.objects.push(HeapObject {
             is_marked: false,
             data,
         });
+        self.allocated_count += 1;
         idx
     }
 
     pub fn free(&mut self, idx: usize) {
+        if idx >= self.objects.len() {
+            return; // Cegah panic jika index tidak valid
+        }
         let next = self.free_list_head.unwrap_or(usize::MAX);
         self.objects[idx].data = HeapData::Free(next);
         self.free_list_head = Some(idx);
-        self.allocated_count -= 1;
+        self.allocated_count = self.allocated_count.saturating_sub(1);
     }
 
     pub fn get_string(&self, idx: usize) -> &String {

@@ -1,8 +1,8 @@
 {
   "name": "rpl-vscode",
   "displayName": "RPL (Rakoda Programming Language)",
-  "description": "Dukungan syntax highlighting untuk bahasa pemrograman RPL",
-  "version": "1.0.0",
+  "description": "Syntax highlighting, error checking, autocomplete, dan hover untuk bahasa pemrograman RPL",
+  "version": "1.1.0",
   "publisher": "rakoda",
   "engines": {
     "vscode": "^1.75.0"
@@ -10,18 +10,37 @@
   "categories": [
     "Programming Languages"
   ],
+  "activationEvents": [
+    "onLanguage:rpl",
+    "onLanguage:rpl-html"
+  ],
+  "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
         "id": "rpl",
-        "aliases": ["RPL", "rpl", "IPL", "ipl"],
-        "extensions": [".rpl", ".ipl"],
+        "aliases": [
+          "RPL",
+          "rpl",
+          "IPL",
+          "ipl"
+        ],
+        "extensions": [
+          ".rpl",
+          ".ipl"
+        ],
         "configuration": "./language-configuration.json"
       },
       {
         "id": "rpl-html",
-        "aliases": ["RPL HTML", "rpl-html"],
-        "extensions": [".rpl.html", ".ipl.html"],
+        "aliases": [
+          "RPL HTML",
+          "rpl-html"
+        ],
+        "extensions": [
+          ".rpl.html",
+          ".ipl.html"
+        ],
         "configuration": "./html-language-configuration.json"
       }
     ],
@@ -37,5 +56,18 @@
         "path": "./syntaxes/rpl-html.tmLanguage.json"
       }
     ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^10.1.0"
   }
 }
