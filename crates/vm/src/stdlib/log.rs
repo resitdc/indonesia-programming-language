@@ -57,7 +57,9 @@ pub fn register(vm: &mut VM) {
     // info
     let info_func = FungsiBawaanVM {
         nama: "info".to_string(),
-        func: std::sync::Arc::new(|ctx: &mut dyn VmContext, args: Vec<Value>| log_impl(ctx, args, "info", "\x1b[36m")), // cyan
+        func: std::sync::Arc::new(|ctx: &mut dyn VmContext, args: Vec<Value>| {
+            log_impl(ctx, args, "info", "\x1b[36m")
+        }), // cyan
     };
     let info_idx = vm.heap.alloc(HeapData::FungsiBawaan(info_func));
     module_dict.insert("info".to_string(), Value::FungsiBawaan(info_idx));
@@ -65,7 +67,9 @@ pub fn register(vm: &mut VM) {
     // warning
     let warning_func = FungsiBawaanVM {
         nama: "peringatan".to_string(),
-        func: std::sync::Arc::new(|ctx: &mut dyn VmContext, args: Vec<Value>| log_impl(ctx, args, "warn", "\x1b[33m")), // yellow
+        func: std::sync::Arc::new(|ctx: &mut dyn VmContext, args: Vec<Value>| {
+            log_impl(ctx, args, "warn", "\x1b[33m")
+        }), // yellow
     };
     let warning_idx = vm.heap.alloc(HeapData::FungsiBawaan(warning_func));
     module_dict.insert("peringatan".to_string(), Value::FungsiBawaan(warning_idx));
@@ -74,7 +78,9 @@ pub fn register(vm: &mut VM) {
     // error
     let error_func = FungsiBawaanVM {
         nama: "salah".to_string(),
-        func: std::sync::Arc::new(|ctx: &mut dyn VmContext, args: Vec<Value>| log_impl(ctx, args, "error", "\x1b[31m")), // red
+        func: std::sync::Arc::new(|ctx: &mut dyn VmContext, args: Vec<Value>| {
+            log_impl(ctx, args, "error", "\x1b[31m")
+        }), // red
     };
     let error_idx = vm.heap.alloc(HeapData::FungsiBawaan(error_func));
     module_dict.insert("salah".to_string(), Value::FungsiBawaan(error_idx));
@@ -83,7 +89,9 @@ pub fn register(vm: &mut VM) {
     // debug
     let debug_func = FungsiBawaanVM {
         nama: "debug".to_string(),
-        func: std::sync::Arc::new(|ctx: &mut dyn VmContext, args: Vec<Value>| log_impl(ctx, args, "debug", "\x1b[35m")), // magenta
+        func: std::sync::Arc::new(|ctx: &mut dyn VmContext, args: Vec<Value>| {
+            log_impl(ctx, args, "debug", "\x1b[35m")
+        }), // magenta
     };
     let debug_idx = vm.heap.alloc(HeapData::FungsiBawaan(debug_func));
     module_dict.insert("debug".to_string(), Value::FungsiBawaan(debug_idx));
