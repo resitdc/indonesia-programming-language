@@ -40,6 +40,21 @@ jobs:
         working-directory: apps/studio
         run: flutter build apk --release
 
+      - name: 🏷️ Get App Version and Rename
+        working-directory: apps/studio
+        run: |
+          APP_VERSION=$(grep '^version: ' pubspec.yaml | head -n 1 | awk '{print $2}' | cut -d '+' -f 1)
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+          cp build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/RPL-Studio-v${APP_VERSION}.apk
+
+      - name: 📤 Upload to Google Drive
+        uses: adityak74/google-drive-upload-git-action@main
+        with:
+          credentials: ${{ secrets.GDRIVE_CREDENTIALS }}
+          filename: apps/studio/build/app/outputs/flutter-apk/RPL-Studio-v${{ env.APP_VERSION }}.apk
+          folderId: ${{ secrets.ANDROID_GDRIVE_FOLDER_ID }}
+          overwrite: "true"
+
       - name: 📤 Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:

@@ -42,6 +42,21 @@ jobs:
           ln -s /Applications dmg-staging/Applications
           hdiutil create -volname "RPL Studio" -srcfolder dmg-staging -ov -format UDZO rpl-studio-macos.dmg
 
+      - name: 🏷️ Get App Version and Rename
+        working-directory: apps/studio
+        run: |
+          APP_VERSION=$(grep '^version: ' pubspec.yaml | head -n 1 | awk '{print $2}' | cut -d '+' -f 1)
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+          cp build/macos/Build/Products/Release/rpl-studio-macos.dmg build/macos/Build/Products/Release/RPL-Studio-v${APP_VERSION}-mac.dmg
+
+      - name: 📤 Upload DMG to Google Drive
+        uses: adityak74/google-drive-upload-git-action@main
+        with:
+          credentials: ${{ secrets.GDRIVE_CREDENTIALS }}
+          filename: apps/studio/build/macos/Build/Products/Release/RPL-Studio-v${{ env.APP_VERSION }}-mac.dmg
+          folderId: ${{ secrets.MAC_GDRIVE_FOLDER_ID }}
+          overwrite: "true"
+
       - name: 📤 Upload DMG
         uses: actions/upload-artifact@v4
         with:
@@ -83,6 +98,22 @@ jobs:
         shell: cmd
         run: |
           "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "windows\rpl-studio.iss"
+
+      - name: 🏷️ Get App Version and Rename
+        working-directory: apps/studio
+        shell: bash
+        run: |
+          APP_VERSION=$(grep '^version: ' pubspec.yaml | head -n 1 | awk '{print $2}' | cut -d '+' -f 1)
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+          cp build/installer/RPL-Studio-Installer.exe build/installer/RPL-Studio-v${APP_VERSION}-win.exe
+
+      - name: 📤 Upload EXE to Google Drive
+        uses: adityak74/google-drive-upload-git-action@main
+        with:
+          credentials: ${{ secrets.GDRIVE_CREDENTIALS }}
+          filename: apps/studio/build/installer/RPL-Studio-v${{ env.APP_VERSION }}-win.exe
+          folderId: ${{ secrets.WINDOWS_GDRIVE_FOLDER_ID }}
+          overwrite: "true"
 
       - name: 📤 Upload Windows Installer
         uses: actions/upload-artifact@v4
