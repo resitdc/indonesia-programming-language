@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart' as html_dom;
@@ -9,6 +10,12 @@ class DevToolsPanel extends StatefulWidget {
   final Map<String, String> cookies;
   final Map<String, String> localStorage;
   final Function(String) onExecuteJS;
+  final VoidCallback? onClearConsole;
+  final VoidCallback? onClearNetwork;
+  final Function(String, String)? onUpdateCookie;
+  final Function(String)? onDeleteCookie;
+  final Function(String, String)? onUpdateLocalStorage;
+  final Function(String)? onDeleteLocalStorage;
 
   final bool isMinimized;
   final VoidCallback onToggleMinimize;
@@ -23,6 +30,12 @@ class DevToolsPanel extends StatefulWidget {
     required this.cookies,
     required this.localStorage,
     required this.onExecuteJS,
+    this.onClearConsole,
+    this.onClearNetwork,
+    this.onUpdateCookie,
+    this.onDeleteCookie,
+    this.onUpdateLocalStorage,
+    this.onDeleteLocalStorage,
   });
 
   @override
@@ -30,6 +43,35 @@ class DevToolsPanel extends StatefulWidget {
 }
 
 class _DevToolsPanelState extends State<DevToolsPanel> {
+  // Edit states for Application tab
+  String? _editingCookieKey;
+  final TextEditingController _editCookieValController =
+      TextEditingController();
+
+  String? _editingLocalStorageKey;
+  final TextEditingController _editLocalStorageValController =
+      TextEditingController();
+
+  bool _addingCookie = false;
+  final TextEditingController _newCookieKeyController = TextEditingController();
+  final TextEditingController _newCookieValController = TextEditingController();
+
+  bool _addingLocalStorage = false;
+  final TextEditingController _newLocalStorageKeyController =
+      TextEditingController();
+  final TextEditingController _newLocalStorageValController =
+      TextEditingController();
+  String _formatJson(dynamic raw) {
+    if (raw == null) return '';
+    final rawStr = raw.toString().trim();
+    try {
+      final decoded = jsonDecode(rawStr);
+      return const JsonEncoder.withIndent('  ').convert(decoded);
+    } catch (_) {
+      return rawStr;
+    }
+  }
+
   int _activeTabIndex = 0;
   final TextEditingController _consoleInputController = TextEditingController();
   String _activeNetworkFilter = 'All';
@@ -51,6 +93,12 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
   @override
   void dispose() {
     _consoleInputController.dispose();
+    _editCookieValController.dispose();
+    _editLocalStorageValController.dispose();
+    _newCookieKeyController.dispose();
+    _newCookieValController.dispose();
+    _newLocalStorageKeyController.dispose();
+    _newLocalStorageValController.dispose();
     super.dispose();
   }
 
@@ -208,6 +256,24 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
   Widget _buildConsoleTab() {
     return Column(
       children: [
+        Container(
+          height: 28,
+          color: const Color(0xFF252526),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          alignment: Alignment.centerLeft,
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.block, size: 14, color: Colors.white54),
+                tooltip: 'Clear console',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: widget.onClearConsole,
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1, color: Color(0xFF333333)),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(8),
@@ -342,33 +408,52 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
           decoration: const BoxDecoration(
             border: Border(bottom: BorderSide(color: Color(0xFF333333))),
           ),
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _networkFilters.length,
-            itemBuilder: (context, index) {
-              final filter = _networkFilters[index];
-              final isActive = _activeNetworkFilter == filter;
-              return InkWell(
-                onTap: () => setState(() {
-                  _activeNetworkFilter = filter;
-                  _selectedNetworkRequest = null;
-                }),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  alignment: Alignment.center,
-                  child: Text(
-                    filter,
-                    style: TextStyle(
-                      color: isActive ? Colors.white : Colors.white54,
-                      fontSize: 11,
-                      fontWeight: isActive
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
-                  ),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.block, size: 14, color: Colors.white54),
+                tooltip: 'Clear network log',
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                constraints: const BoxConstraints(),
+                onPressed: () {
+                  if (widget.onClearNetwork != null) widget.onClearNetwork!();
+                  setState(() {
+                    _selectedNetworkRequest = null;
+                  });
+                },
+              ),
+              Container(width: 1, height: 20, color: const Color(0xFF333333)),
+              Expanded(
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _networkFilters.length,
+                  itemBuilder: (context, index) {
+                    final filter = _networkFilters[index];
+                    final isActive = _activeNetworkFilter == filter;
+                    return InkWell(
+                      onTap: () => setState(() {
+                        _activeNetworkFilter = filter;
+                        _selectedNetworkRequest = null;
+                      }),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        alignment: Alignment.center,
+                        child: Text(
+                          filter,
+                          style: TextStyle(
+                            color: isActive ? Colors.white : Colors.white54,
+                            fontSize: 11,
+                            fontWeight: isActive
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ],
           ),
         ),
         Expanded(
@@ -428,8 +513,9 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                     }
 
                     final req = filteredRequests[index - 1];
+                    final status = req['status']?.toString() ?? '';
                     final isError =
-                        req['status'] != '200 OK' && req['status'] != 'Pending';
+                        !status.startsWith('2') && status != 'Pending';
                     final isSelected = _selectedNetworkRequest == req;
 
                     return InkWell(
@@ -490,16 +576,24 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
       ],
     );
 
-    if (_selectedNetworkRequest == null) {
-      return mainList;
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (_selectedNetworkRequest == null) {
+          return mainList;
+        }
 
-    return Row(
-      children: [
-        Expanded(flex: 1, child: mainList),
-        Container(width: 1, color: const Color(0xFF333333)),
-        Expanded(flex: 1, child: _buildNetworkDetailPanel()),
-      ],
+        if (constraints.maxWidth < 600) {
+          return _buildNetworkDetailPanel();
+        }
+
+        return Row(
+          children: [
+            Expanded(flex: 1, child: mainList),
+            Container(width: 1, color: const Color(0xFF333333)),
+            Expanded(flex: 1, child: _buildNetworkDetailPanel()),
+          ],
+        );
+      },
     );
   }
 
@@ -695,64 +789,576 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text(
-          'Cookies',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Cookies',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (!_addingCookie)
+              TextButton.icon(
+                onPressed: () => setState(() => _addingCookie = true),
+                icon: const Icon(Icons.add, size: 14, color: Color(0xFF007ACC)),
+                label: const Text(
+                  'Add Cookie',
+                  style: TextStyle(color: Color(0xFF007ACC), fontSize: 11),
+                ),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
-        if (widget.cookies.isEmpty)
-          const Text(
-            'No cookies found',
-            style: TextStyle(color: Colors.white38, fontSize: 12),
-          )
-        else
-          ...widget.cookies.entries.map(
-            (e) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: SelectableText(
-                '${e.key}: ${e.value}',
-                style: const TextStyle(
-                  color: Color(0xFF9CDCFE),
-                  fontSize: 12,
-                  fontFamily: 'monospace',
+        _buildCookiesTable(),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Local Storage',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (!_addingLocalStorage)
+              TextButton.icon(
+                onPressed: () => setState(() => _addingLocalStorage = true),
+                icon: const Icon(Icons.add, size: 14, color: Color(0xFF007ACC)),
+                label: const Text(
+                  'Add Item',
+                  style: TextStyle(color: Color(0xFF007ACC), fontSize: 11),
+                ),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _buildLocalStorageTable(),
+      ],
+    );
+  }
+
+  Widget _buildCookiesTable() {
+    final entries = widget.cookies.entries.toList();
+
+    return Table(
+      columnWidths: const {
+        0: FlexColumnWidth(2),
+        1: FlexColumnWidth(3),
+        2: FixedColumnWidth(80),
+      },
+      border: TableBorder.all(color: const Color(0xFF333333), width: 1),
+      children: [
+        // Header
+        TableRow(
+          decoration: const BoxDecoration(color: Color(0xFF252526)),
+          children: const [
+            Padding(
+              padding: EdgeInsets.all(6),
+              child: Text(
+                'Name',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
+            Padding(
+              padding: EdgeInsets.all(6),
+              child: Text(
+                'Value',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(6),
+              child: Text(
+                'Actions',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        // Add new row input form if adding is active
+        if (_addingCookie)
+          TableRow(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: TextField(
+                  controller: _newCookieKeyController,
+                  autofocus: true,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Name...',
+                    hintStyle: TextStyle(color: Colors.white30, fontSize: 11),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: TextField(
+                  controller: _newCookieValController,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Value...',
+                    hintStyle: TextStyle(color: Colors.white30, fontSize: 11),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.check,
+                      size: 14,
+                      color: Colors.green,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      final k = _newCookieKeyController.text.trim();
+                      final v = _newCookieValController.text.trim();
+                      if (k.isNotEmpty && widget.onUpdateCookie != null) {
+                        widget.onUpdateCookie!(k, v);
+                      }
+                      _newCookieKeyController.clear();
+                      _newCookieValController.clear();
+                      setState(() => _addingCookie = false);
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      size: 14,
+                      color: Colors.redAccent,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      _newCookieKeyController.clear();
+                      _newCookieValController.clear();
+                      setState(() => _addingCookie = false);
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
 
-        const SizedBox(height: 24),
-        const Text(
-          'Local Storage',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
+        // List existing cookies
+        if (entries.isEmpty && !_addingCookie)
+          TableRow(
+            children: [
+              const SizedBox(),
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                  'No cookies found',
+                  style: TextStyle(color: Colors.white30, fontSize: 11),
+                ),
+              ),
+              const SizedBox(),
+            ],
           ),
-        ),
-        const SizedBox(height: 8),
-        if (widget.localStorage.isEmpty)
-          const Text(
-            'No local storage found',
-            style: TextStyle(color: Colors.white38, fontSize: 12),
-          )
-        else
-          ...widget.localStorage.entries.map(
-            (e) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: SelectableText(
-                '${e.key}: ${e.value}',
-                style: const TextStyle(
-                  color: Color(0xFF9CDCFE),
-                  fontSize: 12,
-                  fontFamily: 'monospace',
+
+        ...entries.map((entry) {
+          final isEditing = _editingCookieKey == entry.key;
+          return TableRow(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(6),
+                child: Text(
+                  entry.key,
+                  style: const TextStyle(
+                    color: Color(0xFF9CDCFE),
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(4),
+                child: isEditing
+                    ? TextField(
+                        controller: _editCookieValController,
+                        autofocus: true,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
+                      )
+                    : Text(
+                        entry.value,
+                        style: const TextStyle(
+                          color: Color(0xFFCE9178),
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  if (isEditing) ...[
+                    IconButton(
+                      icon: const Icon(
+                        Icons.check,
+                        size: 14,
+                        color: Colors.green,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        if (widget.onUpdateCookie != null) {
+                          widget.onUpdateCookie!(
+                            entry.key,
+                            _editCookieValController.text,
+                          );
+                        }
+                        setState(() => _editingCookieKey = null);
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        size: 14,
+                        color: Colors.redAccent,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => setState(() => _editingCookieKey = null),
+                    ),
+                  ] else ...[
+                    IconButton(
+                      icon: const Icon(
+                        Icons.edit,
+                        size: 12,
+                        color: Colors.white54,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        _editCookieValController.text = entry.value;
+                        setState(() => _editingCookieKey = entry.key);
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete,
+                        size: 12,
+                        color: Colors.redAccent,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        if (widget.onDeleteCookie != null) {
+                          widget.onDeleteCookie!(entry.key);
+                        }
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  Widget _buildLocalStorageTable() {
+    final entries = widget.localStorage.entries.toList();
+
+    return Table(
+      columnWidths: const {
+        0: FlexColumnWidth(2),
+        1: FlexColumnWidth(3),
+        2: FixedColumnWidth(80),
+      },
+      border: TableBorder.all(color: const Color(0xFF333333), width: 1),
+      children: [
+        // Header
+        TableRow(
+          decoration: const BoxDecoration(color: Color(0xFF252526)),
+          children: const [
+            Padding(
+              padding: EdgeInsets.all(6),
+              child: Text(
+                'Key',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
+            Padding(
+              padding: EdgeInsets.all(6),
+              child: Text(
+                'Value',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(6),
+              child: Text(
+                'Actions',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        // Add new row input form if adding is active
+        if (_addingLocalStorage)
+          TableRow(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: TextField(
+                  controller: _newLocalStorageKeyController,
+                  autofocus: true,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Key...',
+                    hintStyle: TextStyle(color: Colors.white30, fontSize: 11),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: TextField(
+                  controller: _newLocalStorageValController,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: 'Value...',
+                    hintStyle: TextStyle(color: Colors.white30, fontSize: 11),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.check,
+                      size: 14,
+                      color: Colors.green,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      final k = _newLocalStorageKeyController.text.trim();
+                      final v = _newLocalStorageValController.text.trim();
+                      if (k.isNotEmpty && widget.onUpdateLocalStorage != null) {
+                        widget.onUpdateLocalStorage!(k, v);
+                      }
+                      _newLocalStorageKeyController.clear();
+                      _newLocalStorageValController.clear();
+                      setState(() => _addingLocalStorage = false);
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close,
+                      size: 14,
+                      color: Colors.redAccent,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      _newLocalStorageKeyController.clear();
+                      _newLocalStorageValController.clear();
+                      setState(() => _addingLocalStorage = false);
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
+
+        // List existing localStorage entries
+        if (entries.isEmpty && !_addingLocalStorage)
+          TableRow(
+            children: [
+              const SizedBox(),
+              const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text(
+                  'No local storage found',
+                  style: TextStyle(color: Colors.white30, fontSize: 11),
+                ),
+              ),
+              const SizedBox(),
+            ],
+          ),
+
+        ...entries.map((entry) {
+          final isEditing = _editingLocalStorageKey == entry.key;
+          return TableRow(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(6),
+                child: Text(
+                  entry.key,
+                  style: const TextStyle(
+                    color: Color(0xFF9CDCFE),
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(4),
+                child: isEditing
+                    ? TextField(
+                        controller: _editLocalStorageValController,
+                        autofocus: true,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          isDense: true,
+                        ),
+                      )
+                    : Text(
+                        entry.value,
+                        style: const TextStyle(
+                          color: Color(0xFFCE9178),
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  if (isEditing) ...[
+                    IconButton(
+                      icon: const Icon(
+                        Icons.check,
+                        size: 14,
+                        color: Colors.green,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        if (widget.onUpdateLocalStorage != null) {
+                          widget.onUpdateLocalStorage!(
+                            entry.key,
+                            _editLocalStorageValController.text,
+                          );
+                        }
+                        setState(() => _editingLocalStorageKey = null);
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        size: 14,
+                        color: Colors.redAccent,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () =>
+                          setState(() => _editingLocalStorageKey = null),
+                    ),
+                  ] else ...[
+                    IconButton(
+                      icon: const Icon(
+                        Icons.edit,
+                        size: 12,
+                        color: Colors.white54,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        _editLocalStorageValController.text = entry.value;
+                        setState(() => _editingLocalStorageKey = entry.key);
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete,
+                        size: 12,
+                        color: Colors.redAccent,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        if (widget.onDeleteLocalStorage != null) {
+                          widget.onDeleteLocalStorage!(entry.key);
+                        }
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          );
+        }).toList(),
       ],
     );
   }

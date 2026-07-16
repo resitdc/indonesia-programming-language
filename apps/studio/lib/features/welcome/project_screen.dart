@@ -33,7 +33,8 @@ class _ProjectScreenState extends State<ProjectScreen> {
 
   late String _terminalCwd;
   final List<String> _terminalLines = [];
-  final TextEditingController _terminalInputController = TextEditingController();
+  final TextEditingController _terminalInputController =
+      TextEditingController();
   final ScrollController _terminalScrollController = ScrollController();
   final FocusNode _terminalFocusNode = FocusNode();
 
@@ -123,7 +124,10 @@ class _ProjectScreenState extends State<ProjectScreen> {
         builder: (context) => AlertDialog(
           backgroundColor: const Color(0xFF252526),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          title: const Text('Simpan Perubahan?', style: TextStyle(color: Colors.white, fontSize: 14)),
+          title: const Text(
+            'Simpan Perubahan?',
+            style: TextStyle(color: Colors.white, fontSize: 14),
+          ),
           content: Text(
             'Apakah Anda ingin menyimpan perubahan pada "${tab.fileName}"?',
             style: const TextStyle(color: Colors.white60, fontSize: 13),
@@ -161,7 +165,10 @@ class _ProjectScreenState extends State<ProjectScreen> {
         } catch (e) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Gagal menyimpan: $e'), backgroundColor: const Color(0xFF5A1D1D)),
+              SnackBar(
+                content: Text('Gagal menyimpan: $e'),
+                backgroundColor: const Color(0xFF5A1D1D),
+              ),
             );
           }
           return;
@@ -172,9 +179,12 @@ class _ProjectScreenState extends State<ProjectScreen> {
     if (!mounted) return;
 
     setState(() {
-      final currentTab = _openTabs.isNotEmpty && _activeTabIndex < _openTabs.length ? _openTabs[_activeTabIndex] : null;
+      final currentTab =
+          _openTabs.isNotEmpty && _activeTabIndex < _openTabs.length
+          ? _openTabs[_activeTabIndex]
+          : null;
       _openTabs.remove(tab);
-      
+
       if (_openTabs.isEmpty) {
         Navigator.pushReplacement(
           context,
@@ -182,7 +192,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
         );
         return;
       }
-      
+
       if (currentTab == tab) {
         if (_activeTabIndex >= _openTabs.length) {
           _activeTabIndex = _openTabs.length - 1;
@@ -200,15 +210,24 @@ class _ProjectScreenState extends State<ProjectScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF252526),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        title: const Text('File Baru', style: TextStyle(color: Colors.white, fontSize: 14)),
+        title: const Text(
+          'File Baru',
+          style: TextStyle(color: Colors.white, fontSize: 14),
+        ),
         content: Theme(
           data: Theme.of(context).copyWith(
             inputDecorationTheme: const InputDecorationTheme(
               filled: true,
               fillColor: Color(0xFF1E1E1E),
-              border: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF3C3C3C))),
-              enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF3C3C3C))),
-              focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF007ACC))),
+              border: OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF3C3C3C)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF3C3C3C)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF007ACC)),
+              ),
             ),
           ),
           child: TextField(
@@ -232,16 +251,18 @@ class _ProjectScreenState extends State<ProjectScreen> {
               final name = controller.text.trim();
               if (name.isNotEmpty) {
                 try {
-                  final newFile = File('$parentPath${Platform.pathSeparator}$name');
+                  final newFile = File(
+                    '$parentPath${Platform.pathSeparator}$name',
+                  );
                   if (!newFile.existsSync()) {
                     newFile.createSync(recursive: true);
                     _openFile(newFile.path);
                   }
                   setState(() => _explorerVersion++);
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Gagal: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
                 }
               }
               Navigator.pop(context);
@@ -264,15 +285,24 @@ class _ProjectScreenState extends State<ProjectScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF252526),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        title: const Text('Folder Baru', style: TextStyle(color: Colors.white, fontSize: 14)),
+        title: const Text(
+          'Folder Baru',
+          style: TextStyle(color: Colors.white, fontSize: 14),
+        ),
         content: Theme(
           data: Theme.of(context).copyWith(
             inputDecorationTheme: const InputDecorationTheme(
               filled: true,
               fillColor: Color(0xFF1E1E1E),
-              border: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF3C3C3C))),
-              enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF3C3C3C))),
-              focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF007ACC))),
+              border: OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF3C3C3C)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF3C3C3C)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFF007ACC)),
+              ),
             ),
           ),
           child: TextField(
@@ -296,15 +326,17 @@ class _ProjectScreenState extends State<ProjectScreen> {
               final name = controller.text.trim();
               if (name.isNotEmpty) {
                 try {
-                  final newDir = Directory('$parentPath${Platform.pathSeparator}$name');
+                  final newDir = Directory(
+                    '$parentPath${Platform.pathSeparator}$name',
+                  );
                   if (!newDir.existsSync()) {
                     newDir.createSync(recursive: true);
                   }
                   setState(() => _explorerVersion++);
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Gagal: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
                 }
               }
               Navigator.pop(context);
@@ -329,14 +361,20 @@ class _ProjectScreenState extends State<ProjectScreen> {
       setState(() => activeTab.isModified = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('File berhasil disimpan', style: TextStyle(fontSize: 12)),
+          content: Text(
+            'File berhasil disimpan',
+            style: TextStyle(fontSize: 12),
+          ),
           backgroundColor: Color(0xFF333333),
           duration: Duration(seconds: 1),
         ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal: $e'), backgroundColor: const Color(0xFF5A1D1D)),
+        SnackBar(
+          content: Text('Gagal: $e'),
+          backgroundColor: const Color(0xFF5A1D1D),
+        ),
       );
     }
   }
@@ -345,13 +383,13 @@ class _ProjectScreenState extends State<ProjectScreen> {
     try {
       final parentDir = File(oldPath).parent.path;
       final newPath = '$parentDir${Platform.pathSeparator}$newName';
-      
+
       if (Directory(oldPath).existsSync()) {
         Directory(oldPath).renameSync(newPath);
       } else if (File(oldPath).existsSync()) {
         File(oldPath).renameSync(newPath);
       }
-      
+
       setState(() {
         for (int i = 0; i < _openTabs.length; i++) {
           if (_openTabs[i].filePath == oldPath) {
@@ -366,9 +404,9 @@ class _ProjectScreenState extends State<ProjectScreen> {
         _explorerVersion++;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
     }
   }
 
@@ -377,7 +415,8 @@ class _ProjectScreenState extends State<ProjectScreen> {
       final result = await FilePicker.pickFiles(allowMultiple: false);
       if (result != null && result.files.single.name != null) {
         final fileName = result.files.single.name;
-        final destinationPath = '$targetDirectoryPath${Platform.pathSeparator}$fileName';
+        final destinationPath =
+            '$targetDirectoryPath${Platform.pathSeparator}$fileName';
 
         if (result.files.single.path != null) {
           final sourceFile = File(result.files.single.path!);
@@ -398,9 +437,9 @@ class _ProjectScreenState extends State<ProjectScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
       }
     }
   }
@@ -431,8 +470,27 @@ class _ProjectScreenState extends State<ProjectScreen> {
     final args = parts.sublist(1);
 
     // Filter destructive commands
-    final forbiddenKeywords = ['rm', 'rf', 'format', 'mkfs', 'dd', 'shred', 'wipe', 'fdisk', 'parted', 'chmod', 'chown', 'sudo', 'su', 'del', 'rd', 'erase'];
-    if (forbiddenKeywords.contains(baseCmd) || cmd.contains('rm ') || cmd.contains('del ')) {
+    final forbiddenKeywords = [
+      'rm',
+      'rf',
+      'format',
+      'mkfs',
+      'dd',
+      'shred',
+      'wipe',
+      'fdisk',
+      'parted',
+      'chmod',
+      'chown',
+      'sudo',
+      'su',
+      'del',
+      'rd',
+      'erase',
+    ];
+    if (forbiddenKeywords.contains(baseCmd) ||
+        cmd.contains('rm ') ||
+        cmd.contains('del ')) {
       setState(() {
         _terminalLines.add('⚠ Perintah ini dilarang demi keamanan.');
       });
@@ -496,16 +554,22 @@ class _ProjectScreenState extends State<ProjectScreen> {
           String newPath;
           if (target == '..') {
             final parent = Directory(_terminalCwd).parent.path;
-            newPath = parent.startsWith(widget.project.path) ? parent : widget.project.path;
+            newPath = parent.startsWith(widget.project.path)
+                ? parent
+                : widget.project.path;
           } else {
-            newPath = Directory('$_terminalCwd${Platform.pathSeparator}$target').path;
+            newPath = Directory(
+              '$_terminalCwd${Platform.pathSeparator}$target',
+            ).path;
           }
 
           final dir = Directory(newPath);
           if (dir.existsSync()) {
             setState(() => _terminalCwd = newPath);
           } else {
-            setState(() => _terminalLines.add('⚠ Folder "$target" tidak ditemukan.'));
+            setState(
+              () => _terminalLines.add('⚠ Folder "$target" tidak ditemukan.'),
+            );
           }
         }
         break;
@@ -525,7 +589,9 @@ class _ProjectScreenState extends State<ProjectScreen> {
               setState(() => _terminalLines.add('⚠ $e'));
             }
           } else {
-            setState(() => _terminalLines.add('⚠ File "$fileName" tidak ditemukan.'));
+            setState(
+              () => _terminalLines.add('⚠ File "$fileName" tidak ditemukan.'),
+            );
           }
         }
         break;
@@ -550,7 +616,9 @@ class _ProjectScreenState extends State<ProjectScreen> {
               setState(() => _terminalLines.add('⚠ $e'));
             }
           } else {
-            setState(() => _terminalLines.add('⚠ File "$fileName" tidak ditemukan.'));
+            setState(
+              () => _terminalLines.add('⚠ File "$fileName" tidak ditemukan.'),
+            );
           }
         }
         break;
@@ -572,7 +640,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
     final isBrowser = _activeActivity == ActivityType.browser;
     final isKeyboardOpen = mediaQuery.viewInsets.bottom > 0;
     final isTerminalFocused = _terminalFocusNode.hasFocus;
-    
+
     // Determine if any input is focused so we can show the toolbar
     final showToolbar = isMobile && isKeyboardOpen;
 
@@ -597,73 +665,81 @@ class _ProjectScreenState extends State<ProjectScreen> {
                       });
                     },
                   ),
-                  if (isBrowser)
-                    const Expanded(child: BrowserWorkspace())
-                  else ...[
-                    // Side Panel (only in layout hierarchy on Desktop)
-                    if (!isMobile) _buildSidePanel(),
-                    // Editor + Terminal
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Column(
-                            children: [
-                              // Tab Bar
-                              EditorTabBar(
-                                tabs: _openTabs,
-                                activeIndex: _activeTabIndex,
-                                onTap: (i) => setState(() => _activeTabIndex = i),
-                                onClose: _closeTab,
-                              ),
-                              // Code Editor
-                              Expanded(
-                                child: _openTabs.isNotEmpty
-                                    ? CodeEditor(
-                                        key: ValueKey('${_openTabs[_activeTabIndex].filePath}-$_targetLineNumber-$_localSearchQuery'),
-                                        tab: _openTabs[_activeTabIndex],
-                                        initialLineNumber: _targetLineNumber,
-                                        searchQuery: _localSearchQuery,
-                                        onChanged: () => setState(() {}),
-                                        onSave: (path, content) => setState(() {}),
-                                      )
-                                    : _buildEmptyEditor(),
-                              ),
-                              // Terminal
-                              _buildTerminal(),
-                              // Status Bar
-                              EditorStatusBar(
-                                tab: _openTabs.isNotEmpty ? _openTabs[_activeTabIndex] : null,
-                              ),
-                            ],
-                          ),
-                          // Overlay Backdrop Scrim (on Mobile)
-                          if (isMobile && _activeActivity != null)
-                            Positioned.fill(
-                              child: GestureDetector(
-                                onTap: () => setState(() => _activeActivity = null),
-                                behavior: HitTestBehavior.opaque,
-                                child: Container(
-                                  color: Colors.black45,
-                                ),
+                  Expanded(
+                    child: IndexedStack(
+                      index: isBrowser ? 1 : 0,
+                      children: [
+                        // Index 0: Editor & Terminal
+                        Row(
+                          children: [
+                            // Side Panel (only in layout hierarchy on Desktop)
+                            if (!isMobile) _buildSidePanel(),
+                            // Editor + Terminal
+                            Expanded(
+                              child: Stack(
+                                children: [
+                                  Column(
+                                    children: [
+                                      // Tab Bar
+                                      EditorTabBar(
+                                        tabs: _openTabs,
+                                        activeIndex: _activeTabIndex,
+                                        onTap: (i) =>
+                                            setState(() => _activeTabIndex = i),
+                                        onClose: _closeTab,
+                                      ),
+                                      // Code Editor
+                                      Expanded(
+                                        child: _openTabs.isNotEmpty
+                                            ? _buildEditorOrViewer(
+                                                _openTabs[_activeTabIndex],
+                                              )
+                                            : _buildEmptyEditor(),
+                                      ),
+                                      // Terminal
+                                      _buildTerminal(),
+                                      // Status Bar
+                                      EditorStatusBar(
+                                        tab: _openTabs.isNotEmpty
+                                            ? _openTabs[_activeTabIndex]
+                                            : null,
+                                      ),
+                                    ],
+                                  ),
+                                  // Overlay Backdrop Scrim (on Mobile)
+                                  if (isMobile && _activeActivity != null)
+                                    Positioned.fill(
+                                      child: GestureDetector(
+                                        onTap: () => setState(
+                                          () => _activeActivity = null,
+                                        ),
+                                        behavior: HitTestBehavior.opaque,
+                                        child: Container(color: Colors.black45),
+                                      ),
+                                    ),
+                                  // Overlay Side Panel (on Mobile)
+                                  if (isMobile && _activeActivity != null)
+                                    Positioned(
+                                      left: 0,
+                                      top: 0,
+                                      bottom: 0,
+                                      width: 241, // 240 panel + 1 divider
+                                      child: Material(
+                                        elevation: 16,
+                                        color: Colors.transparent,
+                                        child: _buildSidePanel(),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                          // Overlay Side Panel (on Mobile)
-                          if (isMobile && _activeActivity != null)
-                            Positioned(
-                              left: 0,
-                              top: 0,
-                              bottom: 0,
-                              width: 241, // 240 panel + 1 divider
-                              child: Material(
-                                elevation: 16,
-                                color: Colors.transparent,
-                                child: _buildSidePanel(),
-                              ),
-                            ),
-                        ],
-                      ),
+                          ],
+                        ),
+                        // Index 1: Browser Workspace
+                        const BrowserWorkspace(),
+                      ],
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
@@ -683,7 +759,11 @@ class _ProjectScreenState extends State<ProjectScreen> {
         children: [
           // Back button
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 13, color: Colors.white54),
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 13,
+              color: Colors.white54,
+            ),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
             tooltip: 'Kembali ke Welcome',
@@ -700,7 +780,11 @@ class _ProjectScreenState extends State<ProjectScreen> {
                   ? _buildLocalSearchInput()
                   : Text(
                       widget.project.name,
-                      style: const TextStyle(fontSize: 12, color: Colors.white60, fontWeight: FontWeight.w400),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.white60,
+                        fontWeight: FontWeight.w400,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
             ),
@@ -718,7 +802,8 @@ class _ProjectScreenState extends State<ProjectScreen> {
                       tooltip: 'Undo',
                       color: value.canUndo ? Colors.white70 : Colors.white24,
                       onPressed: value.canUndo
-                          ? () => _openTabs[_activeTabIndex].undoController.undo()
+                          ? () =>
+                                _openTabs[_activeTabIndex].undoController.undo()
                           : null,
                     ),
                     _TitleBarButton(
@@ -726,7 +811,8 @@ class _ProjectScreenState extends State<ProjectScreen> {
                       tooltip: 'Redo',
                       color: value.canRedo ? Colors.white70 : Colors.white24,
                       onPressed: value.canRedo
-                          ? () => _openTabs[_activeTabIndex].undoController.redo()
+                          ? () =>
+                                _openTabs[_activeTabIndex].undoController.redo()
                           : null,
                     ),
                   ],
@@ -751,7 +837,9 @@ class _ProjectScreenState extends State<ProjectScreen> {
               icon: Icons.save_outlined,
               tooltip: 'Simpan',
               isActive: _openTabs[_activeTabIndex].isModified,
-              onPressed: _openTabs[_activeTabIndex].isModified ? _saveActiveTab : null,
+              onPressed: _openTabs[_activeTabIndex].isModified
+                  ? _saveActiveTab
+                  : null,
             ),
           ],
           _TitleBarButton(
@@ -762,8 +850,12 @@ class _ProjectScreenState extends State<ProjectScreen> {
               if (_openTabs.isEmpty) return;
               setState(() {
                 _isTerminalMinimized = false;
-                _terminalLines.add('>_ run ${_openTabs[_activeTabIndex].fileName}');
-                _terminalLines.add('⏳ Menjalankan ${_openTabs[_activeTabIndex].fileName}...');
+                _terminalLines.add(
+                  '>_ run ${_openTabs[_activeTabIndex].fileName}',
+                );
+                _terminalLines.add(
+                  '⏳ Menjalankan ${_openTabs[_activeTabIndex].fileName}...',
+                );
               });
               final content = _openTabs[_activeTabIndex].content;
               final result = await runCode(code: content);
@@ -798,8 +890,15 @@ class _ProjectScreenState extends State<ProjectScreen> {
           decoration: InputDecoration(
             hintText: 'Cari di file ini...',
             hintStyle: TextStyle(color: Colors.white.withOpacity(0.35)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-            prefixIcon: const Icon(Icons.search, size: 14, color: Colors.white38),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 0,
+            ),
+            prefixIcon: const Icon(
+              Icons.search,
+              size: 14,
+              color: Colors.white38,
+            ),
             prefixIconConstraints: const BoxConstraints(minWidth: 28),
             suffixIcon: IconButton(
               icon: const Icon(Icons.close, size: 12, color: Colors.white54),
@@ -835,9 +934,22 @@ class _ProjectScreenState extends State<ProjectScreen> {
           onRename: _renameFileOrFolder,
           onImportFile: _importFile,
           onFileTap: (path) {
-            final ext = path.contains('.') ? path.split('.').last.toLowerCase() : '';
-            final isBinary = ['png', 'jpg', 'jpeg', 'gif', 'pdf', 'zip', 'tar', 'gz', 'exe', 'dll', 'so', 'dylib', 'db', 'sqlite'].contains(ext);
-            if (!isBinary) _openFile(path);
+            final ext = path.contains('.')
+                ? path.split('.').last.toLowerCase()
+                : '';
+            final isUnsupportedBinary = [
+              'pdf',
+              'zip',
+              'tar',
+              'gz',
+              'exe',
+              'dll',
+              'so',
+              'dylib',
+              'db',
+              'sqlite',
+            ].contains(ext);
+            if (!isUnsupportedBinary) _openFile(path);
           },
           onDelete: (path) {
             try {
@@ -848,11 +960,16 @@ class _ProjectScreenState extends State<ProjectScreen> {
               }
               _openTabs.removeWhere((t) => t.filePath == path);
               if (_openTabs.isEmpty) {
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const WelcomeScreen()));
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                );
               }
               setState(() => _explorerVersion++);
             } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e')));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
             }
           },
         );
@@ -884,6 +1001,44 @@ class _ProjectScreenState extends State<ProjectScreen> {
   }
 
   /// Empty state when no file is open.
+  Widget _buildEditorOrViewer(EditorTab tab) {
+    final lowerPath = tab.filePath.toLowerCase();
+    final isImage =
+        lowerPath.endsWith('.png') ||
+        lowerPath.endsWith('.jpg') ||
+        lowerPath.endsWith('.jpeg') ||
+        lowerPath.endsWith('.gif') ||
+        lowerPath.endsWith('.webp') ||
+        lowerPath.endsWith('.bmp');
+
+    if (isImage) {
+      return Container(
+        color: const Color(0xFF1E1E1E),
+        alignment: Alignment.center,
+        child: InteractiveViewer(
+          minScale: 0.1,
+          maxScale: 10.0,
+          child: Image.file(
+            File(tab.filePath),
+            errorBuilder: (context, error, stackTrace) => const Text(
+              'Failed to load image',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return CodeEditor(
+      key: ValueKey('${tab.filePath}-$_targetLineNumber-$_localSearchQuery'),
+      tab: tab,
+      initialLineNumber: _targetLineNumber,
+      searchQuery: _localSearchQuery,
+      onChanged: () => setState(() {}),
+      onSave: (path, content) => setState(() {}),
+    );
+  }
+
   Widget _buildEmptyEditor() {
     return Container(
       color: const Color(0xFF1E1E1E),
@@ -895,7 +1050,10 @@ class _ProjectScreenState extends State<ProjectScreen> {
             const SizedBox(height: 12),
             Text(
               'Tidak ada file yang dibuka',
-              style: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 13),
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.25),
+                fontSize: 13,
+              ),
             ),
           ],
         ),
@@ -917,14 +1075,17 @@ class _ProjectScreenState extends State<ProjectScreen> {
         children: [
           // Terminal Header
           InkWell(
-            onTap: () => setState(() => _isTerminalMinimized = !_isTerminalMinimized),
+            onTap: () =>
+                setState(() => _isTerminalMinimized = !_isTerminalMinimized),
             child: Container(
               height: 28,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 children: [
                   Icon(
-                    _isTerminalMinimized ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    _isTerminalMinimized
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
                     size: 14,
                     color: Colors.white38,
                   ),
@@ -942,7 +1103,11 @@ class _ProjectScreenState extends State<ProjectScreen> {
                   if (!_isTerminalMinimized)
                     GestureDetector(
                       onTap: () => setState(() => _terminalLines.clear()),
-                      child: const Icon(Icons.delete_outline, size: 14, color: Colors.white30),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        size: 14,
+                        color: Colors.white30,
+                      ),
                     ),
                 ],
               ),
@@ -966,10 +1131,14 @@ class _ProjectScreenState extends State<ProjectScreen> {
                         child: Text(
                           line,
                           style: TextStyle(
-                            color: isPrompt ? const Color(0xFF4EC9B0) : Colors.white70,
+                            color: isPrompt
+                                ? const Color(0xFF4EC9B0)
+                                : Colors.white70,
                             fontFamily: 'monospace',
                             fontSize: 12,
-                            fontWeight: isPrompt ? FontWeight.w600 : FontWeight.normal,
+                            fontWeight: isPrompt
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                           ),
                         ),
                       );
@@ -1030,7 +1199,24 @@ class _ProjectScreenState extends State<ProjectScreen> {
   }
 
   Widget _buildKeyboardToolbar() {
-    final symbols = ['<', '>', '{', '}', '[', ']', '(', ')', '=', '"', "'", '`', ';', ':', ',', '.'];
+    final symbols = [
+      '<',
+      '>',
+      '{',
+      '}',
+      '[',
+      ']',
+      '(',
+      ')',
+      '=',
+      '"',
+      "'",
+      '`',
+      ';',
+      ':',
+      ',',
+      '.',
+    ];
     return Container(
       height: 40,
       color: const Color(0xFF2D2D2D),
@@ -1045,11 +1231,19 @@ class _ProjectScreenState extends State<ProjectScreen> {
                 final selection = _terminalInputController.selection;
                 if (selection.baseOffset >= 0) {
                   final text = _terminalInputController.text;
-                  final newText = text.replaceRange(selection.start, selection.end, symbol);
-                  _terminalInputController.value = _terminalInputController.value.copyWith(
-                    text: newText,
-                    selection: TextSelection.collapsed(offset: selection.start + symbol.length),
+                  final newText = text.replaceRange(
+                    selection.start,
+                    selection.end,
+                    symbol,
                   );
+                  _terminalInputController.value = _terminalInputController
+                      .value
+                      .copyWith(
+                        text: newText,
+                        selection: TextSelection.collapsed(
+                          offset: selection.start + symbol.length,
+                        ),
+                      );
                 } else {
                   _terminalInputController.text += symbol;
                 }
@@ -1062,7 +1256,11 @@ class _ProjectScreenState extends State<ProjectScreen> {
               alignment: Alignment.center,
               child: Text(
                 symbol,
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'monospace'),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
           );
