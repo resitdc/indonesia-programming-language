@@ -77,9 +77,7 @@ fn main() -> Result<()> {
         }
         Some(Commands::Instal { paket }) => {
             let rt = tokio::runtime::Runtime::new()?;
-            rt.block_on(async {
-                commands::handle_instal(paket.clone()).await
-            })?;
+            rt.block_on(async { commands::handle_instal(paket.clone()).await })?;
         }
         Some(Commands::Hapus { paket }) => {
             commands::handle_hapus(paket)?;

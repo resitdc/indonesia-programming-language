@@ -8,10 +8,9 @@ use std::collections::HashMap;
 
 use lsp_server::{Connection, Message, Notification, Response};
 use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionOptions, CompletionParams,
-    Diagnostic, DiagnosticSeverity, Hover, HoverContents, HoverParams,
-    MarkupContent, MarkupKind, OneOf, Position, Range,
-    ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
+    CompletionItem, CompletionItemKind, CompletionOptions, CompletionParams, Diagnostic,
+    DiagnosticSeverity, Hover, HoverContents, HoverParams, MarkupContent, MarkupKind, OneOf,
+    Position, Range, ServerCapabilities, TextDocumentSyncCapability, TextDocumentSyncKind,
     TextDocumentSyncOptions, Url,
 };
 
@@ -57,7 +56,11 @@ struct DocumentStore {
 }
 
 impl DocumentStore {
-    fn new() -> Self { Self { docs: HashMap::new() } }
+    fn new() -> Self {
+        Self {
+            docs: HashMap::new(),
+        }
+    }
     fn set(&mut self, uri: &str, content: String) {
         self.docs.insert(uri.to_string(), content);
     }
@@ -114,7 +117,11 @@ fn handle_request(store: &mut DocumentStore, req: &lsp_server::Request) -> Respo
         }
         "textDocument/hover" => {
             if let Ok(params) = serde_json::from_value::<HoverParams>(req.params.clone()) {
-                let uri = params.text_document_position_params.text_document.uri.to_string();
+                let uri = params
+                    .text_document_position_params
+                    .text_document
+                    .uri
+                    .to_string();
                 let content = store.get(&uri).unwrap_or("");
                 let pos = params.text_document_position_params.position;
                 let hover = get_hover(content, &pos);
@@ -124,16 +131,22 @@ fn handle_request(store: &mut DocumentStore, req: &lsp_server::Request) -> Respo
                     error: None,
                 }
             } else {
-                Response { id, result: None, error: Some(lsp_server::ResponseError { code: -32602, message: "Invalid params".to_string(), data: None }) }
+                Response {
+                    id,
+                    result: None,
+                    error: Some(lsp_server::ResponseError {
+                        code: -32602,
+                        message: "Invalid params".to_string(),
+                        data: None,
+                    }),
+                }
             }
         }
-        "textDocument/definition" => {
-            Response {
-                id,
-                result: Some(serde_json::to_value(None::<()>).unwrap()),
-                error: None,
-            }
-        }
+        "textDocument/definition" => Response {
+            id,
+            result: Some(serde_json::to_value(None::<()>).unwrap()),
+            error: None,
+        },
         _ => Response {
             id,
             result: None,
@@ -152,7 +165,9 @@ fn handle_notification(
     not: Notification,
 ) -> anyhow::Result<()> {
     if let "textDocument/didOpen" | "textDocument/didChange" = not.method.as_str() {
-        if let Ok(params) = serde_json::from_value::<lsp_types::DidChangeTextDocumentParams>(not.params) {
+        if let Ok(params) =
+            serde_json::from_value::<lsp_types::DidChangeTextDocumentParams>(not.params)
+        {
             let uri = params.text_document.uri.to_string();
             if let Some(change) = params.content_changes.into_iter().next() {
                 store.set(&uri, change.text);
@@ -199,8 +214,14 @@ fn compute_diagnostics(source: &str) -> Vec<Diagnostic> {
             let (line, col) = extract_error_location(&e);
             diags.push(Diagnostic {
                 range: Range {
-                    start: Position { line, character: col },
-                    end: Position { line, character: col + 5 },
+                    start: Position {
+                        line,
+                        character: col,
+                    },
+                    end: Position {
+                        line,
+                        character: col + 5,
+                    },
                 },
                 severity: Some(DiagnosticSeverity::ERROR),
                 source: Some("rpl-lsp".to_string()),
@@ -220,8 +241,14 @@ fn compute_diagnostics(source: &str) -> Vec<Diagnostic> {
         let (line, col) = extract_error_location(err);
         diags.push(Diagnostic {
             range: Range {
-                start: Position { line, character: col },
-                end: Position { line, character: col + 10 },
+                start: Position {
+                    line,
+                    character: col,
+                },
+                end: Position {
+                    line,
+                    character: col + 10,
+                },
             },
             severity: Some(DiagnosticSeverity::ERROR),
             source: Some("rpl-lsp".to_string()),
@@ -244,8 +271,14 @@ fn compute_diagnostics(source: &str) -> Vec<Diagnostic> {
         };
         diags.push(Diagnostic {
             range: Range {
-                start: Position { line, character: col },
-                end: Position { line, character: col + 10 },
+                start: Position {
+                    line,
+                    character: col,
+                },
+                end: Position {
+                    line,
+                    character: col + 10,
+                },
             },
             severity: Some(DiagnosticSeverity::WARNING),
             source: Some("rpl-lsp".to_string()),
@@ -310,14 +343,30 @@ fn get_completions() -> Vec<CompletionItem> {
         ("web.post", "Rute POST", CompletionItemKind::FUNCTION),
         ("web.put", "Rute PUT", CompletionItemKind::FUNCTION),
         ("web.delete", "Rute DELETE", CompletionItemKind::FUNCTION),
-        ("web.render", "Render template", CompletionItemKind::FUNCTION),
-        ("web.jalankan", "Jalankan server", CompletionItemKind::FUNCTION),
+        (
+            "web.render",
+            "Render template",
+            CompletionItemKind::FUNCTION,
+        ),
+        (
+            "web.jalankan",
+            "Jalankan server",
+            CompletionItemKind::FUNCTION,
+        ),
         ("json.parse", "Parse JSON", CompletionItemKind::FUNCTION),
         ("json.buat", "Buat JSON", CompletionItemKind::FUNCTION),
         ("string.dari", "Ke string", CompletionItemKind::FUNCTION),
         ("kripto.sha256", "SHA-256", CompletionItemKind::FUNCTION),
-        ("waktu.sekarang", "Waktu sekarang", CompletionItemKind::FUNCTION),
-        ("list.tambah", "Tambah ke list", CompletionItemKind::FUNCTION),
+        (
+            "waktu.sekarang",
+            "Waktu sekarang",
+            CompletionItemKind::FUNCTION,
+        ),
+        (
+            "list.tambah",
+            "Tambah ke list",
+            CompletionItemKind::FUNCTION,
+        ),
     ] {
         items.push(CompletionItem {
             label: label.to_string(),
@@ -375,21 +424,33 @@ fn get_hover(source: &str, position: &Position) -> Option<Hover> {
             value: text.to_string(),
         }),
         range: Some(Range {
-            start: Position { line: position.line, character: (col.saturating_sub(word.len())) as u32 },
-            end: Position { line: position.line, character: (col + 1) as u32 },
+            start: Position {
+                line: position.line,
+                character: (col.saturating_sub(word.len())) as u32,
+            },
+            end: Position {
+                line: position.line,
+                character: (col + 1) as u32,
+            },
         }),
     })
 }
 
 fn extract_word_at(line: &str, col: usize) -> Option<String> {
     let bytes = line.as_bytes();
-    if col >= bytes.len() { return None; }
+    if col >= bytes.len() {
+        return None;
+    }
 
     let mut start = col;
-    while start > 0 && is_word_char(bytes[start - 1]) { start -= 1; }
+    while start > 0 && is_word_char(bytes[start - 1]) {
+        start -= 1;
+    }
 
     let mut end = col;
-    while end < bytes.len() && is_word_char(bytes[end]) { end += 1; }
+    while end < bytes.len() && is_word_char(bytes[end]) {
+        end += 1;
+    }
 
     if start < end {
         Some(line[start..end].to_string())

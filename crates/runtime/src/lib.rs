@@ -15,7 +15,9 @@ pub async fn serve(file: PathBuf, port: u16) -> anyhow::Result<()> {
 /// Used for FFI bridge (RPL Studio). Does NOT print to console.
 pub fn execute_string(kode_sumber: &str) -> Result<String, String> {
     let mut lexer = Lexer::new(kode_sumber);
-    let tokens = lexer.tokenize().map_err(|e| e.tampilkan_dengan_file(kode_sumber, None))?;
+    let tokens = lexer
+        .tokenize()
+        .map_err(|e| e.tampilkan_dengan_file(kode_sumber, None))?;
 
     let mut parser = RplParser::new(tokens);
     let mut program = parser.parse_program();
@@ -35,7 +37,9 @@ pub fn execute_string(kode_sumber: &str) -> Result<String, String> {
     machine.output_buffer.clear();
 
     let compiler = vm::Compiler::baru_dengan_base_path(&mut machine.heap, None);
-    let chunk = compiler.compile(program).map_err(|e| format!("Compiler Error: {}", e))?;
+    let chunk = compiler
+        .compile(program)
+        .map_err(|e| format!("Compiler Error: {}", e))?;
 
     match machine.execute(chunk) {
         Ok(()) => Ok(machine.output_buffer.clone()),
@@ -94,7 +98,10 @@ pub fn run_source(
     let check_result = typechecker.check(&program);
     if !check_result.errors.is_empty() {
         if let Some(file) = nama_file {
-            eprintln!("\x1b[1;33m⚠️  Peringatan pengecekan tipe di {}:\x1b[0m", file);
+            eprintln!(
+                "\x1b[1;33m⚠️  Peringatan pengecekan tipe di {}:\x1b[0m",
+                file
+            );
         } else {
             eprintln!("\x1b[1;33m⚠️  Peringatan pengecekan tipe:\x1b[0m");
         }
@@ -128,10 +135,7 @@ pub fn run_source(
         Ok(chunk) => {
             if let Err((msg, opt_lokasi)) = machine.execute(chunk) {
                 if let Some(lokasi) = opt_lokasi {
-                    let e = errors::RplError::Runtime {
-                        pesan: msg,
-                        lokasi,
-                    };
+                    let e = errors::RplError::Runtime { pesan: msg, lokasi };
                     return Err(e.tampilkan_dengan_file(kode_sumber, nama_file));
                 } else {
                     return Err(format!("VM Error: {}", msg));

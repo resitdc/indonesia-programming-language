@@ -174,7 +174,11 @@ impl Heap {
     pub fn alloc(&mut self, data: HeapData) -> usize {
         if let Some(idx) = self.free_list_head {
             if idx < self.objects.len() {
-                let next = if let HeapData::Free(n) = self.objects[idx].data { n } else { usize::MAX };
+                let next = if let HeapData::Free(n) = self.objects[idx].data {
+                    n
+                } else {
+                    usize::MAX
+                };
                 self.free_list_head = if next == usize::MAX { None } else { Some(next) };
                 self.objects[idx] = HeapObject {
                     is_marked: false,
