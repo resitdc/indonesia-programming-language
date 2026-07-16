@@ -169,8 +169,12 @@ class _ProjectScreenState extends State<ProjectScreen> {
       }
     }
 
+    if (!mounted) return;
+
     setState(() {
-      _openTabs.removeAt(index);
+      final currentTab = _openTabs.isNotEmpty && _activeTabIndex < _openTabs.length ? _openTabs[_activeTabIndex] : null;
+      _openTabs.remove(tab);
+      
       if (_openTabs.isEmpty) {
         Navigator.pushReplacement(
           context,
@@ -178,8 +182,13 @@ class _ProjectScreenState extends State<ProjectScreen> {
         );
         return;
       }
-      if (_activeTabIndex >= _openTabs.length) {
-        _activeTabIndex = _openTabs.length - 1;
+      
+      if (currentTab == tab) {
+        if (_activeTabIndex >= _openTabs.length) {
+          _activeTabIndex = _openTabs.length - 1;
+        }
+      } else if (currentTab != null) {
+        _activeTabIndex = _openTabs.indexOf(currentTab);
       }
     });
   }
@@ -534,8 +543,10 @@ class _ProjectScreenState extends State<ProjectScreen> {
             try {
               final content = file.readAsStringSync();
               final output = await runCode(code: content);
+              if (!mounted) return;
               setState(() => _terminalLines.addAll(output.split('\n')));
             } catch (e) {
+              if (!mounted) return;
               setState(() => _terminalLines.add('⚠ $e'));
             }
           } else {
@@ -756,6 +767,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
               });
               final content = _openTabs[_activeTabIndex].content;
               final result = await runCode(code: content);
+              if (!mounted) return;
               setState(() => _terminalLines.addAll(result.split('\n')));
               _scrollToTerminalBottom();
             },
