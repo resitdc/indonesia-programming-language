@@ -18,6 +18,7 @@ runtime = { path = "../runtime" }
 lexer = { path = "../lexer" }
 parser = { path = "../parser" }
 typechecker = { path = "../typechecker" }
+lsp = { path = "../lsp" }
 reqwest = { version = "0.12", features = ["blocking"] }
 zip = "0.6.6"
 

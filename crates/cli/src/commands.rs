@@ -53,9 +53,7 @@ pub fn handle_serve(file: &PathBuf) -> Result<()> {
                         let _ = child.wait();
 
                         print!("{}[2J{}[1;1H", 27 as char, 27 as char);
-                        println!(
-                            "\x1b[32m🔄 Perubahan terdeteksi! Merestart server...\x1b[0m\n"
-                        );
+                        println!("\x1b[32m🔄 Perubahan terdeteksi! Merestart server...\x1b[0m\n");
 
                         child = std::process::Command::new(std::env::current_exe()?)
                             .arg("run")
@@ -247,9 +245,7 @@ fn jalankan_watch(file: &PathBuf, _port: Option<u16>) -> Result<()> {
     for res in rx {
         match res {
             Ok(event) => {
-                if event.kind.is_modify()
-                    && last_run.elapsed() > Duration::from_millis(500)
-                {
+                if event.kind.is_modify() && last_run.elapsed() > Duration::from_millis(500) {
                     last_run = std::time::Instant::now();
                     print!("{}[2J{}[1;1H", 27 as char, 27 as char);
                     println!("\x1b[32m🔄 File berubah, menjalankan ulang...\x1b[0m\n");
@@ -263,6 +259,10 @@ fn jalankan_watch(file: &PathBuf, _port: Option<u16>) -> Result<()> {
         }
     }
     Ok(())
+}
+
+pub fn handle_lsp() -> Result<()> {
+    lsp::run_lsp().map_err(|e| anyhow::anyhow!("LSP error: {}", e))
 }
 
 #[cfg(test)]

@@ -64,9 +64,7 @@ pub fn register(vm: &mut VM) {
                 // bukan CWD (current working directory).
                 let path = if std::path::Path::new(raw_path).is_relative() {
                     if let Some(root) = &vm.get_heap_mut().project_root {
-                        root.join(raw_path)
-                            .to_string_lossy()
-                            .to_string()
+                        root.join(raw_path).to_string_lossy().to_string()
                     } else {
                         raw_path.to_string()
                     }
@@ -315,8 +313,8 @@ pub fn register(vm: &mut VM) {
             let start = std::time::Instant::now();
             let provider = pool.provider_name().to_string();
 
-            let intermediate_results: Vec<HashMap<String, DbValue>> = pool.with_conn(|conn| {
-                match conn {
+            let intermediate_results: Vec<HashMap<String, DbValue>> =
+                pool.with_conn(|conn| match conn {
                     DatabaseConnection::Sqlite(c) => {
                         let mut stmt = c
                             .prepare(&sql)
@@ -413,8 +411,7 @@ pub fn register(vm: &mut VM) {
                         }
                         Ok(results)
                     }
-                }
-            })?;
+                })?;
 
             let duration_ms = start.elapsed().as_secs_f64() * 1000.0;
             let caller = format!(

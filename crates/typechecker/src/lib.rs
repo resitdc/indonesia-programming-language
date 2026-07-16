@@ -243,15 +243,33 @@ impl TypeChecker {
     pub fn daftarkan_builtin(&mut self) {
         let builtins = [
             // Global module/kamus yang di-register oleh vm::stdlib
-            "db", "web", "string", "waktu", "kripto", "matematika",
-            "list", "json", "http", "env", "file", "cookie", "session",
-            "tugas", "log", "core",
+            "db",
+            "web",
+            "string",
+            "waktu",
+            "kripto",
+            "matematika",
+            "list",
+            "json",
+            "http",
+            "env",
+            "file",
+            "cookie",
+            "session",
+            "tugas",
+            "log",
+            "core",
             // Fungsi/konstanta global
-            "panjang", "tipe",
+            "panjang",
+            "tipe",
             // Function bawaan dari core
-            "tampilkan", "baca", "cetak", "tunda",
+            "tampilkan",
+            "baca",
+            "cetak",
+            "tunda",
             // Http helpers
-            "unduh", "kirim_http",
+            "unduh",
+            "kirim_http",
         ];
 
         let lokasi = errors::Lokasi::new(0, 0);
@@ -259,7 +277,9 @@ impl TypeChecker {
             // Gunakan Kamus kosong sebagai representasi. Built-in ini
             // bisa berupa modul, kamus, atau fungsi bawaam. Yang penting
             // type checker tidak melaporkan "belum dibuat".
-            let _ = self.symbols.deklarasi(nama, RplType::Kamus(HashMap::new()), lokasi);
+            let _ = self
+                .symbols
+                .deklarasi(nama, RplType::Kamus(HashMap::new()), lokasi);
         }
     }
 
@@ -891,7 +911,11 @@ selesai",
     fn test_auto_coercion_angka_teks_diizinkan() {
         // Operator + antara string dan angka harus diizinkan (auto-coercion)
         let result = check("buat x = \"nilai: \" + 42");
-        assert!(result.errors.is_empty(), "Auto-coercion angka ke teks seharusnya tidak error: {:?}", result.errors);
+        assert!(
+            result.errors.is_empty(),
+            "Auto-coercion angka ke teks seharusnya tidak error: {:?}",
+            result.errors
+        );
     }
 
     #[test]

@@ -105,9 +105,7 @@ pub fn register(vm: &mut VM) {
             // bukan CWD (current working directory).
             let file_name = if std::path::Path::new(&raw_file_name).is_relative() {
                 if let Some(root) = &ctx.get_heap_mut().project_root {
-                    root.join(&raw_file_name)
-                        .to_string_lossy()
-                        .to_string()
+                    root.join(&raw_file_name).to_string_lossy().to_string()
                 } else {
                     raw_file_name
                 }

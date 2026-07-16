@@ -1,5 +1,5 @@
 use anyhow::Result;
-use axum::{response::Html, routing::get, Router};
+use axum::{Router, response::Html, routing::get};
 use lexer::Lexer;
 use parser::Parser as RplParser;
 use std::fs;
@@ -84,10 +84,7 @@ async fn handle_request(file: PathBuf) -> Html<String> {
         Ok(chunk) => {
             if let Err((msg, opt_lokasi)) = machine.execute(chunk) {
                 if let Some(lokasi) = opt_lokasi {
-                    let e = errors::RplError::Runtime {
-                        pesan: msg,
-                        lokasi,
-                    };
+                    let e = errors::RplError::Runtime { pesan: msg, lokasi };
                     return Html(format!("<pre>{}</pre>", e.tampilkan(&kode_sumber)));
                 } else {
                     return Html(format!("<pre>VM Error: {}</pre>", msg));

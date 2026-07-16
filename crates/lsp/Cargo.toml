@@ -1,0 +1,16 @@
+[package]
+name = "lsp"
+version = "3.0.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+lsp-server = "0.7"
+lsp-types = "0.95"
+lexer = { path = "../lexer" }
+parser = { path = "../parser" }
+ast = { path = "../ast" }
+errors = { path = "../errors" }
+typechecker = { path = "../typechecker" }

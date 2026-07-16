@@ -97,10 +97,10 @@ pub fn preprocess_template_to_function(input: &str) -> String {
                 output.push_str(&format!("  _html = _html + ({})\n", expr.trim()));
                 continue;
             }
-                // Cek tag komponen berdasarkan nama file seperti:
-                //   <header.rpl>              → tampilan/header.rpl.html
-                //   <tampilan:header.rpl>     → tampilan/header.rpl.html
-                //   <kontroler/produk.rpl>    → kontroler/produk.rpl.html
+            // Cek tag komponen berdasarkan nama file seperti:
+            //   <header.rpl>              → tampilan/header.rpl.html
+            //   <tampilan:header.rpl>     → tampilan/header.rpl.html
+            //   <kontroler/produk.rpl>    → kontroler/produk.rpl.html
             if i < chars.len()
                 && chars[i] == '<'
                 && i + 1 < chars.len()
