@@ -182,83 +182,7 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Template Selection
-            const Text(
-              'Template',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: ProjectTemplate.values.map((template) {
-                final selected = _selectedTemplate == template;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedTemplate = template),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: selected ? const Color(0xFF007ACC).withOpacity(0.15) : const Color(0xFF1E1E1E),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: selected ? const Color(0xFF007ACC) : const Color(0xFF3C3C3C),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _templateIcon(template),
-                          size: 14,
-                          color: selected ? const Color(0xFF007ACC) : Colors.white38,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          template.displayName,
-                          style: TextStyle(
-                            color: selected ? const Color(0xFF007ACC) : Colors.white54,
-                            fontSize: 12,
-                            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-
-            // Template description
-            if (_selectedTemplate.description.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFF3C3C3C)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline, size: 14, color: Colors.white24),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _selectedTemplate.description,
-                        style: TextStyle(color: Colors.white.withOpacity(0.45), fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            const SizedBox(height: 12),
 
             // Error
             if (_error != null) ...[
@@ -322,22 +246,5 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
         ),
       ),
     );
-  }
-
-  IconData _templateIcon(ProjectTemplate template) {
-    switch (template) {
-      case ProjectTemplate.console:
-        return Icons.terminal;
-      case ProjectTemplate.website:
-        return Icons.web;
-      case ProjectTemplate.restApi:
-        return Icons.api;
-      case ProjectTemplate.desktop:
-        return Icons.desktop_windows;
-      case ProjectTemplate.library:
-        return Icons.library_books;
-      case ProjectTemplate.cli:
-        return Icons.code;
-    }
   }
 }

@@ -10,6 +10,7 @@ import 'welcome_screen.dart';
 import '../../src/rust/api/simple.dart';
 import 'activity_bar.dart';
 import 'search_panel.dart';
+import '../browser/browser_workspace.dart';
 
 class ProjectScreen extends StatefulWidget {
   final Project project;
@@ -49,9 +50,18 @@ class _ProjectScreenState extends State<ProjectScreen> {
       EditorTab(
         filePath: mainFile.path,
         fileName: mainFile.path.split(Platform.pathSeparator).last,
+        content: _readFile(mainFile.path),
       ),
     ];
     ProjectService.touchProject(widget.project);
+  }
+
+  String _readFile(String path) {
+    try {
+      return File(path).readAsStringSync();
+    } catch (e) {
+      return '';
+    }
   }
 
   @override
@@ -94,6 +104,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
         EditorTab(
           filePath: path,
           fileName: path.split(Platform.pathSeparator).last,
+          content: _readFile(path),
         ),
       );
       _activeTabIndex = _openTabs.length - 1;
@@ -547,14 +558,21 @@ class _ProjectScreenState extends State<ProjectScreen> {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final isMobile = mediaQuery.size.width < 600;
+    final isBrowser = _activeActivity == ActivityType.browser;
+    final isKeyboardOpen = mediaQuery.viewInsets.bottom > 0;
+    final isTerminalFocused = _terminalFocusNode.hasFocus;
+    
+    // Determine if any input is focused so we can show the toolbar
+    final showToolbar = isMobile && isKeyboardOpen;
 
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
+      bottomNavigationBar: showToolbar ? _buildKeyboardToolbar() : null,
       body: SafeArea(
         child: Column(
           children: [
             // ═══ Title Bar / Navbar ═══
-            _buildTitleBar(),
+            if (!isBrowser) _buildTitleBar(),
             // ═══ Main Content ═══
             Expanded(
               child: Row(
@@ -568,58 +586,73 @@ class _ProjectScreenState extends State<ProjectScreen> {
                       });
                     },
                   ),
-                  // Side Panel (only in layout hierarchy on Desktop)
-                  if (!isMobile) _buildSidePanel(),
-                  // Editor + Terminal
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        Column(
-                          children: [
-                            // Tab Bar
-                            EditorTabBar(
-                              tabs: _openTabs,
-                              activeIndex: _activeTabIndex,
-                              onTap: (i) => setState(() => _activeTabIndex = i),
-                              onClose: _closeTab,
-                            ),
-                            // Code Editor
-                            Expanded(
-                              child: _openTabs.isNotEmpty
-                                  ? CodeEditor(
-                                      key: ValueKey('${_openTabs[_activeTabIndex].filePath}-$_targetLineNumber-$_localSearchQuery'),
-                                      tab: _openTabs[_activeTabIndex],
-                                      initialLineNumber: _targetLineNumber,
-                                      searchQuery: _localSearchQuery,
-                                      onChanged: () => setState(() {}),
-                                      onSave: (path, content) => setState(() {}),
-                                    )
-                                  : _buildEmptyEditor(),
-                            ),
-                            // Terminal
-                            _buildTerminal(),
-                            // Status Bar
-                            EditorStatusBar(
-                              tab: _openTabs.isNotEmpty ? _openTabs[_activeTabIndex] : null,
-                            ),
-                          ],
-                        ),
-                        // Overlay Side Panel (on Mobile)
-                        if (isMobile && _activeActivity != null)
-                          Positioned(
-                            left: 0,
-                            top: 0,
-                            bottom: 0,
-                            width: 241, // 240 panel + 1 divider
-                            child: Material(
-                              elevation: 16,
-                              color: Colors.transparent,
-                              child: _buildSidePanel(),
-                            ),
+                  if (isBrowser)
+                    const Expanded(child: BrowserWorkspace())
+                  else ...[
+                    // Side Panel (only in layout hierarchy on Desktop)
+                    if (!isMobile) _buildSidePanel(),
+                    // Editor + Terminal
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Column(
+                            children: [
+                              // Tab Bar
+                              EditorTabBar(
+                                tabs: _openTabs,
+                                activeIndex: _activeTabIndex,
+                                onTap: (i) => setState(() => _activeTabIndex = i),
+                                onClose: _closeTab,
+                              ),
+                              // Code Editor
+                              Expanded(
+                                child: _openTabs.isNotEmpty
+                                    ? CodeEditor(
+                                        key: ValueKey('${_openTabs[_activeTabIndex].filePath}-$_targetLineNumber-$_localSearchQuery'),
+                                        tab: _openTabs[_activeTabIndex],
+                                        initialLineNumber: _targetLineNumber,
+                                        searchQuery: _localSearchQuery,
+                                        onChanged: () => setState(() {}),
+                                        onSave: (path, content) => setState(() {}),
+                                      )
+                                    : _buildEmptyEditor(),
+                              ),
+                              // Terminal
+                              _buildTerminal(),
+                              // Status Bar
+                              EditorStatusBar(
+                                tab: _openTabs.isNotEmpty ? _openTabs[_activeTabIndex] : null,
+                              ),
+                            ],
                           ),
-                      ],
+                          // Overlay Backdrop Scrim (on Mobile)
+                          if (isMobile && _activeActivity != null)
+                            Positioned.fill(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _activeActivity = null),
+                                behavior: HitTestBehavior.opaque,
+                                child: Container(
+                                  color: Colors.black45,
+                                ),
+                              ),
+                            ),
+                          // Overlay Side Panel (on Mobile)
+                          if (isMobile && _activeActivity != null)
+                            Positioned(
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: 241, // 240 panel + 1 divider
+                              child: Material(
+                                elevation: 16,
+                                color: Colors.transparent,
+                                child: _buildSidePanel(),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -954,6 +987,48 @@ class _ProjectScreenState extends State<ProjectScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildKeyboardToolbar() {
+    final symbols = ['<', '>', '{', '}', '[', ']', '(', ')', '=', '"', "'", '`', ';', ':', ',', '.'];
+    return Container(
+      height: 40,
+      color: const Color(0xFF2D2D2D),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: symbols.length,
+        itemBuilder: (context, index) {
+          final symbol = symbols[index];
+          return InkWell(
+            onTap: () {
+              if (_terminalFocusNode.hasFocus) {
+                final selection = _terminalInputController.selection;
+                if (selection.baseOffset >= 0) {
+                  final text = _terminalInputController.text;
+                  final newText = text.replaceRange(selection.start, selection.end, symbol);
+                  _terminalInputController.value = _terminalInputController.value.copyWith(
+                    text: newText,
+                    selection: TextSelection.collapsed(offset: selection.start + symbol.length),
+                  );
+                } else {
+                  _terminalInputController.text += symbol;
+                }
+              } else {
+                KeyboardEventNotifier.symbolStream.add(symbol);
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              child: Text(
+                symbol,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontFamily: 'monospace'),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

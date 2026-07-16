@@ -10,6 +10,11 @@ import 'package:highlight/languages/xml.dart';
 import 'rpl_languages.dart';
 import 'editor_tab.dart';
 import '../../features/theme/theme_state.dart';
+import 'dart:async';
+
+class KeyboardEventNotifier {
+  static final StreamController<String> symbolStream = StreamController<String>.broadcast();
+}
 
 class CodeEditor extends StatefulWidget {
   final EditorTab tab;
@@ -35,13 +40,20 @@ class CodeEditor extends StatefulWidget {
 
 class _CodeEditorState extends State<CodeEditor> {
   late CodeController _controller;
+  late FocusNode _focusNode;
+  late StreamSubscription _symbolSub;
   String _content = '';
 
   @override
   void initState() {
     super.initState();
-    _content = _loadFile();
-    widget.tab.content = _content;
+    _focusNode = FocusNode()..addListener(() {
+      setState(() {});
+    });
+    
+    _symbolSub = KeyboardEventNotifier.symbolStream.stream.listen(_onSymbol);
+    
+    _content = widget.tab.content;
     
     _controller = CodeController(
       text: _content,
@@ -97,16 +109,6 @@ class _CodeEditorState extends State<CodeEditor> {
     }
   }
 
-  String _loadFile() {
-    try {
-      final file = File(widget.tab.filePath);
-      if (file.existsSync()) {
-        return file.readAsStringSync();
-      }
-    } catch (_) {}
-    return '';
-  }
-
   void save() {
     try {
       final file = File(widget.tab.filePath);
@@ -120,8 +122,24 @@ class _CodeEditorState extends State<CodeEditor> {
     }
   }
 
+  void _onSymbol(String symbol) {
+    if (_focusNode.hasFocus) {
+      final selection = _controller.selection;
+      if (selection.baseOffset >= 0 && selection.extentOffset >= 0) {
+        final currentText = _controller.text;
+        final newText = currentText.replaceRange(selection.start, selection.end, symbol);
+        _controller.value = _controller.value.copyWith(
+          text: newText,
+          selection: TextSelection.collapsed(offset: selection.start + symbol.length),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _symbolSub.cancel();
+    _focusNode.dispose();
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
     super.dispose();
@@ -144,11 +162,18 @@ class _CodeEditorState extends State<CodeEditor> {
         autofocus: true,
         child: CodeTheme(
           data: CodeThemeData(styles: customTheme),
-          child: Container(
-            color: const Color(0xFF1E1E1E),
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 4.0),
+          child: GestureDetector(
+            onTap: () {
+              _focusNode.requestFocus();
+              // Move cursor to the end of the text
+              _controller.selection = TextSelection.collapsed(offset: _controller.text.length);
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              color: const Color(0xFF1E1E1E),
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
                 child: Theme(
                   data: Theme.of(context).copyWith(
                     inputDecorationTheme: const InputDecorationTheme(
@@ -158,6 +183,7 @@ class _CodeEditorState extends State<CodeEditor> {
                   ),
                   child: CodeField(
                     controller: _controller,
+                    focusNode: _focusNode,
                     textStyle: const TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 13,
@@ -180,7 +206,8 @@ class _CodeEditorState extends State<CodeEditor> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 }
 
