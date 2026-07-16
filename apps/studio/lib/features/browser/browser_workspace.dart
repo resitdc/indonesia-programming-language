@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -115,8 +116,14 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
 
       // Get page source
       final html = await _controller.runJavaScriptReturningResult('document.documentElement.outerHTML');
+      String htmlStr = html.toString();
+      if (htmlStr.startsWith('"') && htmlStr.endsWith('"')) {
+        try {
+          htmlStr = jsonDecode(htmlStr) as String;
+        } catch (_) {}
+      }
       setState(() {
-        _pageSource = html.toString();
+        _pageSource = htmlStr;
       });
 
       // Get cookies

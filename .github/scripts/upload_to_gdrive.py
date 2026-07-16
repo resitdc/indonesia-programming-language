@@ -34,7 +34,12 @@ def upload_file():
         media = MediaFileUpload(file_path, resumable=True)
         
         print(f"Uploading {file_name} to Google Drive folder {folder_id}...")
-        file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        file = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id',
+            supportsAllDrives=True
+        ).execute()
         print(f"Successfully uploaded! File ID: {file.get('id')}")
     except Exception as e:
         print(f"Failed to upload to Google Drive: {e}")
