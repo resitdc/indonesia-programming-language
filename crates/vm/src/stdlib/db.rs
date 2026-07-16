@@ -10,7 +10,7 @@ pub fn register(vm: &mut VM) {
 
     let hubungkan_func = FungsiBawaanVM {
         nama: "hubungkan".to_string(),
-        func: |vm: &mut dyn VmContext, args: Vec<Value>| {
+        func: std::sync::Arc::new(move |vm: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.is_empty() {
                 return Err("db.hubungkan membutuhkan 1 argumen: URL koneksi".to_string());
             }
@@ -90,12 +90,12 @@ pub fn register(vm: &mut VM) {
             vm.get_heap_mut().db_pool = Some(pool);
 
             Ok(Value::Kosong)
-        },
+        }),
     };
 
     let eksekusi_func = FungsiBawaanVM {
         nama: "eksekusi".to_string(),
-        func: |vm: &mut dyn VmContext, args: Vec<Value>| {
+        func: std::sync::Arc::new(move |vm: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.is_empty() {
                 return Err("db.eksekusi membutuhkan minimal 1 argumen: SQL".to_string());
             }
@@ -223,12 +223,12 @@ pub fn register(vm: &mut VM) {
             });
 
             Ok(Value::Angka(affected))
-        },
+        }),
     };
 
     let kueri_func = FungsiBawaanVM {
         nama: "kueri".to_string(),
-        func: |vm: &mut dyn VmContext, args: Vec<Value>| {
+        func: std::sync::Arc::new(move |vm: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.is_empty() {
                 return Err("db.kueri membutuhkan minimal 1 argumen: SQL".to_string());
             }
@@ -453,7 +453,7 @@ pub fn register(vm: &mut VM) {
 
             let arr_idx = vm.get_heap_mut().alloc(HeapData::Array(final_results));
             Ok(Value::Array(arr_idx))
-        },
+        }),
     };
 
     let hubungkan_idx = vm.heap.alloc(HeapData::FungsiBawaan(hubungkan_func));
@@ -466,7 +466,7 @@ pub fn register(vm: &mut VM) {
 
     let tabel_func = FungsiBawaanVM {
         nama: "tabel".to_string(),
-        func: |vm: &mut dyn VmContext, args: Vec<Value>| {
+        func: std::sync::Arc::new(move |vm: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.is_empty() {
                 return Err("db.tabel membutuhkan 1 argumen: nama tabel".to_string());
             }
@@ -482,12 +482,12 @@ pub fn register(vm: &mut VM) {
 
             let mod_idx = heap.db_module_idx.unwrap();
             Ok(Value::Modul(mod_idx))
-        },
+        }),
     };
 
     let dimana_func = FungsiBawaanVM {
         nama: "dimana".to_string(),
-        func: |vm: &mut dyn VmContext, args: Vec<Value>| {
+        func: std::sync::Arc::new(move |vm: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() < 3 {
                 return Err("db.dimana membutuhkan 3 argumen: kolom, operator, nilai".to_string());
             }
@@ -509,12 +509,12 @@ pub fn register(vm: &mut VM) {
 
             let mod_idx = heap.db_module_idx.unwrap();
             Ok(Value::Modul(mod_idx))
-        },
+        }),
     };
 
     let ambil_func = FungsiBawaanVM {
         nama: "ambil".to_string(),
-        func: |vm: &mut dyn VmContext, _args: Vec<Value>| {
+        func: std::sync::Arc::new(move |vm: &mut dyn VmContext, _args: Vec<Value>| -> Result<Value, String> {
             let sql = {
                 let state = vm.get_heap_mut().db_query_state.clone();
                 if state.tabel.is_empty() {
@@ -565,12 +565,12 @@ pub fn register(vm: &mut VM) {
             };
 
             vm.execute_function(kueri_val, vec![Value::String(sql_idx)])
-        },
+        }),
     };
 
     let simpan_func = FungsiBawaanVM {
         nama: "simpan".to_string(),
-        func: |vm: &mut dyn VmContext, args: Vec<Value>| {
+        func: std::sync::Arc::new(move |vm: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.is_empty() {
                 return Err("db.simpan membutuhkan 1 argumen: data kamus".to_string());
             }
@@ -636,12 +636,12 @@ pub fn register(vm: &mut VM) {
             };
 
             vm.execute_function(eksekusi_val, vec![Value::String(sql_idx)])
-        },
+        }),
     };
 
     let perbarui_func = FungsiBawaanVM {
         nama: "perbarui".to_string(),
-        func: |vm: &mut dyn VmContext, args: Vec<Value>| {
+        func: std::sync::Arc::new(move |vm: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.is_empty() {
                 return Err("db.perbarui membutuhkan 1 argumen: data kamus".to_string());
             }
@@ -725,12 +725,12 @@ pub fn register(vm: &mut VM) {
             };
 
             vm.execute_function(eksekusi_val, vec![Value::String(sql_idx)])
-        },
+        }),
     };
 
     let hapus_func = FungsiBawaanVM {
         nama: "hapus".to_string(),
-        func: |vm: &mut dyn VmContext, _args: Vec<Value>| {
+        func: std::sync::Arc::new(move |vm: &mut dyn VmContext, _args: Vec<Value>| -> Result<Value, String> {
             let sql = {
                 let state = vm.get_heap_mut().db_query_state.clone();
                 if state.tabel.is_empty() {
@@ -778,7 +778,7 @@ pub fn register(vm: &mut VM) {
             };
 
             vm.execute_function(eksekusi_val, vec![Value::String(sql_idx)])
-        },
+        }),
     };
 
     let tabel_idx = vm.heap.alloc(HeapData::FungsiBawaan(tabel_func));

@@ -451,7 +451,7 @@ impl VM {
 
                             self.stack.pop(); // Pop function itself
 
-                            let func_ptr = self.heap.get_fungsi_bawaan(fungsi_idx).func;
+                            let func_ptr = self.heap.get_fungsi_bawaan(fungsi_idx).func.clone();
                             // Pass heap implicitly
                             let result = func_ptr(self, args).map_err(|e| self.err(e))?;
                             self.stack.push(result);
@@ -705,7 +705,7 @@ impl VmContext for VM {
                 }
             }
             Value::FungsiBawaan(idx) => {
-                let func_ptr = self.heap.get_fungsi_bawaan(idx).func;
+                let func_ptr = self.heap.get_fungsi_bawaan(idx).func.clone();
                 func_ptr(self, args)
             }
             _ => Err("Bukan fungsi".to_string()),

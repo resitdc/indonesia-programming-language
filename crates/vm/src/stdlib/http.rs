@@ -1,6 +1,6 @@
 use crate::heap::HeapData;
 use crate::machine::VM;
-use crate::value::{FungsiBawaanVM, Value};
+use crate::value::{FungsiBawaanVM, Value, VmContext};
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -9,7 +9,7 @@ pub fn register(vm: &mut VM) {
 
     let get_func = FungsiBawaanVM {
         nama: "get".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.is_empty() {
                 return Err("Fungsi 'get' membutuhkan minimal 1 argumen: url".to_string());
             }
@@ -75,7 +75,7 @@ pub fn register(vm: &mut VM) {
             } else {
                 Err("URL harus berupa teks".to_string())
             }
-        },
+        }),
     };
     let get_idx = vm.heap.alloc(HeapData::FungsiBawaan(get_func));
     module_dict.insert("get".to_string(), Value::FungsiBawaan(get_idx));

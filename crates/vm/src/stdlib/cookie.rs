@@ -1,6 +1,6 @@
 use crate::heap::HeapData;
 use crate::machine::VM;
-use crate::value::{FungsiBawaanVM, Value};
+use crate::value::{FungsiBawaanVM, Value, VmContext};
 use std::collections::HashMap;
 
 pub fn register(vm: &mut VM) {
@@ -8,7 +8,7 @@ pub fn register(vm: &mut VM) {
 
     let set_func = FungsiBawaanVM {
         nama: "set".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() < 2 {
                 return Err(
                     "Fungsi 'cookie.set' membutuhkan minimal 2 argumen: nama, nilai".to_string(),
@@ -31,14 +31,14 @@ pub fn register(vm: &mut VM) {
             } else {
                 Err("Nama dan nilai cookie harus berupa teks".to_string())
             }
-        },
+        }),
     };
     let set_idx = vm.heap.alloc(HeapData::FungsiBawaan(set_func));
     module_dict.insert("set".to_string(), Value::FungsiBawaan(set_idx));
 
     let get_func = FungsiBawaanVM {
         nama: "get".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 1 {
                 return Err("Fungsi 'cookie.get' membutuhkan 1 argumen: nama".to_string());
             }
@@ -60,14 +60,14 @@ pub fn register(vm: &mut VM) {
             } else {
                 Err("Nama cookie harus berupa teks".to_string())
             }
-        },
+        }),
     };
     let get_idx = vm.heap.alloc(HeapData::FungsiBawaan(get_func));
     module_dict.insert("get".to_string(), Value::FungsiBawaan(get_idx));
 
     let hapus_func = FungsiBawaanVM {
         nama: "hapus".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 1 {
                 return Err("Fungsi 'cookie.hapus' membutuhkan 1 argumen: nama".to_string());
             }
@@ -79,7 +79,7 @@ pub fn register(vm: &mut VM) {
             } else {
                 Err("Nama cookie harus berupa teks".to_string())
             }
-        },
+        }),
     };
     let hapus_idx = vm.heap.alloc(HeapData::FungsiBawaan(hapus_func));
     module_dict.insert("hapus".to_string(), Value::FungsiBawaan(hapus_idx));

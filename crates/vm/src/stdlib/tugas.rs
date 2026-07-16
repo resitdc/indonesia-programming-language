@@ -1,5 +1,5 @@
 use crate::heap::HeapData;
-use crate::value::{FungsiBawaanVM, Value};
+use crate::value::{FungsiBawaanVM, Value, VmContext};
 use std::collections::HashMap;
 
 pub fn register(vm: &mut crate::machine::VM) {
@@ -9,7 +9,7 @@ pub fn register(vm: &mut crate::machine::VM) {
         "jalankan".to_string(),
         Value::FungsiBawaan(vm.heap.alloc(HeapData::FungsiBawaan(FungsiBawaanVM {
             nama: "tugas.jalankan".to_string(),
-            func: |ctx, args| {
+            func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
                 if args.len() != 1 {
                     return Err("tugas.jalankan membutuhkan 1 argumen (fungsi)".to_string());
                 }
@@ -20,7 +20,7 @@ pub fn register(vm: &mut crate::machine::VM) {
                 } else {
                     Err("Argumen pertama tugas.jalankan harus berupa fungsi".to_string())
                 }
-            },
+            }),
         }))),
     );
 
@@ -28,7 +28,7 @@ pub fn register(vm: &mut crate::machine::VM) {
         "tunggu".to_string(),
         Value::FungsiBawaan(vm.heap.alloc(HeapData::FungsiBawaan(FungsiBawaanVM {
             nama: "tugas.tunggu".to_string(),
-            func: |ctx, args| {
+            func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
                 if args.len() != 1 {
                     return Err("tugas.tunggu membutuhkan 1 argumen (tiket tugas)".to_string());
                 }
@@ -39,7 +39,7 @@ pub fn register(vm: &mut crate::machine::VM) {
                 } else {
                     Err("Argumen tugas.tunggu harus berupa ID tugas (Angka)".to_string())
                 }
-            },
+            }),
         }))),
     );
 

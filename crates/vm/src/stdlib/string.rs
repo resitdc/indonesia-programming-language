@@ -12,27 +12,25 @@ pub fn register(vm: &mut VM) {
 
     // Pure delegation for panjang, besar, kecil, potong, ganti via unsafe transmute
     // (pattern established in matematika.rs / core.rs — NativeFnVM = fn pointer type)
-    for (nama, func) in &stdlib::string::fungsi_string() {
+    for (nama, func_ref) in &stdlib::string::fungsi_string() {
+        let func_ptr = *func_ref;
         let fungsi = FungsiBawaanVM {
             nama: nama.to_string(),
-            func: unsafe {
-                std::mem::transmute(
+            func: std::sync::Arc::new(
                     move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
                         let heap = ctx.get_heap_mut();
                         let nilai_args: Vec<stdlib::NilaiRpl> = args
                             .iter()
                             .map(|v| adapter::value_ke_nilai(v, heap))
                             .collect();
-                        match func(&nilai_args) {
+                        match func_ptr(&nilai_args) {
                             Ok(result) => {
                                 let heap2 = ctx.get_heap_mut();
                                 Ok(adapter::nilai_ke_value(&result, heap2))
                             }
                             Err(e) => Err(e),
                         }
-                    },
-                )
-            },
+                    }),
         };
         let idx = vm.heap.alloc(HeapData::FungsiBawaan(fungsi));
         module_dict.insert(nama.to_string(), Value::FungsiBawaan(idx));
@@ -49,7 +47,7 @@ pub fn register(vm: &mut VM) {
     }
     let dari = FungsiBawaanVM {
         nama: "dari".to_string(),
-        func: dari_wrapper,
+        func: std::sync::Arc::new(dari_wrapper),
     };
     let dari_idx = vm.heap.alloc(HeapData::FungsiBawaan(dari));
     module_dict.insert("dari".to_string(), Value::FungsiBawaan(dari_idx));

@@ -24,7 +24,7 @@ pub fn register(vm: &mut VM) {
 
     let set_func = FungsiBawaanVM {
         nama: "set".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 2 {
                 return Err("Fungsi 'session.set' membutuhkan 2 argumen: kunci, nilai".to_string());
             }
@@ -60,14 +60,14 @@ pub fn register(vm: &mut VM) {
             } else {
                 Err("Kunci session harus berupa teks".to_string())
             }
-        },
+        }),
     };
     let set_idx = vm.heap.alloc(HeapData::FungsiBawaan(set_func));
     module_dict.insert("set".to_string(), Value::FungsiBawaan(set_idx));
 
     let get_func = FungsiBawaanVM {
         nama: "get".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 1 {
                 return Err("Fungsi 'session.get' membutuhkan 1 argumen: kunci".to_string());
             }
@@ -118,14 +118,14 @@ pub fn register(vm: &mut VM) {
             } else {
                 Err("Kunci session harus berupa teks".to_string())
             }
-        },
+        }),
     };
     let get_idx = vm.heap.alloc(HeapData::FungsiBawaan(get_func));
     module_dict.insert("get".to_string(), Value::FungsiBawaan(get_idx));
 
     let hapus_func = FungsiBawaanVM {
         nama: "hapus".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 1 {
                 return Err("Fungsi 'session.hapus' membutuhkan 1 argumen: kunci".to_string());
             }
@@ -149,14 +149,14 @@ pub fn register(vm: &mut VM) {
             } else {
                 Err("Kunci session harus berupa teks".to_string())
             }
-        },
+        }),
     };
     let hapus_idx = vm.heap.alloc(HeapData::FungsiBawaan(hapus_func));
     module_dict.insert("hapus".to_string(), Value::FungsiBawaan(hapus_idx));
 
     let set_expired_func = FungsiBawaanVM {
         nama: "set_expired".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 1 {
                 return Err(
                     "Fungsi 'session.set_expired' membutuhkan 1 argumen: durasi_detik".to_string(),
@@ -188,7 +188,7 @@ pub fn register(vm: &mut VM) {
             ctx.get_heap_mut().web_state.cookies_to_set.push(cookie_str);
 
             Ok(Value::Kosong)
-        },
+        }),
     };
     let set_expired_idx = vm.heap.alloc(HeapData::FungsiBawaan(set_expired_func));
     module_dict.insert(

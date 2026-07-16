@@ -34,7 +34,7 @@ pub fn register(vm: &mut VM) {
 
     let kompresi_func = FungsiBawaanVM {
         nama: "kompresi".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 1 {
                 return Err("Fungsi 'web.kompresi' membutuhkan 1 argumen (boolean)".to_string());
             }
@@ -44,14 +44,14 @@ pub fn register(vm: &mut VM) {
             };
             ctx.get_heap_mut().web_config.kompresi = aktif;
             Ok(Value::Kosong)
-        },
+        }),
     };
     let kompresi_idx = vm.heap.alloc(HeapData::FungsiBawaan(kompresi_func));
     web_map.insert("kompresi".to_string(), Value::FungsiBawaan(kompresi_idx));
 
     let ratelimit_func = FungsiBawaanVM {
         nama: "ratelimit".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 1 {
                 return Err("Fungsi 'web.ratelimit' membutuhkan 1 argumen (angka)".to_string());
             }
@@ -61,14 +61,14 @@ pub fn register(vm: &mut VM) {
             };
             ctx.get_heap_mut().web_config.rate_limit = Some(limit);
             Ok(Value::Kosong)
-        },
+        }),
     };
     let ratelimit_idx = vm.heap.alloc(HeapData::FungsiBawaan(ratelimit_func));
     web_map.insert("ratelimit".to_string(), Value::FungsiBawaan(ratelimit_idx));
 
     let proxy_func = FungsiBawaanVM {
         nama: "proxy".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 2 {
                 return Err(
                     "Fungsi 'web.proxy' membutuhkan 2 argumen (path, target_url)".to_string(),
@@ -82,14 +82,14 @@ pub fn register(vm: &mut VM) {
             } else {
                 Err("Path dan target URL harus berupa string".to_string())
             }
-        },
+        }),
     };
     let proxy_idx = vm.heap.alloc(HeapData::FungsiBawaan(proxy_func));
     web_map.insert("proxy".to_string(), Value::FungsiBawaan(proxy_idx));
 
     let render_func = FungsiBawaanVM {
         nama: "render".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.is_empty() || args.len() > 2 {
                 return Err(
                     "Fungsi 'web.render' membutuhkan 1 atau 2 argumen (file, data)".to_string(),
@@ -155,7 +155,7 @@ pub fn register(vm: &mut VM) {
                 Ok(val) => Ok(val),
                 Err(e) => Err(format!("Gagal me-render template: {}", e)),
             }
-        },
+        }),
     };
     let render_idx = vm.heap.alloc(HeapData::FungsiBawaan(render_func));
     web_map.insert("render".to_string(), Value::FungsiBawaan(render_idx));
@@ -168,7 +168,7 @@ pub fn register(vm: &mut VM) {
     // HTTP method routes
     let get_func = FungsiBawaanVM {
         nama: "get".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 2 {
                 return Err("Fungsi 'web.get' membutuhkan 2 argumen (path, handler)".to_string());
             }
@@ -184,14 +184,14 @@ pub fn register(vm: &mut VM) {
                 .or_insert_with(HashMap::new);
             method_map.insert("GET".to_string(), func_val);
             Ok(Value::Kosong)
-        },
+        }),
     };
     let get_idx = vm.heap.alloc(HeapData::FungsiBawaan(get_func));
     web_map.insert("get".to_string(), Value::FungsiBawaan(get_idx));
 
     let post_func = FungsiBawaanVM {
         nama: "post".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 2 {
                 return Err("Fungsi 'web.post' membutuhkan 2 argumen (path, handler)".to_string());
             }
@@ -207,14 +207,14 @@ pub fn register(vm: &mut VM) {
                 .or_insert_with(HashMap::new);
             method_map.insert("POST".to_string(), func_val);
             Ok(Value::Kosong)
-        },
+        }),
     };
     let post_idx = vm.heap.alloc(HeapData::FungsiBawaan(post_func));
     web_map.insert("post".to_string(), Value::FungsiBawaan(post_idx));
 
     let put_func = FungsiBawaanVM {
         nama: "put".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 2 {
                 return Err("Fungsi 'web.put' membutuhkan 2 argumen (path, handler)".to_string());
             }
@@ -230,14 +230,14 @@ pub fn register(vm: &mut VM) {
                 .or_insert_with(HashMap::new);
             method_map.insert("PUT".to_string(), func_val);
             Ok(Value::Kosong)
-        },
+        }),
     };
     let put_idx = vm.heap.alloc(HeapData::FungsiBawaan(put_func));
     web_map.insert("put".to_string(), Value::FungsiBawaan(put_idx));
 
     let delete_func = FungsiBawaanVM {
         nama: "delete".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 2 {
                 return Err("Fungsi 'web.delete' membutuhkan 2 argumen (path, handler)".to_string());
             }
@@ -253,14 +253,14 @@ pub fn register(vm: &mut VM) {
                 .or_insert_with(HashMap::new);
             method_map.insert("DELETE".to_string(), func_val);
             Ok(Value::Kosong)
-        },
+        }),
     };
     let delete_idx = vm.heap.alloc(HeapData::FungsiBawaan(delete_func));
     web_map.insert("delete".to_string(), Value::FungsiBawaan(delete_idx));
 
     let patch_func = FungsiBawaanVM {
         nama: "patch".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 2 {
                 return Err("Fungsi 'web.patch' membutuhkan 2 argumen (path, handler)".to_string());
             }
@@ -276,7 +276,7 @@ pub fn register(vm: &mut VM) {
                 .or_insert_with(HashMap::new);
             method_map.insert("PATCH".to_string(), func_val);
             Ok(Value::Kosong)
-        },
+        }),
     };
     let patch_idx = vm.heap.alloc(HeapData::FungsiBawaan(patch_func));
     web_map.insert("patch".to_string(), Value::FungsiBawaan(patch_idx));
@@ -284,7 +284,7 @@ pub fn register(vm: &mut VM) {
     // web.statis(path, folder)
     let statis_func = FungsiBawaanVM {
         nama: "statis".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 2 {
                 return Err("Fungsi 'web.statis' membutuhkan 2 argumen (path, folder)".to_string());
             }
@@ -296,14 +296,14 @@ pub fn register(vm: &mut VM) {
             } else {
                 Err("Path dan folder harus berupa string".to_string())
             }
-        },
+        }),
     };
     let statis_idx = vm.heap.alloc(HeapData::FungsiBawaan(statis_func));
     web_map.insert("statis".to_string(), Value::FungsiBawaan(statis_idx));
 
     let jalankan_func = FungsiBawaanVM {
         nama: "jalankan".to_string(),
-        func: |ctx, args| {
+        func: std::sync::Arc::new(move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
             if args.len() != 1 {
                 return Err("Fungsi 'web.jalankan' membutuhkan 1 argumen (port)".to_string());
             }
@@ -720,7 +720,7 @@ pub fn register(vm: &mut VM) {
             });
 
             Ok(Value::Kosong)
-        },
+        }),
     };
     let jalankan_idx = vm.heap.alloc(HeapData::FungsiBawaan(jalankan_func));
     web_map.insert("jalankan".to_string(), Value::FungsiBawaan(jalankan_idx));
