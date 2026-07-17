@@ -175,7 +175,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           'assets/rakoda-white.svg',
           width: 64,
           height: 64,
-          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          colorFilter: const ColorFilter.mode(Color(0xFF007ACC), BlendMode.srcIn),
         ),
         const SizedBox(height: 16),
         const Text(
@@ -183,7 +183,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Color(0xFF007ACC),
             letterSpacing: 4,
           ),
         ),
