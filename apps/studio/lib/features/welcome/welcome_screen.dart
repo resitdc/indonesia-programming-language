@@ -89,7 +89,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Berhasil diekspor ke: ${zipPath.split(Platform.pathSeparator).last}'),
-            backgroundColor: const Color(0xFF007ACC),
+            backgroundColor: const Color(0xFF2568E7),
           ),
         );
       }
@@ -175,7 +175,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           'assets/rakoda-white.svg',
           width: 64,
           height: 64,
-          colorFilter: const ColorFilter.mode(Color(0xFF007ACC), BlendMode.srcIn),
+          colorFilter: const ColorFilter.mode(Color(0xFF2568E7), BlendMode.srcIn),
         ),
         const SizedBox(height: 16),
         const Text(
@@ -183,7 +183,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF007ACC),
+            color: Color(0xFF2568E7),
             letterSpacing: 4,
           ),
         ),
@@ -212,7 +212,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           icon: Icons.create_new_folder_outlined,
           label: 'Buat Project',
           subtitle: 'Buat project baru',
-          color: const Color(0xFF007ACC),
+          color: const Color(0xFF2568E7),
           onTap: _createProject,
         ),
         _ActionCard(
@@ -271,7 +271,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           const Center(
             child: Padding(
               padding: EdgeInsets.all(32),
-              child: CircularProgressIndicator(color: Color(0xFF007ACC)),
+              child: CircularProgressIndicator(color: Color(0xFF2568E7)),
             ),
           )
         else if (_recentProjects.isEmpty)
@@ -346,7 +346,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                   child: Icon(
                     _templateIcon(project.template),
-                    color: const Color(0xFF007ACC),
+                    color: const Color(0xFF2568E7),
                     size: 18,
                   ),
                 ),

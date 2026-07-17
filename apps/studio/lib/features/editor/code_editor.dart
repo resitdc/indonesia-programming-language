@@ -228,7 +228,7 @@ class EditorStatusBar extends StatelessWidget {
       height: 22,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: const BoxDecoration(
-        color: Color(0xFF007ACC),
+        color: Color(0xFF2568E7),
       ),
       child: Row(
         children: [
@@ -360,7 +360,7 @@ class _EditorTabBarState extends State<EditorTabBar> {
                 border: Border(
                   right: const BorderSide(color: Color(0xFF252526), width: 1),
                   top: BorderSide(
-                    color: isActive ? const Color(0xFF007ACC) : Colors.transparent,
+                    color: isActive ? const Color(0xFF2568E7) : Colors.transparent,
                     width: isActive ? 2 : 0,
                   ),
                 ),

@@ -137,7 +137,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                                   border: Border(
                                     top: BorderSide(
                                       color: isActive
-                                          ? const Color(0xFF007ACC)
+                                          ? const Color(0xFF2568E7)
                                           : Colors.transparent,
                                       width: 2,
                                     ),
@@ -335,7 +335,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
               const Icon(
                 Icons.chevron_right,
                 size: 16,
-                color: Color(0xFF007ACC),
+                color: Color(0xFF2568E7),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -633,7 +633,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                           border: Border(
                             bottom: BorderSide(
                               color: isActive
-                                  ? const Color(0xFF007ACC)
+                                  ? const Color(0xFF2568E7)
                                   : Colors.transparent,
                               width: 2,
                             ),
@@ -803,10 +803,10 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
             if (!_addingCookie)
               TextButton.icon(
                 onPressed: () => setState(() => _addingCookie = true),
-                icon: const Icon(Icons.add, size: 14, color: Color(0xFF007ACC)),
+                icon: const Icon(Icons.add, size: 14, color: Color(0xFF2568E7)),
                 label: const Text(
                   'Add Cookie',
-                  style: TextStyle(color: Color(0xFF007ACC), fontSize: 11),
+                  style: TextStyle(color: Color(0xFF2568E7), fontSize: 11),
                 ),
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
@@ -832,10 +832,10 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
             if (!_addingLocalStorage)
               TextButton.icon(
                 onPressed: () => setState(() => _addingLocalStorage = true),
-                icon: const Icon(Icons.add, size: 14, color: Color(0xFF007ACC)),
+                icon: const Icon(Icons.add, size: 14, color: Color(0xFF2568E7)),
                 label: const Text(
                   'Add Item',
-                  style: TextStyle(color: Color(0xFF007ACC), fontSize: 11),
+                  style: TextStyle(color: Color(0xFF2568E7), fontSize: 11),
                 ),
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,

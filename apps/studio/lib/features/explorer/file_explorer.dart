@@ -136,7 +136,7 @@ class _FileExplorerState extends State<FileExplorer> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF007ACC), strokeWidth: 2),
+        child: CircularProgressIndicator(color: Color(0xFF2568E7), strokeWidth: 2),
       );
     }
 
@@ -350,7 +350,7 @@ class _FileExplorerState extends State<FileExplorer> {
               fillColor: Color(0xFF1E1E1E),
               border: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF3C3C3C))),
               enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF3C3C3C))),
-              focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF007ACC))),
+              focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF2568E7))),
             ),
           ),
           child: TextField(
@@ -374,7 +374,7 @@ class _FileExplorerState extends State<FileExplorer> {
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF007ACC),
+              backgroundColor: const Color(0xFF2568E7),
               foregroundColor: Colors.white,
             ),
             child: const Text('Rename'),

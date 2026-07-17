@@ -142,7 +142,7 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text(
                   'OK',
-                  style: TextStyle(color: Color(0xFF007ACC)),
+                  style: TextStyle(color: Color(0xFF2568E7)),
                 ),
               ),
             ],
@@ -177,7 +177,7 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
                 onPressed: () => Navigator.of(context).pop(true),
                 child: const Text(
                   'OK',
-                  style: TextStyle(color: Color(0xFF007ACC)),
+                  style: TextStyle(color: Color(0xFF2568E7)),
                 ),
               ),
             ],
@@ -217,7 +217,7 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
                       borderSide: BorderSide(color: Color(0xFF333333)),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF007ACC)),
+                      borderSide: BorderSide(color: Color(0xFF2568E7)),
                     ),
                   ),
                 ),
@@ -235,7 +235,7 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
                 onPressed: () => Navigator.of(context).pop(textController.text),
                 child: const Text(
                   'OK',
-                  style: TextStyle(color: Color(0xFF007ACC)),
+                  style: TextStyle(color: Color(0xFF2568E7)),
                 ),
               ),
             ],
@@ -539,7 +539,7 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
       font-size: 28px;
       font-weight: 900;
       letter-spacing: 6px;
-      color: #007acc;
+      color: #2568E7;
       text-shadow: 0 0 20px rgba(0, 122, 204, 0.4);
       margin: 0;
       background: linear-gradient(135deg, #2568e7, #00bfff);
@@ -577,7 +577,7 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
     .search-box:focus-within {
-      border-color: #007acc;
+      border-color: #2568E7;
       box-shadow: 0 8px 24px rgba(0, 122, 204, 0.2);
     }
     .search-input {
@@ -698,7 +698,7 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
           LinearProgressIndicator(
             value: _progress,
             backgroundColor: Colors.transparent,
-            color: const Color(0xFF007ACC),
+            color: const Color(0xFF2568E7),
             minHeight: 2,
           ),
 

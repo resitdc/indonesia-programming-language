@@ -187,7 +187,7 @@ class _ConnectionDialogState extends State<ConnectionDialog> {
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF007ACC),
+            backgroundColor: const Color(0xFF2568E7),
           ),
           onPressed: _save,
           child: const Text('Save', style: TextStyle(color: Colors.white)),

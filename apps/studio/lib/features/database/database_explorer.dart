@@ -335,7 +335,7 @@ class _DatabaseExplorerState extends State<DatabaseExplorer> {
                       : (node.isExpandable ? Icons.folder : Icons.table_chart),
                   size: 14,
                   color: isRoot
-                      ? const Color(0xFF007ACC)
+                      ? const Color(0xFF2568E7)
                       : (node.isExpandable
                             ? const Color(0xFFDCDCAA)
                             : const Color(0xFF4EC9B0)),

@@ -151,7 +151,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
             ElevatedButton(
               onPressed: () => Navigator.pop(context, 'save'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF007ACC),
+                backgroundColor: const Color(0xFF2568E7),
                 foregroundColor: Colors.white,
               ),
               child: const Text('Simpan'),
@@ -231,7 +231,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                 borderSide: BorderSide(color: Color(0xFF3C3C3C)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF007ACC)),
+                borderSide: BorderSide(color: Color(0xFF2568E7)),
               ),
             ),
           ),
@@ -273,7 +273,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF007ACC),
+              backgroundColor: const Color(0xFF2568E7),
               foregroundColor: Colors.white,
             ),
             child: const Text('Buat'),
@@ -306,7 +306,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                 borderSide: BorderSide(color: Color(0xFF3C3C3C)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFF007ACC)),
+                borderSide: BorderSide(color: Color(0xFF2568E7)),
               ),
             ),
           ),
@@ -347,7 +347,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF007ACC),
+              backgroundColor: const Color(0xFF2568E7),
               foregroundColor: Colors.white,
             ),
             child: const Text('Buat'),
@@ -1314,7 +1314,7 @@ class _TitleBarButton extends StatelessWidget {
       icon: Icon(
         icon,
         size: 15,
-        color: color ?? (isActive ? const Color(0xFF007ACC) : Colors.white38),
+        color: color ?? (isActive ? const Color(0xFF2568E7) : Colors.white38),
       ),
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

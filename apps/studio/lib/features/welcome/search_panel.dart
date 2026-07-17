@@ -249,7 +249,7 @@ class _SearchPanelState extends State<SearchPanel> {
           // Results List
           Expanded(
             child: _searching
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF007ACC), strokeWidth: 2))
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF2568E7), strokeWidth: 2))
                 : _results.isEmpty
                     ? Center(
                         child: Text(
@@ -281,7 +281,7 @@ class _SearchPanelState extends State<SearchPanel> {
           fillColor: const Color(0xFF3C3C3C),
           border: const OutlineInputBorder(borderSide: BorderSide(color: Colors.transparent)),
           enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.transparent)),
-          focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF007ACC))),
+          focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF2568E7))),
         ),
       ),
     );

@@ -691,7 +691,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Success. Affected rows: ${res.affectedRows}'),
-            backgroundColor: const Color(0xFF007ACC),
+            backgroundColor: const Color(0xFF2568E7),
           ),
         );
       }
@@ -911,7 +911,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF007ACC),
+                backgroundColor: const Color(0xFF2568E7),
               ),
               child: const Text(
                 'Create',
@@ -1056,7 +1056,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF007ACC),
+              backgroundColor: const Color(0xFF2568E7),
             ),
             child: const Text('Insert', style: TextStyle(color: Colors.white)),
           ),
@@ -1169,7 +1169,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF007ACC),
+              backgroundColor: const Color(0xFF2568E7),
             ),
             child: const Text('Update', style: TextStyle(color: Colors.white)),
           ),
@@ -1481,7 +1481,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
                 const Icon(
                   Icons.dns_outlined,
                   size: 14,
-                  color: Color(0xFF007ACC),
+                  color: Color(0xFF2568E7),
                 ),
                 const SizedBox(width: 6),
                 const Expanded(
@@ -1536,7 +1536,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
                         icon: const Icon(Icons.add, size: 16),
                         label: const Text('Add Connection'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF007ACC),
+                          backgroundColor: const Color(0xFF2568E7),
                           foregroundColor: Colors.white,
                         ),
                       ),
@@ -1581,7 +1581,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
     Color iconColor;
     if (isConn) {
       icon = Icons.storage;
-      iconColor = const Color(0xFF007ACC);
+      iconColor = const Color(0xFF2568E7);
     } else if (isDb) {
       icon = Icons.dataset;
       iconColor = const Color(0xFFDCDCAA);
@@ -1810,13 +1810,13 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
           Color tabColor;
           if (tab.type == _DbTabType.query) {
             tabIcon = Icons.code;
-            tabColor = const Color(0xFF007ACC);
+            tabColor = const Color(0xFF2568E7);
           } else if (tab.type == _DbTabType.tableStructure) {
             tabIcon = Icons.view_column;
             tabColor = const Color(0xFFE8AB53);
           } else if (tab.type == _DbTabType.databaseInfo) {
             tabIcon = Icons.info_outline;
-            tabColor = const Color(0xFF007ACC);
+            tabColor = const Color(0xFF2568E7);
           } else {
             tabIcon = Icons.table_chart_outlined;
             tabColor = const Color(0xFF4EC9B0);
@@ -1833,7 +1833,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
                 border: Border(
                   top: BorderSide(
                     color: isActive
-                        ? const Color(0xFF007ACC)
+                        ? const Color(0xFF2568E7)
                         : Colors.transparent,
                     width: 2,
                   ),
@@ -1976,7 +1976,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
                 icon: const Icon(Icons.code, size: 12),
                 label: const Text('SQL Editor'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF007ACC),
+                  backgroundColor: const Color(0xFF2568E7),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 6,
@@ -2240,7 +2240,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: isActive ? const Color(0xFF007ACC) : Colors.transparent,
+              color: isActive ? const Color(0xFF2568E7) : Colors.transparent,
               width: 2,
             ),
           ),
@@ -2468,7 +2468,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
               // Toolbar
               Row(
                 children: [
-                  const Icon(Icons.code, size: 14, color: Color(0xFF007ACC)),
+                  const Icon(Icons.code, size: 14, color: Color(0xFF2568E7)),
                   const SizedBox(width: 6),
                   const Text(
                     'SQL Editor',
@@ -2487,7 +2487,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
                     ),
                     label: Text(isExecuting ? 'Running...' : 'Run'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF007ACC),
+                      backgroundColor: const Color(0xFF2568E7),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -2659,7 +2659,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
           ),
         ),
         // Divider
-        Container(height: 1, color: const Color(0xFF007ACC)),
+        Container(height: 1, color: const Color(0xFF2568E7)),
         // Results area
         Expanded(
           child: Container(
@@ -2808,7 +2808,7 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
           menuBackgroundColor: Color(0xFF2D2D30),
           gridBorderColor: Color(0xFF333333),
           borderColor: Color(0xFF333333),
-          activatedBorderColor: Color(0xFF007ACC),
+          activatedBorderColor: Color(0xFF2568E7),
           activatedColor: Color(0xFF094771),
           cellTextStyle: TextStyle(color: Colors.white70, fontSize: 13),
           columnTextStyle: TextStyle(

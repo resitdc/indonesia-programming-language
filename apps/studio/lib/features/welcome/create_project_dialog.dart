@@ -100,12 +100,12 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF007ACC).withOpacity(0.15),
+                    color: const Color(0xFF2568E7).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.create_new_folder_outlined,
-                    color: Color(0xFF007ACC),
+                    color: Color(0xFF2568E7),
                     size: 20,
                   ),
                 ),
@@ -131,7 +131,7 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                     borderSide: BorderSide(color: Color(0xFF3C3C3C)),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF007ACC)),
+                    borderSide: BorderSide(color: Color(0xFF2568E7)),
                   ),
                   filled: true,
                   fillColor: Color(0xFF1E1E1E),
@@ -174,7 +174,7 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                   TextButton(
                     onPressed: _pickFolder,
                     style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF007ACC),
+                      foregroundColor: const Color(0xFF2568E7),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                     child: const Text('Browse', style: TextStyle(fontSize: 12)),
@@ -234,7 +234,7 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                       : const Icon(Icons.check, size: 16),
                   label: Text(_creating ? 'Membuat...' : 'Buat Project'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007ACC),
+                    backgroundColor: const Color(0xFF2568E7),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),

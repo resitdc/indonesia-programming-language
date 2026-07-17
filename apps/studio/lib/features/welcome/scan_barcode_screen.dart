@@ -84,7 +84,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
                     borderSide: BorderSide(color: Color(0xFF3C3C3C)),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF007ACC)),
+                    borderSide: BorderSide(color: Color(0xFF2568E7)),
                   ),
                   filled: true,
                   fillColor: Color(0xFF252526),
@@ -121,7 +121,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
                     : const Icon(Icons.download_outlined, size: 18),
                 label: Text(_isProcessing ? 'Memproses...' : 'Download Project'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF007ACC),
+                  backgroundColor: const Color(0xFF2568E7),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -182,7 +182,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
                 width: 250,
                 height: 250,
                 decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFF007ACC), width: 2),
+                  border: Border.all(color: const Color(0xFF2568E7), width: 2),
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
