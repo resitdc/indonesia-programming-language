@@ -1500,7 +1500,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                 const SizedBox(width: 6),
                 const Expanded(
                   child: Text(
-                    'DATABASE NAVIGATOR',
+                    'DATABASE',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 11,
@@ -1895,7 +1895,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
             const Icon(Icons.storage, size: 64, color: Colors.white12),
             const SizedBox(height: 16),
             const Text(
-              'RPL Studio Database',
+              'RPL Studio',
               style: TextStyle(
                 color: Colors.white38,
                 fontSize: 18,
@@ -1905,8 +1905,8 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
             const SizedBox(height: 8),
             Text(
               _roots.isEmpty
-                  ? 'Add a connection to get started'
-                  : 'Select a table or open a query from the sidebar',
+                  ? 'Kamu belum mempunyai database'
+                  : 'Buka table atau query dari sidebar',
               style: const TextStyle(color: Colors.white24, fontSize: 13),
             ),
           ],

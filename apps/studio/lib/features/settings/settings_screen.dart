@@ -72,6 +72,42 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
           ),
+          const SizedBox(height: 16.0),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+            child: Text(
+              'Editor',
+              style: TextStyle(
+                color: Color(0xFF2568E7),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Card(
+            color: const Color(0xFF2D2D30),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: SwitchListTile(
+              activeColor: const Color(0xFF2568E7),
+              title: Container (
+                margin: const EdgeInsets.only(bottom: 8), 
+                child: const Text(
+                  'Auto Save',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                )
+              ),
+              subtitle: const Text(
+                'Menyimpan file secara otomatis setiap kali Anda mengetik di editor.',
+                style: TextStyle(color: Colors.white70, height: 1.1),
+              ),
+              value: settings.isAutoSave,
+              onChanged: (value) {
+                ref.read(settingsProvider.notifier).toggleAutoSave(value);
+              },
+            ),
+          ),
         ],
       ),
     );

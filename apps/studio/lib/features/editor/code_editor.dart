@@ -47,6 +47,7 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
   late StreamSubscription _symbolSub;
   String _content = '';
   Timer? _debounceTimer;
+  Timer? _autoSaveTimer;
 
   @override
   void initState() {
@@ -119,7 +120,15 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
       });
       widget.onChanged?.call();
       
-      final isLowEndMode = ref.read(settingsProvider).isLowEndMode;
+      final settings = ref.read(settingsProvider);
+      if (settings.isAutoSave) {
+        _autoSaveTimer?.cancel();
+        _autoSaveTimer = Timer(const Duration(milliseconds: 500), () {
+          if (mounted) save();
+        });
+      }
+      
+      final isLowEndMode = settings.isLowEndMode;
       if (isLowEndMode) {
         if (_controller.language != null) {
           _controller.language = null; // Disable highlighting temporarily
