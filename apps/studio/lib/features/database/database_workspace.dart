@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../settings/settings_provider.dart';
 import 'query_history_service.dart';
 import 'package:flutter_code_editor/flutter_code_editor.dart';
 import 'package:flutter_highlight/themes/vs2015.dart';
@@ -11,13 +13,13 @@ import 'connection_dialog.dart';
 
 /// A fully self-contained database workspace (like DBeaver).
 /// Has its own sidebar (explorer tree) and main editor area.
-class DatabaseWorkspace extends StatefulWidget {
+class DatabaseWorkspace extends ConsumerStatefulWidget {
   final String projectPath;
 
   const DatabaseWorkspace({super.key, required this.projectPath});
 
   @override
-  State<DatabaseWorkspace> createState() => _DatabaseWorkspaceState();
+  ConsumerState<DatabaseWorkspace> createState() => _DatabaseWorkspaceState();
 }
 
 // ─── Tree Node Model ─────────────────────────────────────────────────────────
@@ -80,7 +82,7 @@ class _ColumnDef {
   bool isNotNull = false;
 }
 
-class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
+class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
   // ── Sidebar State ──
   List<_DbNode> _roots = [];
   bool _isSidebarLoading = true;
@@ -503,14 +505,16 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
       await svc.connect();
 
       final page = _pageState[tab.id] ?? 0;
-      final offset = page * 100;
+      final isLowEndMode = ref.read(settingsProvider).isLowEndMode;
+      final limit = isLowEndMode ? 20 : 100;
+      final offset = page * limit;
       String q;
       if (tab.connection.engine == DatabaseEngine.postgres) {
-        q = 'SELECT * FROM "${tab.schema}"."${tab.table}" LIMIT 100 OFFSET $offset';
+        q = 'SELECT * FROM "${tab.schema}"."${tab.table}" LIMIT $limit OFFSET $offset';
       } else if (tab.connection.engine == DatabaseEngine.mysql) {
-        q = 'SELECT * FROM `${tab.database}`.`${tab.table}` LIMIT 100 OFFSET $offset';
+        q = 'SELECT * FROM `${tab.database}`.`${tab.table}` LIMIT $limit OFFSET $offset';
       } else {
-        q = 'SELECT * FROM "${tab.table}" LIMIT 100 OFFSET $offset';
+        q = 'SELECT * FROM "${tab.table}" LIMIT $limit OFFSET $offset';
       }
 
       final res = await svc.executeQuery(q);
@@ -620,7 +624,17 @@ class _DatabaseWorkspaceState extends State<DatabaseWorkspace> {
         await svc.executeQuery('SET search_path TO "${tab.schema}"');
       }
 
-      final res = await svc.executeQuery(query);
+      // Lindungi memori dari query SELECT besar tanpa limit
+      var finalQuery = query;
+      final isLowEndMode = ref.read(settingsProvider).isLowEndMode;
+      if (isLowEndMode) {
+        final upperQuery = query.toUpperCase();
+        if (upperQuery.startsWith('SELECT') && !upperQuery.contains('LIMIT')) {
+          finalQuery = '$query LIMIT 20';
+        }
+      }
+
+      final res = await svc.executeQuery(finalQuery);
 
       QueryHistoryService.addHistory(QueryHistoryItem(
         query: query,

@@ -12,17 +12,19 @@ import 'activity_bar.dart';
 import 'search_panel.dart';
 import '../browser/browser_workspace.dart';
 import '../database/database_workspace.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../settings/settings_provider.dart';
 
 enum WorkspaceType { editor, browser, database }
 
-class ProjectScreen extends StatefulWidget {
+class ProjectScreen extends ConsumerStatefulWidget {
   final Project project;
   const ProjectScreen({super.key, required this.project});
   @override
-  State<ProjectScreen> createState() => _ProjectScreenState();
+  ConsumerState<ProjectScreen> createState() => _ProjectScreenState();
 }
 
-class _ProjectScreenState extends State<ProjectScreen> {
+class _ProjectScreenState extends ConsumerState<ProjectScreen> {
   late List<EditorTab> _openTabs;
   int _activeTabIndex = 0;
   ActivityType? _activeActivity = ActivityType.explorer;
@@ -105,6 +107,16 @@ class _ProjectScreenState extends State<ProjectScreen> {
       });
       return;
     }
+
+    final isLowEndMode = ref.read(settingsProvider).isLowEndMode;
+    if (isLowEndMode && _openTabs.length >= 2) {
+      // Find oldest non-modified tab to close
+      final tabToClose = _openTabs.indexWhere((t) => !t.isModified);
+      if (tabToClose != -1) {
+        _openTabs.removeAt(tabToClose);
+      }
+    }
+
     setState(() {
       _openTabs.add(
         EditorTab(
@@ -753,7 +765,9 @@ class _ProjectScreenState extends State<ProjectScreen> {
                           ],
                         ),
                         // Index 1: Browser Workspace
-                        const BrowserWorkspace(),
+                        ref.watch(settingsProvider).isLowEndMode && _activeActivity != ActivityType.browser
+                            ? const SizedBox() // Bebaskan memori webview saat tidak aktif
+                            : const BrowserWorkspace(),
                         // Index 2: Database Workspace
                         DatabaseWorkspace(projectPath: widget.project.path),
                       ],

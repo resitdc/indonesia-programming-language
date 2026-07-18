@@ -1,6 +1,9 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../settings/settings_provider.dart';
 import 'package:flutter_code_editor/flutter_code_editor.dart';
 import 'package:flutter_highlight/themes/vs2015.dart';
 import 'package:highlight/highlight.dart';
@@ -16,7 +19,7 @@ class KeyboardEventNotifier {
   static final StreamController<String> symbolStream = StreamController<String>.broadcast();
 }
 
-class CodeEditor extends StatefulWidget {
+class CodeEditor extends ConsumerStatefulWidget {
   final EditorTab tab;
   final int? initialLineNumber;
   final String? searchQuery;
@@ -35,14 +38,15 @@ class CodeEditor extends StatefulWidget {
   });
 
   @override
-  State<CodeEditor> createState() => _CodeEditorState();
+  ConsumerState<CodeEditor> createState() => _CodeEditorState();
 }
 
-class _CodeEditorState extends State<CodeEditor> {
+class _CodeEditorState extends ConsumerState<CodeEditor> {
   late CodeController _controller;
   late FocusNode _focusNode;
   late StreamSubscription _symbolSub;
   String _content = '';
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -57,7 +61,7 @@ class _CodeEditorState extends State<CodeEditor> {
     
     _controller = CodeController(
       text: _content,
-      language: _getLanguageMode(widget.tab.filePath),
+      language: _getLanguageMode(widget.tab.filePath, _content),
       patternMap: widget.searchQuery != null && widget.searchQuery!.isNotEmpty
           ? {
               '(?i)${RegExp.escape(widget.searchQuery!)}': const TextStyle(
@@ -81,7 +85,15 @@ class _CodeEditorState extends State<CodeEditor> {
     _controller.addListener(_onTextChanged);
   }
 
-  Mode? _getLanguageMode(String filePath) {
+  Mode? _getLanguageMode(String filePath, String content) {
+    final isLowEndMode = ref.read(settingsProvider).isLowEndMode;
+    if (isLowEndMode) {
+      final lineCount = '\n'.allMatches(content).length + 1;
+      if (lineCount > 800) {
+        return null; // Disable syntax highlighting to save memory
+      }
+    }
+
     final ext = filePath.split('.').last.toLowerCase();
     if (filePath.endsWith('.rpl.html') || filePath.endsWith('.html')) {
       return rplHtml;
@@ -106,6 +118,20 @@ class _CodeEditorState extends State<CodeEditor> {
         widget.tab.isModified = true;
       });
       widget.onChanged?.call();
+      
+      final isLowEndMode = ref.read(settingsProvider).isLowEndMode;
+      if (isLowEndMode) {
+        if (_controller.language != null) {
+          _controller.language = null; // Disable highlighting temporarily
+        }
+        
+        _debounceTimer?.cancel();
+        _debounceTimer = Timer(const Duration(milliseconds: 700), () {
+          if (mounted) {
+            _controller.language = _getLanguageMode(widget.tab.filePath, _content);
+          }
+        });
+      }
     }
   }
 
@@ -138,6 +164,7 @@ class _CodeEditorState extends State<CodeEditor> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _symbolSub.cancel();
     _focusNode.dispose();
     _controller.removeListener(_onTextChanged);

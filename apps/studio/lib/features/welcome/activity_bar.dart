@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../settings/settings_screen.dart';
 
 enum ActivityType {
   explorer,
@@ -62,7 +64,11 @@ class ActivityBar extends StatelessWidget {
             type: null,
             icon: Icons.settings_outlined,
             tooltip: 'Settings',
-            onTap: () {},
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
           ),
           const SizedBox(height: 8),
         ],

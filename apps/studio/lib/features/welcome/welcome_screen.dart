@@ -1,6 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../settings/settings_screen.dart';
+import '../settings/settings_provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../models/project.dart';
 import '../../services/project_service.dart';
@@ -8,14 +12,14 @@ import 'create_project_dialog.dart';
 import 'project_screen.dart';
 import 'scan_barcode_screen.dart';
 
-class WelcomeScreen extends StatefulWidget {
+class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
+  ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   List<Project> _recentProjects = [];
   bool _loading = true;
 
@@ -200,6 +204,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildActionCards() {
+    final isLowEndMode = ref.watch(settingsProvider).isLowEndMode;
+
     return GridView.count(
       crossAxisCount: 2,
       mainAxisSpacing: 12,
@@ -209,6 +215,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       physics: const NeverScrollableScrollPhysics(),
       children: [
         _ActionCard(
+          isLowEndMode: isLowEndMode,
           icon: Icons.create_new_folder_outlined,
           label: 'Buat Project',
           subtitle: 'Buat project baru',
@@ -216,6 +223,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           onTap: _createProject,
         ),
         _ActionCard(
+          isLowEndMode: isLowEndMode,
           icon: Icons.folder_open_outlined,
           label: 'Buka Project',
           subtitle: 'Buka folder project',
@@ -223,6 +231,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           onTap: _openFolder,
         ),
         _ActionCard(
+          isLowEndMode: isLowEndMode,
           icon: Icons.qr_code_scanner_outlined,
           label: 'Scan Barcode',
           subtitle: 'Download sample project',
@@ -230,16 +239,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           onTap: _scanBarcode,
         ),
         _ActionCard(
+          isLowEndMode: isLowEndMode,
           icon: Icons.settings_outlined,
           label: 'Pengaturan',
           subtitle: 'Pengaturan aplikasi',
           color: const Color(0xFF9CDCFE),
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Pengaturan akan segera hadir!'),
-                backgroundColor: Color(0xFF333333),
-              ),
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
             );
           },
         ),
@@ -409,6 +416,7 @@ class _ActionCard extends StatefulWidget {
   final String subtitle;
   final Color color;
   final VoidCallback onTap;
+  final bool isLowEndMode;
 
   const _ActionCard({
     required this.icon,
@@ -416,6 +424,7 @@ class _ActionCard extends StatefulWidget {
     required this.subtitle,
     required this.color,
     required this.onTap,
+    this.isLowEndMode = false,
   });
 
   @override
@@ -433,14 +442,14 @@ class _ActionCardState extends State<_ActionCard> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: widget.isLowEndMode ? Duration.zero : const Duration(milliseconds: 200),
           curve: Curves.easeOut,
           decoration: BoxDecoration(
             color: const Color(0xFF252526),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: _isHovered ? widget.color.withOpacity(0.6) : const Color(0xFF3C3C3C),
-              width: _isHovered ? 1.5 : 1,
+              color: _isHovered && !widget.isLowEndMode ? widget.color.withOpacity(0.6) : const Color(0xFF3C3C3C),
+              width: _isHovered && !widget.isLowEndMode ? 1.5 : 1,
             ),
           ),
           padding: const EdgeInsets.all(16),

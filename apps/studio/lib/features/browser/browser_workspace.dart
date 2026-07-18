@@ -30,6 +30,19 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
   bool _isDevToolsMinimized = true;
 
   @override
+  void dispose() {
+    // Kosongkan memori WebView secara paksa saat tab ditutup (Mode Ringan)
+    try {
+      _controller.loadHtmlString('about:blank');
+      _controller.clearCache();
+      _controller.clearLocalStorage();
+    } catch (_) {
+      // Ignore if controller is already disposed
+    }
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     if (!kIsWeb && Platform.isMacOS) {

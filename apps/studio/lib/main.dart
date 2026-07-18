@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'src/rust/frb_generated.dart';
@@ -28,9 +29,11 @@ Future<void> main() async {
   }
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
-      child: const RplStudioApp(),
+    ProviderScope(
+      child: ChangeNotifierProvider(
+        create: (_) => ThemeProvider(),
+        child: const RplStudioApp(),
+      ),
     ),
   );
 }
