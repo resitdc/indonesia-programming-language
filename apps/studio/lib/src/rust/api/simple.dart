@@ -6,8 +6,8 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-String runCode({required String code}) =>
+Future<String> runCode({required String code}) =>
     RustLib.instance.api.crateApiSimpleRunCode(code: code);
 
-List<String> checkSyntax({required String code}) =>
+Future<List<String>> checkSyntax({required String code}) =>
     RustLib.instance.api.crateApiSimpleCheckSyntax(code: code);

@@ -1,4 +1,3 @@
-#[flutter_rust_bridge::frb(sync)]
 pub fn run_code(code: String) -> String {
     match runtime::execute_string(&code) {
         Ok(output) => output,
@@ -6,7 +5,6 @@ pub fn run_code(code: String) -> String {
     }
 }
 
-#[flutter_rust_bridge::frb(sync)]
 pub fn check_syntax(code: String) -> Vec<String> {
     // Basic syntax checking (mocked for now)
     // Could hook into runtime::execute_string dry run
