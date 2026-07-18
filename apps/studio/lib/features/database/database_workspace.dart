@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../settings/settings_provider.dart';
 import 'query_history_service.dart';
 import 'package:flutter_code_editor/flutter_code_editor.dart';
@@ -775,7 +776,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                       TextButton.icon(
                         onPressed: () =>
                             setDialogState(() => columns.add(_ColumnDef())),
-                        icon: const Icon(Icons.add, size: 14),
+                        icon: HugeIcon(icon: HugeIcons.strokeRoundedAdd01, size: 14, color: Colors.white70),
                         label: const Text(
                           'Add Column',
                           style: TextStyle(fontSize: 12),
@@ -893,10 +894,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                           // Remove
                           if (columns.length > 1)
                             IconButton(
-                              icon: const Icon(
-                                Icons.close,
-                                size: 14,
-                                color: Colors.red,
+                              icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14, color: Colors.red,
                               ),
                               onPressed: () =>
                                   setDialogState(() => columns.removeAt(i)),
@@ -1430,7 +1428,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
           // Toggle sidebar
           IconButton(
             icon: Icon(
-              _sidebarVisible ? Icons.menu_open : Icons.menu,
+              _sidebarVisible ? Icons.menu : Icons.menu,
               size: 18,
               color: Colors.white70,
             ),
@@ -1442,7 +1440,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
           const SizedBox(width: 4),
           // New query button
           IconButton(
-            icon: const Icon(Icons.code, size: 18, color: Colors.white70),
+            icon: HugeIcon(icon: HugeIcons.strokeRoundedSourceCode, size: 18, color: Colors.white70),
             onPressed: _openNewQueryTab,
             tooltip: 'New SQL Query',
             padding: EdgeInsets.zero,
@@ -1492,10 +1490,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
             color: const Color(0xFF2D2D30),
             child: Row(
               children: [
-                const Icon(
-                  Icons.dns_outlined,
-                  size: 14,
-                  color: Color(0xFF2568E7),
+                HugeIcon(icon: HugeIcons.strokeRoundedDatabase, size: 14, color: Color(0xFF2568E7),
                 ),
                 const SizedBox(width: 6),
                 const Expanded(
@@ -1534,10 +1529,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.dns_outlined,
-                        size: 48,
-                        color: Colors.white24,
+                      HugeIcon(icon: HugeIcons.strokeRoundedDatabase, size: 48, color: Colors.white24,
                       ),
                       const SizedBox(height: 12),
                       const Text(
@@ -1547,7 +1539,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                       const SizedBox(height: 8),
                       ElevatedButton.icon(
                         onPressed: _addConnection,
-                        icon: const Icon(Icons.add, size: 16),
+                        icon: HugeIcon(icon: HugeIcons.strokeRoundedAdd01, size: 16, color: Colors.white70),
                         label: const Text('Add Connection'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2568E7),
@@ -1597,7 +1589,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
       icon = Icons.storage;
       iconColor = const Color(0xFF2568E7);
     } else if (isDb) {
-      icon = Icons.dataset;
+      icon = Icons.storage;
       iconColor = const Color(0xFFDCDCAA);
     } else if (isSchema) {
       icon = Icons.folder_outlined;
@@ -1684,7 +1676,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
 
     items.add(
       ListTile(
-        leading: const Icon(Icons.history, color: Colors.white),
+        leading: HugeIcon(icon: HugeIcons.strokeRoundedClock01, color: Colors.white, size: 20),
         title: const Text(
           'Query History',
           style: TextStyle(color: Colors.white),
@@ -1699,7 +1691,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
     // All nodes: SQL Editor
     items.add(
       ListTile(
-        leading: const Icon(Icons.code, color: Colors.white),
+        leading: HugeIcon(icon: HugeIcons.strokeRoundedSourceCode, color: Colors.white, size: 20),
         title: const Text(
           'Open SQL Editor',
           style: TextStyle(color: Colors.white),
@@ -1715,7 +1707,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
     if (node.type == _NodeType.database || node.type == _NodeType.schema) {
       items.add(
         ListTile(
-          leading: const Icon(Icons.add_box_outlined, color: Color(0xFF4EC9B0)),
+          leading: HugeIcon(icon: HugeIcons.strokeRoundedAddSquare, color: const Color(0xFF4EC9B0), size: 20),
           title: const Text(
             'Create Table',
             style: TextStyle(color: Colors.white),
@@ -1732,7 +1724,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
     if (node.type == _NodeType.table) {
       items.add(
         ListTile(
-          leading: const Icon(Icons.table_chart, color: Color(0xFF4EC9B0)),
+          leading: HugeIcon(icon: HugeIcons.strokeRoundedTable, color: const Color(0xFF4EC9B0), size: 20),
           title: const Text('View Data', style: TextStyle(color: Colors.white)),
           onTap: () {
             Navigator.pop(context);
@@ -1742,7 +1734,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
       );
       items.add(
         ListTile(
-          leading: const Icon(Icons.delete_forever, color: Colors.red),
+          leading: HugeIcon(icon: HugeIcons.strokeRoundedDelete02, color: Colors.red, size: 20),
           title: const Text('Drop Table', style: TextStyle(color: Colors.red)),
           onTap: () {
             Navigator.pop(context);
@@ -1756,7 +1748,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
     if (node.type == _NodeType.connection) {
       items.add(
         ListTile(
-          leading: const Icon(Icons.edit, color: Colors.white),
+          leading: HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: Colors.white, size: 20),
           title: const Text(
             'Edit Connection',
             style: TextStyle(color: Colors.white),
@@ -1769,7 +1761,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
       );
       items.add(
         ListTile(
-          leading: const Icon(Icons.delete, color: Colors.red),
+          leading: HugeIcon(icon: HugeIcons.strokeRoundedDelete02, color: Colors.red, size: 20),
           title: const Text(
             'Delete Connection',
             style: TextStyle(color: Colors.red),
@@ -1785,7 +1777,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
     // All nodes: Refresh
     items.add(
       ListTile(
-        leading: const Icon(Icons.refresh, color: Colors.white),
+        leading: HugeIcon(icon: HugeIcons.strokeRoundedRefresh, color: Colors.white, size: 20),
         title: const Text('Refresh', style: TextStyle(color: Colors.white)),
         onTap: () {
           Navigator.pop(context);
@@ -1869,10 +1861,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                   const SizedBox(width: 8),
                   InkWell(
                     onTap: () => _closeTab(index),
-                    child: Icon(
-                      Icons.close,
-                      size: 14,
-                      color: isActive ? Colors.white54 : Colors.white24,
+                    child: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14, color: isActive ? Colors.white54 : Colors.white24,
                     ),
                   ),
                 ],
@@ -1892,7 +1881,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.storage, size: 64, color: Colors.white12),
+            HugeIcon(icon: HugeIcons.strokeRoundedDatabase, size: 64, color: Colors.white12),
             const SizedBox(height: 16),
             const Text(
               'RPL Studio',
@@ -1953,7 +1942,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
           color: const Color(0xFF2D2D30),
           child: Row(
             children: [
-              const Icon(Icons.info_outline, size: 16, color: Colors.white70),
+              HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, size: 16, color: Colors.white70),
               const SizedBox(width: 8),
               Text(
                 'Info: ${tab.title}',
@@ -1970,7 +1959,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                     tab.database,
                     tab.schema,
                   ),
-                  icon: const Icon(Icons.add, size: 12),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedAdd01, size: 12, color: Colors.white70),
                   label: const Text('Create Table'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4EC9B0),
@@ -1987,7 +1976,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
               ElevatedButton.icon(
                 onPressed: () =>
                     _openQueryTab(tab.connection, tab.database, tab.schema),
-                icon: const Icon(Icons.code, size: 12),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedSourceCode, size: 12, color: Colors.white70),
                 label: const Text('SQL Editor'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2568E7),
@@ -2003,10 +1992,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
               const SizedBox(width: 8),
               InkWell(
                 onTap: () => _loadDatabaseInfo(tab),
-                child: const Icon(
-                  Icons.refresh,
-                  size: 16,
-                  color: Colors.white54,
+                child: HugeIcon(icon: HugeIcons.strokeRoundedRefresh, size: 16, color: Colors.white54,
                 ),
               ),
             ],
@@ -2056,10 +2042,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                       ),
                       trailing: canCreateTable
                           ? IconButton(
-                              icon: const Icon(
-                                Icons.arrow_forward_ios,
-                                size: 14,
-                                color: Colors.white54,
+                              icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 14, color: Colors.white54,
                               ),
                               onPressed: () {
                                 final fakeNode = _DbNode(
@@ -2140,13 +2123,13 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                 () => _showInsertRowDialog(tab),
               ),
               _crudButton(
-                Icons.edit_outlined,
+                Icons.edit,
                 'Edit Row',
                 const Color(0xFFDCDCAA),
                 hasSelection ? () => _showEditRowDialog(tab) : null,
               ),
               _crudButton(
-                Icons.delete_outline,
+                Icons.delete,
                 'Delete Row',
                 Colors.red,
                 hasSelection ? () => _deleteSelectedRow(tab) : null,
@@ -2231,10 +2214,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                 padding: const EdgeInsets.only(right: 8),
                 child: InkWell(
                   onTap: () => _loadTableStructure(tab),
-                  child: const Icon(
-                    Icons.refresh,
-                    size: 14,
-                    color: Colors.white54,
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedRefresh, size: 14, color: Colors.white54,
                   ),
                 ),
               ),
@@ -2323,10 +2303,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                     : null,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  child: Icon(
-                    Icons.chevron_left,
-                    size: 16,
-                    color: page > 0 ? Colors.white : Colors.white24,
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 16, color: page > 0 ? Colors.white : Colors.white24,
                   ),
                 ),
               ),
@@ -2340,10 +2317,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                     : null,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  child: Icon(
-                    Icons.chevron_right,
-                    size: 16,
-                    color: data.rows.length == 100 ? Colors.white : Colors.white24,
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 16, color: data.rows.length == 100 ? Colors.white : Colors.white24,
                   ),
                 ),
               ),
@@ -2390,7 +2364,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
                 children: [
                   const Text('Query History', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                   TextButton.icon(
-                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedDelete02, color: Colors.redAccent, size: 20),
                     label: const Text('Clear History', style: TextStyle(color: Colors.redAccent)),
                     onPressed: () async {
                       await QueryHistoryService.clearHistory();
@@ -2482,7 +2456,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
               // Toolbar
               Row(
                 children: [
-                  const Icon(Icons.code, size: 14, color: Color(0xFF2568E7)),
+                  HugeIcon(icon: HugeIcons.strokeRoundedSourceCode, size: 14, color: Color(0xFF2568E7)),
                   const SizedBox(width: 6),
                   const Text(
                     'SQL Editor',
@@ -2699,7 +2673,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 16),
+            HugeIcon(icon: HugeIcons.strokeRoundedAlert02, color: Colors.red, size: 16),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -2716,7 +2690,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: const [
-            Icon(Icons.terminal, size: 32, color: Colors.white12),
+            HugeIcon(icon: HugeIcons.strokeRoundedCommandLine, size: 32, color: Colors.white12),
             SizedBox(height: 8),
             Text(
               'Write a query and press Run',
@@ -2731,10 +2705,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.check_circle_outline,
-              size: 32,
-              color: Colors.green,
+            HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle02, size: 32, color: Colors.green,
             ),
             const SizedBox(height: 8),
             Text(
@@ -2755,7 +2726,7 @@ class _DatabaseWorkspaceState extends ConsumerState<DatabaseWorkspace> {
           color: const Color(0xFF252526),
           child: Row(
             children: [
-              const Icon(Icons.table_chart, size: 13, color: Colors.white38),
+              HugeIcon(icon: HugeIcons.strokeRoundedTable, size: 13, color: Colors.white38),
               const SizedBox(width: 6),
               Text(
                 '${result.rows.length} rows × ${result.columns.length} columns',

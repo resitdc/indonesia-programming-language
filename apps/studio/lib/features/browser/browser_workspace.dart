@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'devtools_panel.dart';
@@ -478,7 +479,11 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
         _localStorage = parsedLs;
       });
     } catch (e) {
-      debugPrint('Failed to extract devtools data: $e');
+      if (e.toString().contains('FWFEvaluateJavaScriptError') || e.toString().contains('Failed evaluating JavaScript')) {
+        // Abaikan error ini. Biasanya terjadi saat Hot Restart ketika context WebView terputus.
+      } else {
+        debugPrint('Failed to extract devtools data: $e');
+      }
     }
   }
 
@@ -647,30 +652,21 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(
-                  Icons.arrow_back,
-                  size: 20,
-                  color: Colors.white70,
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: Colors.white70,
                 ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32),
                 onPressed: () => _controller.goBack(),
               ),
               IconButton(
-                icon: const Icon(
-                  Icons.arrow_forward,
-                  size: 20,
-                  color: Colors.white70,
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 20, color: Colors.white70,
                 ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32),
                 onPressed: () => _controller.goForward(),
               ),
               IconButton(
-                icon: const Icon(
-                  Icons.refresh,
-                  size: 20,
-                  color: Colors.white70,
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedRefresh, size: 20, color: Colors.white70,
                 ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32),

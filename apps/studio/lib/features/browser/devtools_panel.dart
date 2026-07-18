@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:html/dom.dart' as html_dom;
 
@@ -189,8 +190,8 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                       alignment: Alignment.center,
                       child: Icon(
                         widget.isMinimized
-                            ? Icons.keyboard_arrow_up
-                            : Icons.keyboard_arrow_down,
+                            ? Icons.expand_less
+                            : Icons.expand_more,
                         size: 16,
                         color: Colors.white54,
                       ),
@@ -264,7 +265,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.block, size: 14, color: Colors.white54),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14, color: Colors.white54),
                 tooltip: 'Clear console',
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -298,7 +299,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                 iconColor = const Color(0xFF9CDCFE);
               } else if (log.startsWith('< ')) {
                 textColor = const Color(0xFFD4D4D4);
-                icon = Icons.arrow_back;
+                icon = Icons.chevron_left;
                 iconColor = Colors.white54;
               }
 
@@ -332,10 +333,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             children: [
-              const Icon(
-                Icons.chevron_right,
-                size: 16,
-                color: Color(0xFF2568E7),
+              HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 16, color: Color(0xFF2568E7),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -411,7 +409,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.block, size: 14, color: Colors.white54),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14, color: Colors.white54),
                 tooltip: 'Clear network log',
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 constraints: const BoxConstraints(),
@@ -613,7 +611,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                 onTap: () => setState(() => _selectedNetworkRequest = null),
                 child: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Icon(Icons.close, size: 16, color: Colors.white54),
+                  child: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 16, color: Colors.white54),
                 ),
               ),
               Expanded(
@@ -803,7 +801,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
             if (!_addingCookie)
               TextButton.icon(
                 onPressed: () => setState(() => _addingCookie = true),
-                icon: const Icon(Icons.add, size: 14, color: Color(0xFF2568E7)),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedAdd01, size: 14, color: Color(0xFF2568E7)),
                 label: const Text(
                   'Add Cookie',
                   style: TextStyle(color: Color(0xFF2568E7), fontSize: 11),
@@ -832,7 +830,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
             if (!_addingLocalStorage)
               TextButton.icon(
                 onPressed: () => setState(() => _addingLocalStorage = true),
-                icon: const Icon(Icons.add, size: 14, color: Color(0xFF2568E7)),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedAdd01, size: 14, color: Color(0xFF2568E7)),
                 label: const Text(
                   'Add Item',
                   style: TextStyle(color: Color(0xFF2568E7), fontSize: 11),
@@ -942,10 +940,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   IconButton(
-                    icon: const Icon(
-                      Icons.check,
-                      size: 14,
-                      color: Colors.green,
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkSquare02, size: 14, color: Colors.green,
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -961,10 +956,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                     },
                   ),
                   IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      size: 14,
-                      color: Colors.redAccent,
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14, color: Colors.redAccent,
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1041,10 +1033,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                 children: [
                   if (isEditing) ...[
                     IconButton(
-                      icon: const Icon(
-                        Icons.check,
-                        size: 14,
-                        color: Colors.green,
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkSquare02, size: 14, color: Colors.green,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -1059,10 +1048,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(
-                        Icons.close,
-                        size: 14,
-                        color: Colors.redAccent,
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14, color: Colors.redAccent,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -1070,10 +1056,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                     ),
                   ] else ...[
                     IconButton(
-                      icon: const Icon(
-                        Icons.edit,
-                        size: 12,
-                        color: Colors.white54,
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedEdit02, size: 12, color: Colors.white54,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -1083,10 +1066,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(
-                        Icons.delete,
-                        size: 12,
-                        color: Colors.redAccent,
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 12, color: Colors.redAccent,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -1198,10 +1178,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   IconButton(
-                    icon: const Icon(
-                      Icons.check,
-                      size: 14,
-                      color: Colors.green,
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkSquare02, size: 14, color: Colors.green,
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1217,10 +1194,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                     },
                   ),
                   IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      size: 14,
-                      color: Colors.redAccent,
+                    icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14, color: Colors.redAccent,
                     ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1297,10 +1271,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                 children: [
                   if (isEditing) ...[
                     IconButton(
-                      icon: const Icon(
-                        Icons.check,
-                        size: 14,
-                        color: Colors.green,
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkSquare02, size: 14, color: Colors.green,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -1315,10 +1286,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(
-                        Icons.close,
-                        size: 14,
-                        color: Colors.redAccent,
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14, color: Colors.redAccent,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -1327,10 +1295,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                     ),
                   ] else ...[
                     IconButton(
-                      icon: const Icon(
-                        Icons.edit,
-                        size: 12,
-                        color: Colors.white54,
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedEdit02, size: 12, color: Colors.white54,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -1340,10 +1305,7 @@ class _DevToolsPanelState extends State<DevToolsPanel> {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(
-                        Icons.delete,
-                        size: 12,
-                        color: Colors.redAccent,
+                      icon: HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 12, color: Colors.redAccent,
                       ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -1497,7 +1459,7 @@ class _DomNodeViewerState extends State<DomNodeViewer> {
                   width: 16,
                   height: 16,
                   child: Icon(
-                    _isExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
+                    _isExpanded ? Icons.expand_more : Icons.chevron_right,
                     size: 16,
                     color: Colors.white54,
                   ),

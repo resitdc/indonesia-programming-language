@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../models/project.dart';
 import '../../services/project_service.dart';
@@ -12,10 +13,11 @@ import 'activity_bar.dart';
 import 'search_panel.dart';
 import '../browser/browser_workspace.dart';
 import '../database/database_workspace.dart';
+import '../http/http_workspace.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../settings/settings_provider.dart';
 
-enum WorkspaceType { editor, browser, database }
+enum WorkspaceType { editor, browser, database, http }
 
 class ProjectScreen extends ConsumerStatefulWidget {
   final Project project;
@@ -622,7 +624,7 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
           final filePath = '$_terminalCwd${Platform.pathSeparator}$fileName';
           final file = File(filePath);
           if (file.existsSync()) {
-            setState(() => _terminalLines.add('⏳ Menjalankan $fileName...'));
+            setState(() => _terminalLines.add('Menjalankan $fileName...'));
             try {
               final content = file.readAsStringSync();
               final output = await runCode(code: content);
@@ -656,6 +658,7 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
     final isMobile = mediaQuery.size.width < 600;
     final isBrowser = _activeWorkspace == WorkspaceType.browser;
     final isDatabase = _activeWorkspace == WorkspaceType.database;
+    final isHttp = _activeWorkspace == WorkspaceType.http;
     final isKeyboardOpen = mediaQuery.viewInsets.bottom > 0;
     final isTerminalFocused = _terminalFocusNode.hasFocus;
 
@@ -669,7 +672,7 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
         child: Column(
           children: [
             // ═══ Title Bar / Navbar ═══
-            if (!isBrowser && !isDatabase) _buildTitleBar(),
+            if (!isBrowser && !isDatabase && !isHttp) _buildTitleBar(),
             // ═══ Main Content ═══
             Expanded(
               child: Row(
@@ -687,6 +690,8 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
                             _activeWorkspace = WorkspaceType.browser;
                           } else if (type == ActivityType.database) {
                             _activeWorkspace = WorkspaceType.database;
+                          } else if (type == ActivityType.http) {
+                            _activeWorkspace = WorkspaceType.http;
                           } else {
                             _activeWorkspace = WorkspaceType.editor;
                           }
@@ -696,7 +701,7 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
                   ),
                   Expanded(
                     child: IndexedStack(
-                      index: isBrowser ? 1 : (isDatabase ? 2 : 0),
+                      index: isBrowser ? 1 : (isDatabase ? 2 : (isHttp ? 3 : 0)),
                       children: [
                         // Index 0: Editor & Terminal
                         Row(
@@ -770,6 +775,8 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
                             : const BrowserWorkspace(),
                         // Index 2: Database Workspace
                         DatabaseWorkspace(projectPath: widget.project.path),
+                        // Index 3: HTTP Workspace
+                        const HttpWorkspace(),
                       ],
                     ),
                   ),
@@ -790,10 +797,9 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
         children: [
-          // Back button
           IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new,
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedArrowLeft01,
               size: 13,
               color: Colors.white54,
             ),
@@ -831,7 +837,7 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _TitleBarButton(
-                      icon: Icons.undo,
+                      icon: HugeIcons.strokeRoundedUndo,
                       tooltip: 'Undo',
                       color: value.canUndo ? Colors.white70 : Colors.white24,
                       onPressed: value.canUndo
@@ -840,7 +846,7 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
                           : null,
                     ),
                     _TitleBarButton(
-                      icon: Icons.redo,
+                      icon: HugeIcons.strokeRoundedRedo,
                       tooltip: 'Redo',
                       color: value.canRedo ? Colors.white70 : Colors.white24,
                       onPressed: value.canRedo
@@ -850,20 +856,6 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
                     ),
                   ],
                 );
-              },
-            ),
-            _TitleBarButton(
-              icon: Icons.search,
-              tooltip: 'Cari di file ini',
-              isActive: _showLocalSearch,
-              onPressed: () {
-                setState(() {
-                  _showLocalSearch = !_showLocalSearch;
-                  if (!_showLocalSearch) {
-                    _localSearchQuery = '';
-                    _localSearchController.clear();
-                  }
-                });
               },
             ),
             _TitleBarButton(
@@ -886,9 +878,9 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
                 _terminalLines.add(
                   '>_ run ${_openTabs[_activeTabIndex].fileName}',
                 );
-                _terminalLines.add(
-                  '⏳ Menjalankan ${_openTabs[_activeTabIndex].fileName}...',
-                );
+                // _terminalLines.add(
+                //   '⏳ Menjalankan ${_openTabs[_activeTabIndex].fileName}...',
+                // );
               });
               final content = _openTabs[_activeTabIndex].content;
               final result = await runCode(code: content);
@@ -927,14 +919,14 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
               horizontal: 8,
               vertical: 0,
             ),
-            prefixIcon: const Icon(
-              Icons.search,
-              size: 14,
-              color: Colors.white38,
+            prefixIcon: Center(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: HugeIcon(icon: HugeIcons.strokeRoundedSearch01, size: 14, color: Colors.white38),
             ),
             prefixIconConstraints: const BoxConstraints(minWidth: 28),
             suffixIcon: IconButton(
-              icon: const Icon(Icons.close, size: 12, color: Colors.white54),
+              icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 12, color: Colors.white54),
               onPressed: () {
                 setState(() {
                   _showLocalSearch = false;
@@ -1082,7 +1074,7 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.code, size: 48, color: Colors.white.withOpacity(0.08)),
+            HugeIcon(icon: HugeIcons.strokeRoundedSourceCode, size: 48, color: Colors.white.withOpacity(0.08)),
             const SizedBox(height: 12),
             Text(
               'Tidak ada file yang dibuka',
@@ -1120,8 +1112,8 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
                 children: [
                   Icon(
                     _isTerminalMinimized
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
+                        ? Icons.expand_less
+                        : Icons.expand_more,
                     size: 14,
                     color: Colors.white38,
                   ),
@@ -1139,10 +1131,7 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
                   if (!_isTerminalMinimized)
                     GestureDetector(
                       onTap: () => setState(() => _terminalLines.clear()),
-                      child: const Icon(
-                        Icons.delete_outline,
-                        size: 14,
-                        color: Colors.white30,
+                      child: HugeIcon(icon: HugeIcons.strokeRoundedDelete02, size: 14, color: Colors.white30,
                       ),
                     ),
                 ],
@@ -1308,7 +1297,7 @@ class _ProjectScreenState extends ConsumerState<ProjectScreen> {
 
 /// Small title bar button with optional active state.
 class _TitleBarButton extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String tooltip;
   final bool isActive;
   final Color? color;
@@ -1325,11 +1314,17 @@ class _TitleBarButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(
-        icon,
-        size: 15,
-        color: color ?? (isActive ? const Color(0xFF2568E7) : Colors.white38),
-      ),
+      icon: icon is IconData
+          ? Icon(
+              icon,
+              size: 15,
+              color: color ?? (isActive ? const Color(0xFF2568E7) : Colors.white38),
+            )
+          : HugeIcon(
+              icon: icon,
+              size: 15,
+              color: color ?? (isActive ? const Color(0xFF2568E7) : Colors.white38),
+            ),
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
       tooltip: tooltip,

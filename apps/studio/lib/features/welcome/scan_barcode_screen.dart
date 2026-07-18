@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class ScanBarcodeScreen extends StatefulWidget {
@@ -51,11 +52,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
                 color: const Color(0xFF333333),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Icon(
-                Icons.qr_code_2,
-                size: 36,
-                color: Color(0xFFDCDCAA),
-              ),
+              child: HugeIcon(icon: HugeIcons.strokeRoundedQrCode, size: 36, color: const Color(0xFFDCDCAA)),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -96,7 +93,11 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
                 decoration: const InputDecoration(
                   hintText: 'Masukkan kode project...',
                   hintStyle: TextStyle(color: Colors.white30),
-                  prefixIcon: Icon(Icons.vpn_key_outlined, color: Colors.white30, size: 18),
+                  prefixIcon: Center(
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    child: HugeIcon(icon: HugeIcons.strokeRoundedKey01, color: Colors.white30, size: 18),
+                  ),
                 ),
               ),
             ),
@@ -118,7 +119,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
                         height: 16,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Icon(Icons.download_outlined, size: 18),
+                    : HugeIcon(icon: HugeIcons.strokeRoundedDownload01, size: 18, color: Colors.white70),
                 label: Text(_isProcessing ? 'Memproses...' : 'Download Project'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2568E7),
@@ -139,7 +140,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, size: 16, color: Color(0xFFDCDCAA)),
+                    HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, size: 16, color: Color(0xFFDCDCAA)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -213,7 +214,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.check_circle, color: Color(0xFF4EC9B0), size: 18),
+                    HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkCircle02, color: Color(0xFF4EC9B0), size: 18),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -233,7 +234,7 @@ class _ScanBarcodeScreenState extends State<ScanBarcodeScreen> {
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.info_outline, size: 14, color: Color(0xFFDCDCAA)),
+                      HugeIcon(icon: HugeIcons.strokeRoundedInformationCircle, size: 14, color: Color(0xFFDCDCAA)),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(

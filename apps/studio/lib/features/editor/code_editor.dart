@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../settings/settings_provider.dart';
@@ -183,6 +184,8 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final isWordWrap = ref.watch(settingsProvider).isWordWrap;
+
     // We can inject custom background color into the vs2015 theme map
     final customTheme = Map<String, TextStyle>.from(vs2015Theme);
     customTheme['root'] = customTheme['root']?.copyWith(
@@ -207,36 +210,36 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
             behavior: HitTestBehavior.opaque,
             child: Container(
               color: const Color(0xFF1E1E1E),
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                child: Theme(
-                  data: Theme.of(context).copyWith(
-                    inputDecorationTheme: const InputDecorationTheme(
-                      border: InputBorder.none,
-                      filled: false,
-                    ),
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  inputDecorationTheme: const InputDecorationTheme(
+                    border: InputBorder.none,
+                    filled: false,
                   ),
-                  child: CodeField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    undoController: widget.tab.undoController,
-                    textStyle: const TextStyle(
-                      fontFamily: 'monospace',
+                ),
+                child: CodeField(
+                  key: ValueKey('code_field_wrap_$isWordWrap'),
+                  wrap: isWordWrap,
+                  expands: true,
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  undoController: widget.tab.undoController,
+                  textStyle: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    height: 1.6,
+                  ),
+                  gutterStyle: const GutterStyle(
+                    textStyle: TextStyle(
+                      color: Color(0xFF858585),
                       fontSize: 13,
+                      fontFamily: 'monospace',
                       height: 1.6,
                     ),
-                    gutterStyle: const GutterStyle(
-                      textStyle: TextStyle(
-                        color: Color(0xFF858585),
-                        fontSize: 13,
-                        fontFamily: 'monospace',
-                        height: 1.6,
-                      ),
-                      background: Color(0xFF1E1E1E),
-                      margin: 0,
-                      width: 60,
-                    ),
+                    background: Color(0xFF1E1E1E),
+                    margin: 0,
+                    width: 60,
                   ),
                 ),
               ),
@@ -244,8 +247,7 @@ class _CodeEditorState extends ConsumerState<CodeEditor> {
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 }
 
@@ -269,7 +271,7 @@ class EditorStatusBar extends StatelessWidget {
       child: Row(
         children: [
           if (tab != null) ...[
-            const Icon(Icons.code, size: 12, color: Colors.white70),
+            HugeIcon(icon: HugeIcons.strokeRoundedSourceCode, size: 12, color: Colors.white70),
             const SizedBox(width: 4),
             const Text(
               'RPL',
@@ -449,7 +451,7 @@ class _EditorTabBarState extends State<EditorTabBar> {
       case 'rpl':
         return Icons.code;
       case 'html':
-        return Icons.web;
+        return Icons.public;
       case 'css':
         return Icons.style;
       case 'js':
@@ -457,7 +459,7 @@ class _EditorTabBarState extends State<EditorTabBar> {
       case 'json':
         return Icons.data_object;
       case 'md':
-        return Icons.description;
+        return Icons.insert_drive_file;
       default:
         return Icons.insert_drive_file;
     }

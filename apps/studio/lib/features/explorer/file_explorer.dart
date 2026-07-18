@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 /// File/folder node untuk tree view.
 class FileNode {
@@ -166,7 +167,7 @@ class _FileExplorerState extends State<FileExplorer> {
                 const Spacer(),
                 if (widget.onCreateFile != null)
                   _ExplorerActionButton(
-                    icon: Icons.note_add_outlined,
+                    icon: Icons.note_add,
                     tooltip: 'New File',
                     onPressed: () => widget.onCreateFile!(_getTargetPath()),
                   ),
@@ -239,7 +240,7 @@ class _FileExplorerState extends State<FileExplorer> {
                 const SizedBox(width: 2),
                 Icon(
                   node.isDirectory
-                      ? (node.isExpanded ? Icons.folder_open : Icons.folder)
+                      ? (node.isExpanded ? Icons.folder_open : Icons.folder_outlined)
                       : _fileIcon(node.name),
                   size: 15,
                   color: node.isDirectory
@@ -269,12 +270,12 @@ class _FileExplorerState extends State<FileExplorer> {
 
   IconData _fileIcon(String name) {
     if (name.endsWith('.rpl')) return Icons.code;
-    if (name.endsWith('.html')) return Icons.web;
+    if (name.endsWith('.html')) return Icons.public;
     if (name.endsWith('.css')) return Icons.style;
     if (name.endsWith('.js')) return Icons.javascript;
     if (name.endsWith('.json')) return Icons.data_object;
     if (name.endsWith('.db') || name.endsWith('.sqlite')) return Icons.storage;
-    if (name.endsWith('.md')) return Icons.description;
+    if (name.endsWith('.md')) return Icons.insert_drive_file;
     if (name.endsWith('.txt')) return Icons.text_snippet;
     return Icons.insert_drive_file;
   }
@@ -311,7 +312,7 @@ class _FileExplorerState extends State<FileExplorer> {
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.edit_outlined, color: Colors.white70, size: 20),
+                leading: HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: Colors.white70, size: 20),
                 title: const Text('Rename', style: TextStyle(color: Colors.white70, fontSize: 13)),
                 dense: true,
                 onTap: () {
@@ -320,7 +321,7 @@ class _FileExplorerState extends State<FileExplorer> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: Color(0xFFFF6B6B), size: 20),
+                leading: HugeIcon(icon: HugeIcons.strokeRoundedDelete02, color: Color(0xFFFF6B6B), size: 20),
                 title: const Text('Delete', style: TextStyle(color: Color(0xFFFF6B6B), fontSize: 13)),
                 dense: true,
                 onTap: () {

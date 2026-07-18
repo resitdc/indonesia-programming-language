@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../settings/settings_screen.dart';
@@ -128,7 +129,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   IconData _templateIcon(ProjectTemplate template) {
     switch (template) {
       case ProjectTemplate.website:
-        return Icons.web;
+        return Icons.public;
       case ProjectTemplate.restApi:
         return Icons.api;
       case ProjectTemplate.desktop:
@@ -232,7 +233,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         ),
         _ActionCard(
           isLowEndMode: isLowEndMode,
-          icon: Icons.qr_code_scanner_outlined,
+          icon: Icons.qr_code_outlined,
           label: 'Scan Barcode',
           subtitle: 'Download sample project',
           color: const Color(0xFFDCDCAA),
@@ -260,7 +261,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       children: [
         Row(
           children: [
-            const Icon(Icons.history, size: 16, color: Colors.white54),
+            HugeIcon(icon: HugeIcons.strokeRoundedClock01, size: 16, color: Colors.white54),
             const SizedBox(width: 8),
             Text(
               'PROJECT TERAKHIR',
@@ -299,10 +300,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 48,
-            color: Colors.white.withOpacity(0.15),
+          HugeIcon(icon: HugeIcons.strokeRoundedInbox, size: 48, color: Colors.white.withOpacity(0.15),
           ),
           const SizedBox(height: 12),
           Text(
@@ -386,7 +384,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 ),
                 // Export ZIP button
                 IconButton(
-                  icon: const Icon(Icons.archive_outlined, size: 16, color: Colors.white38),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedArchive, size: 16, color: Colors.white38),
                   tooltip: 'Export ke ZIP',
                   onPressed: () => _exportToZip(project),
                   padding: EdgeInsets.zero,
@@ -394,7 +392,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 ),
                 // Remove button
                 IconButton(
-                  icon: const Icon(Icons.close, size: 14, color: Colors.white24),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14, color: Colors.white24),
                   tooltip: 'Hapus dari recent',
                   onPressed: () => _removeFromRecent(project),
                   padding: EdgeInsets.zero,

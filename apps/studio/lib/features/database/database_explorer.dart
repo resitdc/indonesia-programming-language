@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import '../../models/database_connection.dart';
 import '../../services/database/connection_service.dart';
 import '../../services/database/database_service.dart';
@@ -232,19 +233,13 @@ class _DatabaseExplorerState extends State<DatabaseExplorer> {
                   children: [
                     InkWell(
                       onTap: _addConnection,
-                      child: const Icon(
-                        Icons.add,
-                        size: 16,
-                        color: Colors.white,
+                      child: HugeIcon(icon: HugeIcons.strokeRoundedAdd01, size: 16, color: Colors.white,
                       ),
                     ),
                     const SizedBox(width: 8),
                     InkWell(
                       onTap: _loadConnections,
-                      child: const Icon(
-                        Icons.refresh,
-                        size: 16,
-                        color: Colors.white,
+                      child: HugeIcon(icon: HugeIcons.strokeRoundedRefresh, size: 16, color: Colors.white,
                       ),
                     ),
                   ],
@@ -284,7 +279,7 @@ class _DatabaseExplorerState extends State<DatabaseExplorer> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ListTile(
-                          leading: const Icon(Icons.edit, color: Colors.white),
+                          leading: HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: Colors.white, size: 20),
                           title: const Text(
                             'Edit Connection',
                             style: TextStyle(color: Colors.white),
@@ -295,7 +290,7 @@ class _DatabaseExplorerState extends State<DatabaseExplorer> {
                           },
                         ),
                         ListTile(
-                          leading: const Icon(Icons.delete, color: Colors.red),
+                          leading: HugeIcon(icon: HugeIcons.strokeRoundedDelete02, color: Colors.red, size: 20),
                           title: const Text(
                             'Delete Connection',
                             style: TextStyle(color: Colors.red),
@@ -331,8 +326,8 @@ class _DatabaseExplorerState extends State<DatabaseExplorer> {
                 const SizedBox(width: 4),
                 Icon(
                   isRoot
-                      ? Icons.dns
-                      : (node.isExpandable ? Icons.folder : Icons.table_chart),
+                      ? Icons.storage
+                      : (node.isExpandable ? Icons.folder_outlined : Icons.table_chart_outlined),
                   size: 14,
                   color: isRoot
                       ? const Color(0xFF2568E7)
