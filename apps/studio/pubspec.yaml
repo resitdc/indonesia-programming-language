@@ -1,7 +1,7 @@
 name: rpl_studio
 description: "RPL Studio - IDE Resmi Rakoda Programming Language"
 publish_to: 'none'
-version: 1.0.0+1
+version: 3.0.0+5
 
 environment:
   sdk: ^3.12.2
@@ -25,6 +25,16 @@ dependencies:
     path: rust_builder
   webview_flutter: ^4.14.1
   html: ^0.15.6
+  window_manager: ^0.5.2
+  mysql_client: ^0.0.27
+  postgres: ^3.5.12
+  sqflite_common_ffi: ^2.4.2
+  pluto_grid: ^8.1.0
+  uuid: ^4.6.0
+  sqlite3_flutter_libs: ^0.6.0+eol
+  flutter_riverpod: ^3.3.2
+  hugeicons: ^1.1.7
+  http: ^1.2.1
 
 dev_dependencies:
   flutter_test:
@@ -33,6 +43,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.8
 
 flutter_icons:
   android: "launcher_icon"
@@ -56,3 +67,13 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+flutter_native_splash:
+  color: "#2568E7"
+  image: "assets/rakoda-white.png"
+  android_12:
+    color: "#2568E7"
+    image: "assets/rakoda-white-square.png"
+    icon_background_color: "#2568E7"
+  android: true
+  ios: true
+  web: true

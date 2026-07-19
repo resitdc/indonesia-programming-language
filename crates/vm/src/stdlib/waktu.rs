@@ -11,27 +11,26 @@ pub fn register(vm: &mut VM) {
     let mut module_dict = HashMap::new();
 
     // Pure delegation for sekarang, tahun, bulan, tanggal, jam, menit, detik, format
-    for (nama, func) in &stdlib::waktu::fungsi_waktu() {
+    for (nama, func_ref) in &stdlib::waktu::fungsi_waktu() {
+        let func_ptr = *func_ref;
         let fungsi = FungsiBawaanVM {
             nama: nama.to_string(),
-            func: unsafe {
-                std::mem::transmute(
-                    move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
-                        let heap = ctx.get_heap_mut();
-                        let nilai_args: Vec<stdlib::NilaiRpl> = args
-                            .iter()
-                            .map(|v| adapter::value_ke_nilai(v, heap))
-                            .collect();
-                        match func(&nilai_args) {
-                            Ok(result) => {
-                                let heap2 = ctx.get_heap_mut();
-                                Ok(adapter::nilai_ke_value(&result, heap2))
-                            }
-                            Err(e) => Err(e),
+            func: std::sync::Arc::new(
+                move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
+                    let heap = ctx.get_heap_mut();
+                    let nilai_args: Vec<stdlib::NilaiRpl> = args
+                        .iter()
+                        .map(|v| adapter::value_ke_nilai(v, heap))
+                        .collect();
+                    match func_ptr(&nilai_args) {
+                        Ok(result) => {
+                            let heap2 = ctx.get_heap_mut();
+                            Ok(adapter::nilai_ke_value(&result, heap2))
                         }
-                    },
-                )
-            },
+                        Err(e) => Err(e),
+                    }
+                },
+            ),
         };
         let idx = vm.heap.alloc(HeapData::FungsiBawaan(fungsi));
         module_dict.insert(nama.to_string(), Value::FungsiBawaan(idx));
@@ -58,7 +57,7 @@ pub fn register(vm: &mut VM) {
     }
     let tunggu = FungsiBawaanVM {
         nama: "tunggu".to_string(),
-        func: tunggu_wrapper,
+        func: std::sync::Arc::new(tunggu_wrapper),
     };
     let tunggu_idx = vm.heap.alloc(HeapData::FungsiBawaan(tunggu));
     module_dict.insert("tunggu".to_string(), Value::FungsiBawaan(tunggu_idx));
@@ -71,7 +70,7 @@ pub fn register(vm: &mut VM) {
     }
     let string = FungsiBawaanVM {
         nama: "string".to_string(),
-        func: string_wrapper,
+        func: std::sync::Arc::new(string_wrapper),
     };
     let string_idx = vm.heap.alloc(HeapData::FungsiBawaan(string));
     module_dict.insert("string".to_string(), Value::FungsiBawaan(string_idx));

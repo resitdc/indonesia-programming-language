@@ -42,27 +42,25 @@ pub fn convert_to_value(vm: &mut VM, json: &serde_json::Value) -> Value {
 pub fn register(vm: &mut VM) {
     let mut module_dict = HashMap::new();
 
-    for (nama, func) in stdlib::json::fungsi_json() {
+    for (nama, func_ptr) in stdlib::json::fungsi_json() {
         let fungsi = FungsiBawaanVM {
             nama: nama.to_string(),
-            func: unsafe {
-                std::mem::transmute(
-                    move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
-                        let heap = ctx.get_heap_mut();
-                        let nilai_args: Vec<stdlib::jenis::NilaiRpl> = args
-                            .iter()
-                            .map(|v| adapter::value_ke_nilai(v, heap))
-                            .collect();
-                        match func(&nilai_args) {
-                            Ok(result) => {
-                                let heap2 = ctx.get_heap_mut();
-                                Ok(adapter::nilai_ke_value(&result, heap2))
-                            }
-                            Err(e) => Err(e),
+            func: std::sync::Arc::new(
+                move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
+                    let heap = ctx.get_heap_mut();
+                    let nilai_args: Vec<stdlib::jenis::NilaiRpl> = args
+                        .iter()
+                        .map(|v| adapter::value_ke_nilai(v, heap))
+                        .collect();
+                    match func_ptr(&nilai_args) {
+                        Ok(result) => {
+                            let heap2 = ctx.get_heap_mut();
+                            Ok(adapter::nilai_ke_value(&result, heap2))
                         }
-                    },
-                )
-            },
+                        Err(e) => Err(e),
+                    }
+                },
+            ),
         };
         let idx = vm.heap.alloc(HeapData::FungsiBawaan(fungsi));
         module_dict.insert(nama.to_string(), Value::FungsiBawaan(idx));

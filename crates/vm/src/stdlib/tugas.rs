@@ -1,5 +1,5 @@
 use crate::heap::HeapData;
-use crate::value::{FungsiBawaanVM, Value};
+use crate::value::{FungsiBawaanVM, Value, VmContext};
 use std::collections::HashMap;
 
 pub fn register(vm: &mut crate::machine::VM) {
@@ -9,18 +9,20 @@ pub fn register(vm: &mut crate::machine::VM) {
         "jalankan".to_string(),
         Value::FungsiBawaan(vm.heap.alloc(HeapData::FungsiBawaan(FungsiBawaanVM {
             nama: "tugas.jalankan".to_string(),
-            func: |ctx, args| {
-                if args.len() != 1 {
-                    return Err("tugas.jalankan membutuhkan 1 argumen (fungsi)".to_string());
-                }
+            func: std::sync::Arc::new(
+                move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
+                    if args.len() != 1 {
+                        return Err("tugas.jalankan membutuhkan 1 argumen (fungsi)".to_string());
+                    }
 
-                if let Value::Fungsi(_, _) = args[0] {
-                    let task_id = ctx.spawn_task(args[0])?;
-                    Ok(Value::Angka(task_id as f64))
-                } else {
-                    Err("Argumen pertama tugas.jalankan harus berupa fungsi".to_string())
-                }
-            },
+                    if let Value::Fungsi(_, _) = args[0] {
+                        let task_id = ctx.spawn_task(args[0])?;
+                        Ok(Value::Angka(task_id as f64))
+                    } else {
+                        Err("Argumen pertama tugas.jalankan harus berupa fungsi".to_string())
+                    }
+                },
+            ),
         }))),
     );
 
@@ -28,18 +30,20 @@ pub fn register(vm: &mut crate::machine::VM) {
         "tunggu".to_string(),
         Value::FungsiBawaan(vm.heap.alloc(HeapData::FungsiBawaan(FungsiBawaanVM {
             nama: "tugas.tunggu".to_string(),
-            func: |ctx, args| {
-                if args.len() != 1 {
-                    return Err("tugas.tunggu membutuhkan 1 argumen (tiket tugas)".to_string());
-                }
+            func: std::sync::Arc::new(
+                move |ctx: &mut dyn VmContext, args: Vec<Value>| -> Result<Value, String> {
+                    if args.len() != 1 {
+                        return Err("tugas.tunggu membutuhkan 1 argumen (tiket tugas)".to_string());
+                    }
 
-                if let Value::Angka(task_id_f) = args[0] {
-                    let task_id = task_id_f as usize;
-                    ctx.join_task(task_id)
-                } else {
-                    Err("Argumen tugas.tunggu harus berupa ID tugas (Angka)".to_string())
-                }
-            },
+                    if let Value::Angka(task_id_f) = args[0] {
+                        let task_id = task_id_f as usize;
+                        ctx.join_task(task_id)
+                    } else {
+                        Err("Argumen tugas.tunggu harus berupa ID tugas (Angka)".to_string())
+                    }
+                },
+            ),
         }))),
     );
 

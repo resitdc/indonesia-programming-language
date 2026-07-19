@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../settings/settings_screen.dart';
+import '../settings/settings_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../models/project.dart';
@@ -8,14 +13,14 @@ import 'create_project_dialog.dart';
 import 'project_screen.dart';
 import 'scan_barcode_screen.dart';
 
-class WelcomeScreen extends StatefulWidget {
+class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
+  ConsumerState<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> {
+class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   List<Project> _recentProjects = [];
   bool _loading = true;
 
@@ -89,7 +94,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Berhasil diekspor ke: ${zipPath.split(Platform.pathSeparator).last}'),
-            backgroundColor: const Color(0xFF007ACC),
+            backgroundColor: const Color(0xFF2568E7),
           ),
         );
       }
@@ -124,7 +129,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   IconData _templateIcon(ProjectTemplate template) {
     switch (template) {
       case ProjectTemplate.website:
-        return Icons.web;
+        return Icons.public;
       case ProjectTemplate.restApi:
         return Icons.api;
       case ProjectTemplate.desktop:
@@ -175,7 +180,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           'assets/rakoda-white.svg',
           width: 64,
           height: 64,
-          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          colorFilter: const ColorFilter.mode(Color(0xFF2568E7), BlendMode.srcIn),
         ),
         const SizedBox(height: 16),
         const Text(
@@ -183,7 +188,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Color(0xFF2568E7),
             letterSpacing: 4,
           ),
         ),
@@ -200,6 +205,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildActionCards() {
+    final isLowEndMode = ref.watch(settingsProvider).isLowEndMode;
+
     return GridView.count(
       crossAxisCount: 2,
       mainAxisSpacing: 12,
@@ -209,37 +216,38 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       physics: const NeverScrollableScrollPhysics(),
       children: [
         _ActionCard(
+          isLowEndMode: isLowEndMode,
           icon: Icons.create_new_folder_outlined,
-          label: 'Create Project',
+          label: 'Buat Project',
           subtitle: 'Buat project baru',
-          color: const Color(0xFF007ACC),
+          color: const Color(0xFF2568E7),
           onTap: _createProject,
         ),
         _ActionCard(
+          isLowEndMode: isLowEndMode,
           icon: Icons.folder_open_outlined,
-          label: 'Open Project',
+          label: 'Buka Project',
           subtitle: 'Buka folder project',
           color: const Color(0xFF4EC9B0),
           onTap: _openFolder,
         ),
         _ActionCard(
-          icon: Icons.qr_code_scanner_outlined,
+          isLowEndMode: isLowEndMode,
+          icon: Icons.qr_code_outlined,
           label: 'Scan Barcode',
           subtitle: 'Download sample project',
           color: const Color(0xFFDCDCAA),
           onTap: _scanBarcode,
         ),
         _ActionCard(
+          isLowEndMode: isLowEndMode,
           icon: Icons.settings_outlined,
-          label: 'Settings',
+          label: 'Pengaturan',
           subtitle: 'Pengaturan aplikasi',
           color: const Color(0xFF9CDCFE),
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Pengaturan akan segera hadir!'),
-                backgroundColor: Color(0xFF333333),
-              ),
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
             );
           },
         ),
@@ -253,7 +261,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       children: [
         Row(
           children: [
-            const Icon(Icons.history, size: 16, color: Colors.white54),
+            HugeIcon(icon: HugeIcons.strokeRoundedClock01, size: 16, color: Colors.white54),
             const SizedBox(width: 8),
             Text(
               'PROJECT TERAKHIR',
@@ -271,7 +279,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           const Center(
             child: Padding(
               padding: EdgeInsets.all(32),
-              child: CircularProgressIndicator(color: Color(0xFF007ACC)),
+              child: CircularProgressIndicator(color: Color(0xFF2568E7)),
             ),
           )
         else if (_recentProjects.isEmpty)
@@ -292,10 +300,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 48,
-            color: Colors.white.withOpacity(0.15),
+          HugeIcon(icon: HugeIcons.strokeRoundedInbox, size: 48, color: Colors.white.withOpacity(0.15),
           ),
           const SizedBox(height: 12),
           Text(
@@ -346,7 +351,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                   child: Icon(
                     _templateIcon(project.template),
-                    color: const Color(0xFF007ACC),
+                    color: const Color(0xFF2568E7),
                     size: 18,
                   ),
                 ),
@@ -379,7 +384,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
                 // Export ZIP button
                 IconButton(
-                  icon: const Icon(Icons.archive_outlined, size: 16, color: Colors.white38),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedArchive, size: 16, color: Colors.white38),
                   tooltip: 'Export ke ZIP',
                   onPressed: () => _exportToZip(project),
                   padding: EdgeInsets.zero,
@@ -387,7 +392,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
                 // Remove button
                 IconButton(
-                  icon: const Icon(Icons.close, size: 14, color: Colors.white24),
+                  icon: HugeIcon(icon: HugeIcons.strokeRoundedCancel01, size: 14, color: Colors.white24),
                   tooltip: 'Hapus dari recent',
                   onPressed: () => _removeFromRecent(project),
                   padding: EdgeInsets.zero,
@@ -409,6 +414,7 @@ class _ActionCard extends StatefulWidget {
   final String subtitle;
   final Color color;
   final VoidCallback onTap;
+  final bool isLowEndMode;
 
   const _ActionCard({
     required this.icon,
@@ -416,6 +422,7 @@ class _ActionCard extends StatefulWidget {
     required this.subtitle,
     required this.color,
     required this.onTap,
+    this.isLowEndMode = false,
   });
 
   @override
@@ -433,14 +440,14 @@ class _ActionCardState extends State<_ActionCard> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: widget.isLowEndMode ? Duration.zero : const Duration(milliseconds: 200),
           curve: Curves.easeOut,
           decoration: BoxDecoration(
             color: const Color(0xFF252526),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: _isHovered ? widget.color.withOpacity(0.6) : const Color(0xFF3C3C3C),
-              width: _isHovered ? 1.5 : 1,
+              color: _isHovered && !widget.isLowEndMode ? widget.color.withOpacity(0.6) : const Color(0xFF3C3C3C),
+              width: _isHovered && !widget.isLowEndMode ? 1.5 : 1,
             ),
           ),
           padding: const EdgeInsets.all(16),

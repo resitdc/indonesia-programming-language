@@ -1,8 +1,17 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../settings/settings_provider.dart';
 import 'package:flutter_code_editor/flutter_code_editor.dart';
 import 'package:flutter_highlight/themes/vs2015.dart';
+import 'package:flutter_highlight/themes/monokai.dart';
+import 'package:flutter_highlight/themes/monokai-sublime.dart';
+import 'package:flutter_highlight/themes/dracula.dart';
+import 'package:flutter_highlight/themes/github.dart';
+import 'package:flutter_highlight/themes/atom-one-dark.dart';
 import 'package:highlight/highlight.dart';
 import 'package:highlight/languages/css.dart';
 import 'package:highlight/languages/javascript.dart';
@@ -16,7 +25,7 @@ class KeyboardEventNotifier {
   static final StreamController<String> symbolStream = StreamController<String>.broadcast();
 }
 
-class CodeEditor extends StatefulWidget {
+class CodeEditor extends ConsumerStatefulWidget {
   final EditorTab tab;
   final int? initialLineNumber;
   final String? searchQuery;
@@ -35,14 +44,16 @@ class CodeEditor extends StatefulWidget {
   });
 
   @override
-  State<CodeEditor> createState() => _CodeEditorState();
+  ConsumerState<CodeEditor> createState() => _CodeEditorState();
 }
 
-class _CodeEditorState extends State<CodeEditor> {
+class _CodeEditorState extends ConsumerState<CodeEditor> {
   late CodeController _controller;
   late FocusNode _focusNode;
   late StreamSubscription _symbolSub;
   String _content = '';
+  Timer? _debounceTimer;
+  Timer? _autoSaveTimer;
 
   @override
   void initState() {
@@ -57,7 +68,7 @@ class _CodeEditorState extends State<CodeEditor> {
     
     _controller = CodeController(
       text: _content,
-      language: _getLanguageMode(widget.tab.filePath),
+      language: _getLanguageMode(widget.tab.filePath, _content),
       patternMap: widget.searchQuery != null && widget.searchQuery!.isNotEmpty
           ? {
               '(?i)${RegExp.escape(widget.searchQuery!)}': const TextStyle(
@@ -81,7 +92,15 @@ class _CodeEditorState extends State<CodeEditor> {
     _controller.addListener(_onTextChanged);
   }
 
-  Mode? _getLanguageMode(String filePath) {
+  Mode? _getLanguageMode(String filePath, String content) {
+    final isLowEndMode = ref.read(settingsProvider).isLowEndMode;
+    if (isLowEndMode) {
+      final lineCount = '\n'.allMatches(content).length + 1;
+      if (lineCount > 800) {
+        return null; // Disable syntax highlighting to save memory
+      }
+    }
+
     final ext = filePath.split('.').last.toLowerCase();
     if (filePath.endsWith('.rpl.html') || filePath.endsWith('.html')) {
       return rplHtml;
@@ -106,6 +125,28 @@ class _CodeEditorState extends State<CodeEditor> {
         widget.tab.isModified = true;
       });
       widget.onChanged?.call();
+      
+      final settings = ref.read(settingsProvider);
+      if (settings.isAutoSave) {
+        _autoSaveTimer?.cancel();
+        _autoSaveTimer = Timer(const Duration(milliseconds: 500), () {
+          if (mounted) save();
+        });
+      }
+      
+      final isLowEndMode = settings.isLowEndMode;
+      if (isLowEndMode) {
+        if (_controller.language != null) {
+          _controller.language = null; // Disable highlighting temporarily
+        }
+        
+        _debounceTimer?.cancel();
+        _debounceTimer = Timer(const Duration(milliseconds: 700), () {
+          if (mounted) {
+            _controller.language = _getLanguageMode(widget.tab.filePath, _content);
+          }
+        });
+      }
     }
   }
 
@@ -138,6 +179,7 @@ class _CodeEditorState extends State<CodeEditor> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _symbolSub.cancel();
     _focusNode.dispose();
     _controller.removeListener(_onTextChanged);
@@ -145,13 +187,49 @@ class _CodeEditorState extends State<CodeEditor> {
     super.dispose();
   }
 
+  Map<String, TextStyle> _getTheme(String themeName) {
+    switch (themeName) {
+      case 'Monokai':
+        return monokaiTheme;
+      case 'Monokai Sublime':
+        return monokaiSublimeTheme;
+      case 'Dracula':
+        return draculaTheme;
+      case 'GitHub':
+        return githubTheme;
+      case 'Atom One Dark':
+        return atomOneDarkTheme;
+      case 'VS2015':
+      default:
+        return vs2015Theme;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // We can inject custom background color into the vs2015 theme map
-    final customTheme = Map<String, TextStyle>.from(vs2015Theme);
+    final settings = ref.watch(settingsProvider);
+    final isWordWrap = settings.isWordWrap;
+    final editorFontSize = settings.editorFontSize;
+    final baseTheme = _getTheme(settings.editorTheme);
+
+    // We can inject custom background color into the theme map
+    final customTheme = Map<String, TextStyle>.from(baseTheme);
     customTheme['root'] = customTheme['root']?.copyWith(
       backgroundColor: const Color(0xFF1E1E1E), // VS Code exact editor background
     ) ?? const TextStyle(backgroundColor: Color(0xFF1E1E1E));
+
+    final codeTextStyle = TextStyle(
+      fontFamily: 'monospace',
+      fontSize: editorFontSize,
+      height: 1.6,
+    );
+
+    final gutterTextStyle = TextStyle(
+      color: const Color(0xFF858585),
+      fontSize: editorFontSize,
+      fontFamily: 'monospace',
+      height: 1.6,
+    );
 
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
@@ -171,45 +249,52 @@ class _CodeEditorState extends State<CodeEditor> {
             behavior: HitTestBehavior.opaque,
             child: Container(
               color: const Color(0xFF1E1E1E),
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                child: Theme(
-                  data: Theme.of(context).copyWith(
-                    inputDecorationTheme: const InputDecorationTheme(
-                      border: InputBorder.none,
-                      filled: false,
-                    ),
-                  ),
-                  child: CodeField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    undoController: widget.tab.undoController,
-                    textStyle: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                      height: 1.6,
-                    ),
-                    gutterStyle: const GutterStyle(
-                      textStyle: TextStyle(
-                        color: Color(0xFF858585),
-                        fontSize: 13,
-                        fontFamily: 'monospace',
-                        height: 1.6,
-                      ),
-                      background: Color(0xFF1E1E1E),
-                      margin: 0,
-                      width: 60,
-                    ),
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  inputDecorationTheme: const InputDecorationTheme(
+                    border: InputBorder.none,
+                    filled: false,
                   ),
                 ),
+                child: isWordWrap
+                  ? CodeField(
+                      key: ValueKey('code_field_wrap_true_$editorFontSize'),
+                      wrap: true,
+                      expands: false,
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      undoController: widget.tab.undoController,
+                      maxLines: null,
+                      textStyle: codeTextStyle,
+                      gutterStyle: GutterStyle(
+                        textStyle: gutterTextStyle,
+                        background: const Color(0xFF1E1E1E),
+                        margin: 0,
+                        width: 60,
+                      ),
+                    )
+                  : CodeField(
+                      key: ValueKey('code_field_wrap_false_$editorFontSize'),
+                      wrap: false,
+                      expands: true,
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      undoController: widget.tab.undoController,
+                      textStyle: codeTextStyle,
+                      gutterStyle: GutterStyle(
+                        textStyle: gutterTextStyle,
+                        background: const Color(0xFF1E1E1E),
+                        margin: 0,
+                        width: 60,
+                      ),
+                    ),
               ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 }
 
@@ -228,12 +313,12 @@ class EditorStatusBar extends StatelessWidget {
       height: 22,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: const BoxDecoration(
-        color: Color(0xFF007ACC),
+        color: Color(0xFF2568E7),
       ),
       child: Row(
         children: [
           if (tab != null) ...[
-            const Icon(Icons.code, size: 12, color: Colors.white70),
+            HugeIcon(icon: HugeIcons.strokeRoundedSourceCode, size: 12, color: Colors.white70),
             const SizedBox(width: 4),
             const Text(
               'RPL',
@@ -360,7 +445,7 @@ class _EditorTabBarState extends State<EditorTabBar> {
                 border: Border(
                   right: const BorderSide(color: Color(0xFF252526), width: 1),
                   top: BorderSide(
-                    color: isActive ? const Color(0xFF007ACC) : Colors.transparent,
+                    color: isActive ? const Color(0xFF2568E7) : Colors.transparent,
                     width: isActive ? 2 : 0,
                   ),
                 ),
@@ -413,7 +498,7 @@ class _EditorTabBarState extends State<EditorTabBar> {
       case 'rpl':
         return Icons.code;
       case 'html':
-        return Icons.web;
+        return Icons.public;
       case 'css':
         return Icons.style;
       case 'js':
@@ -421,7 +506,7 @@ class _EditorTabBarState extends State<EditorTabBar> {
       case 'json':
         return Icons.data_object;
       case 'md':
-        return Icons.description;
+        return Icons.insert_drive_file;
       default:
         return Icons.insert_drive_file;
     }

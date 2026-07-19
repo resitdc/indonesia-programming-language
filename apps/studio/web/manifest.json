@@ -1,6 +1,6 @@
 {
-    "name": "rpl_studio",
-    "short_name": "rpl_studio",
+    "name": "RPL Studio",
+    "short_name": "RPL Studio",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#1E1E1E",

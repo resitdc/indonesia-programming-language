@@ -12,7 +12,8 @@ pub trait VmContext {
     fn current_function_info(&self) -> (String, Option<String>);
 }
 
-pub type NativeFnVM = fn(&mut dyn VmContext, Vec<Value>) -> Result<Value, String>;
+pub type NativeFnVM =
+    std::sync::Arc<dyn Fn(&mut dyn VmContext, Vec<Value>) -> Result<Value, String> + Send + Sync>;
 
 #[derive(Clone)]
 pub struct FungsiBawaanVM {

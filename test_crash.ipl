@@ -1,0 +1,1 @@
+tampilkan(`waktu hari ini ${waktu.sekarang()}`)

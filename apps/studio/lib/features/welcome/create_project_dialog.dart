@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/project.dart';
@@ -100,12 +101,12 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF007ACC).withOpacity(0.15),
+                    color: const Color(0xFF2568E7).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.create_new_folder_outlined,
-                    color: Color(0xFF007ACC),
+                    color: Color(0xFF2568E7),
                     size: 20,
                   ),
                 ),
@@ -131,7 +132,7 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                     borderSide: BorderSide(color: Color(0xFF3C3C3C)),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF007ACC)),
+                    borderSide: BorderSide(color: Color(0xFF2568E7)),
                   ),
                   filled: true,
                   fillColor: Color(0xFF1E1E1E),
@@ -146,7 +147,11 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                   labelStyle: const TextStyle(color: Colors.white54),
                   hintText: 'contoh: aplikasi_toko',
                   hintStyle: TextStyle(color: Colors.white.withOpacity(0.25)),
-                  prefixIcon: const Icon(Icons.edit_outlined, color: Colors.white38, size: 18),
+                  prefixIcon: Center(
+                    widthFactor: 1,
+                    heightFactor: 1,
+                    child: HugeIcon(icon: HugeIcons.strokeRoundedEdit02, color: Colors.white38, size: 18),
+                  ),
                 ),
               ),
             ),
@@ -162,7 +167,7 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.folder_outlined, size: 16, color: Colors.white38),
+                  HugeIcon(icon: HugeIcons.strokeRoundedFolder01, size: 16, color: Colors.white38),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -174,7 +179,7 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                   TextButton(
                     onPressed: _pickFolder,
                     style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF007ACC),
+                      foregroundColor: const Color(0xFF2568E7),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
                     child: const Text('Browse', style: TextStyle(fontSize: 12)),
@@ -195,7 +200,7 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline, size: 14, color: Color(0xFFFF6B6B)),
+                    HugeIcon(icon: HugeIcons.strokeRoundedAlert02, size: 14, color: Color(0xFFFF6B6B)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -231,10 +236,10 @@ class _CreateProjectDialogState extends State<CreateProjectDialog> {
                           height: 14,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Icon(Icons.check, size: 16),
+                      : HugeIcon(icon: HugeIcons.strokeRoundedCheckmarkSquare02, size: 16, color: Colors.white70),
                   label: Text(_creating ? 'Membuat...' : 'Buat Project'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007ACC),
+                    backgroundColor: const Color(0xFF2568E7),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),

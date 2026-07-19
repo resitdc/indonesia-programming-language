@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.rakoda" "\0"
-            VALUE "FileDescription", "rpl_studio" "\0"
+            VALUE "FileDescription", "RPL Studio" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "rpl_studio" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.rakoda. All rights reserved." "\0"
             VALUE "OriginalFilename", "rpl_studio.exe" "\0"
-            VALUE "ProductName", "rpl_studio" "\0"
+            VALUE "ProductName", "RPL Studio" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

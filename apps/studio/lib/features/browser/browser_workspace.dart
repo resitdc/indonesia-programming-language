@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'devtools_panel.dart';
@@ -14,10 +16,12 @@ class BrowserWorkspace extends StatefulWidget {
 
 class _BrowserWorkspaceState extends State<BrowserWorkspace> {
   late final WebViewController _controller;
-  final TextEditingController _urlController = TextEditingController(text: 'https://flutter.dev');
+  final TextEditingController _urlController = TextEditingController(
+    text: 'https://flutter.dev',
+  );
   bool _isLoading = true;
   double _progress = 0;
-  
+
   // DevTools states
   List<String> _consoleLogs = [];
   String _pageSource = '';
@@ -27,6 +31,19 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
   bool _isDevToolsMinimized = true;
 
   @override
+  void dispose() {
+    // Kosongkan memori WebView secara paksa saat tab ditutup (Mode Ringan)
+    try {
+      _controller.loadHtmlString('about:blank');
+      _controller.clearCache();
+      _controller.clearLocalStorage();
+    } catch (_) {
+      // Ignore if controller is already disposed
+    }
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     if (!kIsWeb && Platform.isMacOS) {
@@ -34,8 +51,15 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
     }
 
     _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFF1E1E1E))
+      ..setJavaScriptMode(JavaScriptMode.unrestricted);
+
+    try {
+      _controller.setBackgroundColor(const Color(0xFF1E1E1E));
+    } catch (_) {
+      // Ignored: webview_flutter_wkwebview throws UnimplementedError for opaque on macOS
+    }
+
+    _controller
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (int progress) {
@@ -48,7 +72,10 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
             if (!mounted) return;
             setState(() {
               _isLoading = true;
-              _urlController.text = (url.startsWith('data:text/html') || url == 'about:blank') ? 'rpl://browser' : url;
+              _urlController.text =
+                  (url.startsWith('data:text/html') || url == 'about:blank')
+                  ? 'rpl://browser'
+                  : url;
               _consoleLogs.clear();
               _networkRequests.add({
                 'url': url,
@@ -86,6 +113,150 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
           });
         },
       )
+      ..addJavaScriptChannel(
+        'NetworkChannel',
+        onMessageReceived: (JavaScriptMessage message) {
+          if (!mounted) return;
+          try {
+            final data = jsonDecode(message.message) as Map<String, dynamic>;
+            setState(() {
+              _networkRequests.add({
+                'url': data['url'] ?? '',
+                'method': data['method'] ?? 'GET',
+                'status': data['status'] ?? '',
+                'payload': data['payload'] ?? '',
+                'response': data['response'] ?? '',
+                'time': DateTime.now().toString(),
+                'contentType': data['contentType'] ?? '',
+              });
+            });
+          } catch (e) {
+            debugPrint('Error parsing network message: $e');
+          }
+        },
+      )
+      ..setOnJavaScriptAlertDialog((
+        JavaScriptAlertDialogRequest request,
+      ) async {
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF252526),
+            title: const Text(
+              'JavaScript Alert',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Text(
+              request.message,
+              style: const TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(color: Color(0xFF2568E7)),
+                ),
+              ),
+            ],
+          ),
+        );
+      })
+      ..setOnJavaScriptConfirmDialog((
+        JavaScriptConfirmDialogRequest request,
+      ) async {
+        if (!mounted) return false;
+        final result = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF252526),
+            title: const Text(
+              'JavaScript Confirm',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Text(
+              request.message,
+              style: const TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white54),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(color: Color(0xFF2568E7)),
+                ),
+              ),
+            ],
+          ),
+        );
+        return result ?? false;
+      })
+      ..setOnJavaScriptTextInputDialog((
+        JavaScriptTextInputDialogRequest request,
+      ) async {
+        if (!mounted) return '';
+        final TextEditingController textController = TextEditingController(
+          text: request.defaultText,
+        );
+        final result = await showDialog<String>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF252526),
+            title: const Text(
+              'JavaScript Prompt',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  request.message,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: textController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF333333)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF2568E7)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(null),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white54),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(textController.text),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(color: Color(0xFF2568E7)),
+                ),
+              ),
+            ],
+          ),
+        );
+        return result ?? '';
+      })
       ..loadHtmlString(_getDefaultHtml());
   }
 
@@ -113,38 +284,206 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
         }
       ''');
 
+      // Inject network interceptor
+      await _controller.runJavaScript('''
+        if (!window._networkOverridden) {
+          window._networkOverridden = true;
+
+          // 1. Intercept Fetch
+          const originalFetch = window.fetch;
+          window.fetch = async function(...args) {
+            const url = args[0];
+            const options = args[1] || {};
+            const method = options.method || 'GET';
+            const payload = options.body ? options.body.toString() : '';
+
+            NetworkChannel.postMessage(JSON.stringify({
+              url: url,
+              method: method,
+              status: 'Pending',
+              payload: payload,
+              response: '',
+              contentType: 'application/json'
+            }));
+
+            try {
+              const response = await originalFetch(...args);
+              const clone = response.clone();
+              let responseText = '';
+              try {
+                responseText = await clone.text();
+              } catch (_) {}
+              
+              NetworkChannel.postMessage(JSON.stringify({
+                url: url,
+                method: method,
+                status: response.status + ' ' + response.statusText,
+                payload: payload,
+                response: responseText,
+                contentType: response.headers.get('content-type') || 'application/json'
+              }));
+              return response;
+            } catch (err) {
+              NetworkChannel.postMessage(JSON.stringify({
+                url: url,
+                method: method,
+                status: 'Failed',
+                payload: payload,
+                response: err.toString(),
+                contentType: 'text/plain'
+              }));
+              throw err;
+            }
+          };
+
+          // 2. Intercept XHR (XMLHttpRequest)
+          const origOpen = XMLHttpRequest.prototype.open;
+          const origSend = XMLHttpRequest.prototype.send;
+
+          XMLHttpRequest.prototype.open = function(method, url, ...args) {
+            this._url = url;
+            this._method = method;
+            return origOpen.apply(this, [method, url, ...args]);
+          };
+
+          XMLHttpRequest.prototype.send = function(body) {
+            const xhr = this;
+            const url = xhr._url;
+            const method = xhr._method || 'GET';
+            const payload = body ? body.toString() : '';
+
+            NetworkChannel.postMessage(JSON.stringify({
+              url: url,
+              method: method,
+              status: 'Pending',
+              payload: payload,
+              response: '',
+              contentType: 'text/plain'
+            }));
+
+            xhr.addEventListener('load', function() {
+              NetworkChannel.postMessage(JSON.stringify({
+                url: url,
+                method: method,
+                status: xhr.status + ' ' + xhr.statusText,
+                payload: payload,
+                response: xhr.responseText,
+                contentType: xhr.getResponseHeader('content-type') || 'text/plain'
+              }));
+            });
+
+            xhr.addEventListener('error', function() {
+              NetworkChannel.postMessage(JSON.stringify({
+                url: url,
+                method: method,
+                status: 'Failed',
+                payload: payload,
+                response: 'Network Error',
+                contentType: 'text/plain'
+              }));
+            });
+
+            return origSend.apply(this, arguments);
+          };
+        }
+      ''');
+
+      // 3. Inject Resource Timing collector for CSS, JS, Images, Media
+      await _controller.runJavaScript('''
+        (function() {
+          const resources = performance.getEntriesByType('resource');
+          for (const res of resources) {
+            if (res.initiatorType !== 'xmlhttprequest' && res.initiatorType !== 'fetch') {
+              let cType = 'text/plain';
+              if (res.initiatorType === 'css') cType = 'text/css';
+              else if (res.initiatorType === 'img') cType = 'image/png';
+              else if (res.initiatorType === 'script') cType = 'text/javascript';
+
+              NetworkChannel.postMessage(JSON.stringify({
+                url: res.name,
+                method: 'GET',
+                status: '200 OK',
+                payload: '',
+                response: '[Resource Loaded from Cache/Network]',
+                contentType: cType
+              }));
+            }
+          }
+        })();
+      ''');
+
       // Get page source
-      final html = await _controller.runJavaScriptReturningResult('document.documentElement.outerHTML');
+      final html = await _controller.runJavaScriptReturningResult(
+        'document.documentElement.outerHTML',
+      );
+      String htmlStr = html.toString();
+      if (htmlStr.startsWith('"') && htmlStr.endsWith('"')) {
+        try {
+          htmlStr = jsonDecode(htmlStr) as String;
+        } catch (_) {}
+      }
       setState(() {
-        _pageSource = html.toString();
+        _pageSource = htmlStr;
       });
 
       // Get cookies
-      final cookiesStr = await _controller.runJavaScriptReturningResult('document.cookie');
-      if (cookiesStr != null && cookiesStr.toString() != '""' && cookiesStr.toString().isNotEmpty) {
-        final Map<String, String> parsedCookies = {};
-        final parts = cookiesStr.toString().replaceAll('"', '').split(';');
+      final cookiesObj = await _controller.runJavaScriptReturningResult(
+        'document.cookie',
+      );
+      String cookiesStr = cookiesObj.toString();
+      if (cookiesStr.startsWith('"') && cookiesStr.endsWith('"')) {
+        try {
+          cookiesStr = jsonDecode(cookiesStr) as String;
+        } catch (_) {}
+      }
+      final Map<String, String> parsedCookies = {};
+      if (cookiesStr.isNotEmpty && cookiesStr != '""') {
+        final parts = cookiesStr.split(';');
         for (var part in parts) {
           if (part.contains('=')) {
-            final kv = part.split('=');
-            parsedCookies[kv[0].trim()] = kv[1].trim();
+            final idx = part.indexOf('=');
+            final k = part.substring(0, idx).trim();
+            final v = part.substring(idx + 1).trim();
+            if (k.isNotEmpty) {
+              parsedCookies[k] = v;
+            }
           }
         }
-        setState(() {
-          _cookies = parsedCookies;
-        });
       }
+      setState(() {
+        _cookies = parsedCookies;
+      });
 
       // Get local storage
-      final lsStr = await _controller.runJavaScriptReturningResult('JSON.stringify(localStorage)');
-      if (lsStr != null && lsStr.toString() != '""' && lsStr.toString() != '{}') {
-        // Simplified parsing for mockup
-        setState(() {
-          _localStorage = {'data': lsStr.toString()};
-        });
+      final lsObj = await _controller.runJavaScriptReturningResult(
+        'JSON.stringify(localStorage)',
+      );
+      String lsStr = lsObj.toString();
+      if (lsStr.startsWith('"') && lsStr.endsWith('"')) {
+        try {
+          lsStr = jsonDecode(lsStr) as String;
+        } catch (_) {}
       }
+      final Map<String, String> parsedLs = {};
+      if (lsStr.isNotEmpty && lsStr != '{}') {
+        try {
+          final Map<String, dynamic> rawLs = jsonDecode(lsStr);
+          rawLs.forEach((k, v) {
+            parsedLs[k] = v.toString();
+          });
+        } catch (e) {
+          debugPrint('Failed to parse localStorage JSON: $e');
+        }
+      }
+      setState(() {
+        _localStorage = parsedLs;
+      });
     } catch (e) {
-      debugPrint('Failed to extract devtools data: $e');
+      if (e.toString().contains('FWFEvaluateJavaScriptError') || e.toString().contains('Failed evaluating JavaScript')) {
+        // Abaikan error ini. Biasanya terjadi saat Hot Restart ketika context WebView terputus.
+      } else {
+        debugPrint('Failed to extract devtools data: $e');
+      }
     }
   }
 
@@ -156,7 +495,7 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
       FocusScope.of(context).unfocus();
       return;
     }
-    
+
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       if (url.contains('.') && !url.contains(' ')) {
         url = 'https://$url';
@@ -198,15 +537,15 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
       to { opacity: 1; transform: translateY(0); }
     }
     .logo-container {
-      margin-bottom: 12px;
+      margin-bottom: 24px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
     .rakoda-logo {
-      width: 54px;
+      width: 50px;
       height: auto;
-      margin-bottom: 16px;
+      margin-bottom: 26px;
       filter: drop-shadow(0 0 12px rgba(37, 104, 231, 0.5));
       animation: logoPulse 2s infinite alternate;
     }
@@ -215,10 +554,10 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
       to { transform: scale(1.05); filter: drop-shadow(0 0 18px rgba(37, 104, 231, 0.7)); }
     }
     .logo-text {
-      font-size: 48px;
+      font-size: 28px;
       font-weight: 900;
       letter-spacing: 6px;
-      color: #007acc;
+      color: #2568E7;
       text-shadow: 0 0 20px rgba(0, 122, 204, 0.4);
       margin: 0;
       background: linear-gradient(135deg, #2568e7, #00bfff);
@@ -256,7 +595,7 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
     .search-box:focus-within {
-      border-color: #007acc;
+      border-color: #2568E7;
       box-shadow: 0 8px 24px rgba(0, 122, 204, 0.2);
     }
     .search-input {
@@ -266,57 +605,6 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
       color: #ffffff;
       font-size: 15px;
       outline: none;
-    }
-    .search-button {
-      background: none;
-      border: none;
-      color: #858585;
-      cursor: pointer;
-      outline: none;
-      font-size: 16px;
-      transition: color 0.2s;
-    }
-    .search-button:hover {
-      color: #ffffff;
-    }
-    .shortcuts {
-      display: flex;
-      gap: 32px;
-      margin-top: 50px;
-      justify-content: center;
-    }
-    .shortcut-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      color: #aaaaaa;
-      text-decoration: none;
-      font-size: 12px;
-      transition: all 0.2s;
-      width: 70px;
-    }
-    .shortcut-item:hover {
-      color: #007acc;
-      transform: translateY(-2px);
-    }
-    .shortcut-icon {
-      width: 52px;
-      height: 52px;
-      background-color: #252526;
-      border: 1px solid #3c3c3c;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 10px;
-      font-size: 22px;
-      transition: all 0.2s;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .shortcut-item:hover .shortcut-icon {
-      background-color: #2d2d2d;
-      border-color: #007acc;
-      box-shadow: 0 6px 12px rgba(0, 122, 204, 0.15);
     }
   </style>
 </head>
@@ -343,25 +631,9 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
       </svg>
       <h1 class="logo-text">RPL STUDIO</h1>
     </div>
-    <div class="title">RPL Browser</div>
     <form class="search-box" action="https://www.google.com/search" method="get">
-      <input class="search-input" type="text" name="q" placeholder="Cari di Google atau ketik URL..." required autocomplete="off">
-      <button class="search-button" type="submit">🔍</button>
+      <input class="search-input" type="text" name="q" placeholder="Cari di Google atau ketik URL...." required autocomplete="off">
     </form>
-    <div class="shortcuts">
-      <a class="shortcut-item" href="https://www.google.com/search?q=Indonesia">
-        <div class="shortcut-icon">🇮🇩</div>
-        <span>Indonesia</span>
-      </a>
-      <a class="shortcut-item" href="https://www.google.com/search?q=Belajar+Coding+Pemula">
-        <div class="shortcut-icon">🌱</div>
-        <span>Beginner</span>
-      </a>
-      <a class="shortcut-item" href="https://www.google.com/search?q=RPL+Studio">
-        <div class="shortcut-icon">❤️</div>
-        <span>Love</span>
-      </a>
-    </div>
   </div>
 </body>
 </html>
@@ -380,19 +652,22 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, size: 20, color: Colors.white70),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowLeft01, size: 20, color: Colors.white70,
+                ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32),
                 onPressed: () => _controller.goBack(),
               ),
               IconButton(
-                icon: const Icon(Icons.arrow_forward, size: 20, color: Colors.white70),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedArrowRight01, size: 20, color: Colors.white70,
+                ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32),
                 onPressed: () => _controller.goForward(),
               ),
               IconButton(
-                icon: const Icon(Icons.refresh, size: 20, color: Colors.white70),
+                icon: HugeIcon(icon: HugeIcons.strokeRoundedRefresh, size: 20, color: Colors.white70,
+                ),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32),
                 onPressed: () => _controller.reload(),
@@ -415,7 +690,10 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
                       border: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       enabledBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       isDense: true,
                     ),
                     onSubmitted: _loadUrl,
@@ -429,79 +707,137 @@ class _BrowserWorkspaceState extends State<BrowserWorkspace> {
           LinearProgressIndicator(
             value: _progress,
             backgroundColor: Colors.transparent,
-            color: const Color(0xFF007ACC),
+            color: const Color(0xFF2568E7),
             minHeight: 2,
           ),
-        
+
         // Split View: Webview & DevTools
         Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 800;
-              return Flex(
-                direction: isWide ? Axis.horizontal : Axis.vertical,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Browser View
-                  Expanded(
-                    flex: 3,
-                    child: WebViewWidget(controller: _controller),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Browser View
+              Expanded(flex: 3, child: WebViewWidget(controller: _controller)),
+              Container(height: 1, color: const Color(0xFF333333)),
+              // DevTools View
+              if (_isDevToolsMinimized)
+                SizedBox(
+                  height: 35,
+                  child: DevToolsPanel(
+                    isMinimized: true,
+                    onToggleMinimize: () =>
+                        setState(() => _isDevToolsMinimized = false),
+                    pageSource: _pageSource,
+                    consoleLogs: _consoleLogs,
+                    networkRequests: _networkRequests,
+                    cookies: _cookies,
+                    localStorage: _localStorage,
+                    onClearConsole: () => setState(() => _consoleLogs.clear()),
+                    onClearNetwork: () =>
+                        setState(() => _networkRequests.clear()),
+                    onUpdateCookie: (key, value) async {
+                      await _controller.runJavaScript(
+                        'document.cookie = "$key=${Uri.encodeComponent(value)}; path=/";',
+                      );
+                      _extractDevToolsData();
+                    },
+                    onDeleteCookie: (key) async {
+                      await _controller.runJavaScript(
+                        'document.cookie = "$key=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";',
+                      );
+                      _extractDevToolsData();
+                    },
+                    onUpdateLocalStorage: (key, value) async {
+                      final safeKey = key.replaceAll("'", "\\'");
+                      final safeValue = value.replaceAll("'", "\\'");
+                      await _controller.runJavaScript(
+                        "localStorage.setItem('$safeKey', '$safeValue');",
+                      );
+                      _extractDevToolsData();
+                    },
+                    onDeleteLocalStorage: (key) async {
+                      final safeKey = key.replaceAll("'", "\\'");
+                      await _controller.runJavaScript(
+                        "localStorage.removeItem('$safeKey');",
+                      );
+                      _extractDevToolsData();
+                    },
+                    onExecuteJS: (code) async {},
                   ),
-                  Container(
-                    width: isWide ? 1 : null,
-                    height: isWide ? null : 1,
-                    color: const Color(0xFF333333),
+                )
+              else
+                Expanded(
+                  flex: 2,
+                  child: DevToolsPanel(
+                    isMinimized: false,
+                    onToggleMinimize: () =>
+                        setState(() => _isDevToolsMinimized = true),
+                    pageSource: _pageSource,
+                    consoleLogs: _consoleLogs,
+                    networkRequests: _networkRequests,
+                    cookies: _cookies,
+                    localStorage: _localStorage,
+                    onClearConsole: () => setState(() => _consoleLogs.clear()),
+                    onClearNetwork: () =>
+                        setState(() => _networkRequests.clear()),
+                    onUpdateCookie: (key, value) async {
+                      await _controller.runJavaScript(
+                        'document.cookie = "$key=${Uri.encodeComponent(value)}; path=/";',
+                      );
+                      _extractDevToolsData();
+                    },
+                    onDeleteCookie: (key) async {
+                      await _controller.runJavaScript(
+                        'document.cookie = "$key=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";',
+                      );
+                      _extractDevToolsData();
+                    },
+                    onUpdateLocalStorage: (key, value) async {
+                      final safeKey = key.replaceAll("'", "\\'");
+                      final safeValue = value.replaceAll("'", "\\'");
+                      await _controller.runJavaScript(
+                        "localStorage.setItem('$safeKey', '$safeValue');",
+                      );
+                      _extractDevToolsData();
+                    },
+                    onDeleteLocalStorage: (key) async {
+                      final safeKey = key.replaceAll("'", "\\'");
+                      await _controller.runJavaScript(
+                        "localStorage.removeItem('$safeKey');",
+                      );
+                      _extractDevToolsData();
+                    },
+                    onExecuteJS: (code) async {
+                      try {
+                        final result = await _controller
+                            .runJavaScriptReturningResult(code);
+                        if (mounted) {
+                          setState(() {
+                            _consoleLogs.add('> $code');
+                            _consoleLogs.add('< $result');
+                          });
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          setState(() {
+                            _consoleLogs.add('> $code');
+                            if (e.toString().contains(
+                                  'returned a `null` value',
+                                ) ||
+                                e.toString().contains(
+                                  'returned a \'null\' value',
+                                )) {
+                              _consoleLogs.add('< undefined');
+                            } else {
+                              _consoleLogs.add('[ERROR] $e');
+                            }
+                          });
+                        }
+                      }
+                    },
                   ),
-                  // DevTools View
-                  if (_isDevToolsMinimized)
-                    SizedBox(
-                      width: isWide ? 40 : double.infinity, // Minimal width if horizontal split
-                      height: isWide ? double.infinity : 35,
-                      child: DevToolsPanel(
-                        isMinimized: true,
-                        onToggleMinimize: () => setState(() => _isDevToolsMinimized = false),
-                        pageSource: _pageSource,
-                        consoleLogs: _consoleLogs,
-                        networkRequests: _networkRequests,
-                        cookies: _cookies,
-                        localStorage: _localStorage,
-                        onExecuteJS: (code) async {},
-                      ),
-                    )
-                  else
-                    Expanded(
-                      flex: 2,
-                      child: DevToolsPanel(
-                        isMinimized: false,
-                        onToggleMinimize: () => setState(() => _isDevToolsMinimized = true),
-                        pageSource: _pageSource,
-                        consoleLogs: _consoleLogs,
-                        networkRequests: _networkRequests,
-                        cookies: _cookies,
-                        localStorage: _localStorage,
-                        onExecuteJS: (code) async {
-                          try {
-                            final result = await _controller.runJavaScriptReturningResult(code);
-                            if (mounted) {
-                              setState(() {
-                                _consoleLogs.add('> $code');
-                                _consoleLogs.add('< $result');
-                              });
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              setState(() {
-                                _consoleLogs.add('> $code');
-                                _consoleLogs.add('[ERROR] $e');
-                              });
-                            }
-                          }
-                        },
-                      ),
-                    ),
-                ],
-              );
-            },
+                ),
+            ],
           ),
         ),
       ],
