@@ -260,6 +260,7 @@ impl TypeChecker {
             "log",
             "core",
             "ai",
+            "regex",
             "uuid",
             "acak",
             "random",
