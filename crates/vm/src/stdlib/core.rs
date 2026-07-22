@@ -90,4 +90,69 @@ pub fn register(vm: &mut VM) {
 
     let module_idx = vm.heap.alloc(HeapData::Modul(module_dict));
     vm.set_global("core".to_string(), Value::Modul(module_idx));
+
+    // uuid
+    fn uuid_wrapper(ctx: &mut dyn VmContext, _args: Vec<Value>) -> Result<Value, String> {
+        let u = uuid::Uuid::new_v4().to_string();
+        let idx = ctx.get_heap_mut().alloc(HeapData::String(u));
+        Ok(Value::String(idx))
+    }
+    let uuid_func = FungsiBawaanVM {
+        nama: "uuid".to_string(),
+        func: std::sync::Arc::new(uuid_wrapper),
+    };
+    let uuid_idx = vm.heap.alloc(HeapData::FungsiBawaan(uuid_func));
+    vm.set_global("uuid".to_string(), Value::FungsiBawaan(uuid_idx));
+
+    // acak
+    fn acak_wrapper(ctx: &mut dyn VmContext, args: Vec<Value>) -> Result<Value, String> {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+
+        if args.len() == 2 {
+            if let (Value::Angka(min), Value::Angka(max)) = (args[0], args[1]) {
+                if min > max {
+                    return Err("acak: nilai minimum tidak boleh lebih besar dari maksimum".to_string());
+                }
+                let is_integer = min.fract() == 0.0 && max.fract() == 0.0;
+                let res = if is_integer {
+                    rng.gen_range((min as i64)..=(max as i64)) as f64
+                } else {
+                    rng.gen_range(min..=max)
+                };
+                return Ok(Value::Angka(res));
+            }
+            
+            if let (Value::String(tipe_idx), Value::Angka(len)) = (args[0], args[1]) {
+                let tipe = ctx.get_heap_mut().get_string(tipe_idx).clone();
+                let length = len as usize;
+                let chars: Vec<char> = match tipe.as_str() {
+                    "huruf" => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".chars().collect(),
+                    "angka" => "0123456789".chars().collect(),
+                    "campuran" => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".chars().collect(),
+                    _ => return Err("acak: tipe tidak valid. Gunakan 'huruf', 'angka', atau 'campuran'".to_string()),
+                };
+                let result: String = (0..length)
+                    .map(|_| {
+                        let idx = rng.gen_range(0..chars.len());
+                        chars[idx]
+                    })
+                    .collect();
+                let res_idx = ctx.get_heap_mut().alloc(HeapData::String(result));
+                return Ok(Value::String(res_idx));
+            }
+        } else if args.is_empty() {
+            let res: f64 = rng.gen_range(0.0..1.0);
+            return Ok(Value::Angka(res));
+        }
+
+        Err("acak: argumen tidak valid. Gunakan acak(min, max) atau acak('tipe', panjang)".to_string())
+    }
+    let acak_func = FungsiBawaanVM {
+        nama: "acak".to_string(),
+        func: std::sync::Arc::new(acak_wrapper),
+    };
+    let acak_idx = vm.heap.alloc(HeapData::FungsiBawaan(acak_func));
+    vm.set_global("acak".to_string(), Value::FungsiBawaan(acak_idx));
+    vm.set_global("random".to_string(), Value::FungsiBawaan(acak_idx));
 }

@@ -260,6 +260,9 @@ impl TypeChecker {
             "log",
             "core",
             "ai",
+            "uuid",
+            "acak",
+            "random",
             // Fungsi/konstanta global
             "panjang",
             "tipe",
