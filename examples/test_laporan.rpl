@@ -1,0 +1,14 @@
+buat html = "<h1>Laporan Resmi Rakoda</h1>
+<br>
+<p>Halo, ini adalah <b>percobaan</b> pertama membuat PDF dan DOCX secara native menggunakan Rakoda.</p>
+<p>Proses ini sangat cepat dan tidak menggunakan memori yang besar.</p>
+<div>Terima kasih.</div>
+"
+
+tampilkan "Mencetak DOCX..."
+laporan.buat(html, "output_coba", "docx")
+tampilkan "DOCX berhasil dibuat!"
+
+tampilkan "Mencetak PDF..."
+laporan.buat(html, "output_coba", "pdf")
+tampilkan "PDF berhasil dibuat!"

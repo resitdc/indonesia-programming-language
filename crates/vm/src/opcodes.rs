@@ -34,6 +34,7 @@ pub enum OpCode {
     Pop,
     IterInit, // No operand. Pops collection, pushes Iterator(idx).
     IterNext, // operand: 2 bytes (jump offset if exhausted). Pops nothing. Modifies Iterator at top of stack. Pushes key, then value, or jumps.
+    SetIndex,
 }
 
 impl OpCode {
@@ -72,6 +73,7 @@ impl OpCode {
             30 => Some(OpCode::Pop),
             31 => Some(OpCode::IterInit),
             32 => Some(OpCode::IterNext),
+            33 => Some(OpCode::SetIndex),
             _ => None,
         }
     }

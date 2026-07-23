@@ -1,7 +1,0 @@
-buat beranda = fungsi(req)
-    buat data = {
-        "judul": "Toko RPL"
-    }
-    log.info("berhasil menampilkan beranda")
-    web.render("tampilan/index.rpl.html", data)
-selesai
