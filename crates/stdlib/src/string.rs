@@ -142,9 +142,9 @@ fn angka_ke_terbilang(n: i64) -> String {
     ];
 
     if n < 12 {
-        return satuan[n as usize].to_string();
+        satuan[n as usize].to_string()
     } else if n < 20 {
-        return format!("{} belas", satuan[(n - 10) as usize]);
+        format!("{} belas", satuan[(n - 10) as usize])
     } else if n < 100 {
         let puluhan = n / 10;
         let sisa = n % 10;
@@ -153,7 +153,7 @@ fn angka_ke_terbilang(n: i64) -> String {
         } else {
             "".to_string()
         };
-        return format!("{} puluh{}", satuan[puluhan as usize], sisa_str);
+        format!("{} puluh{}", satuan[puluhan as usize], sisa_str)
     } else if n < 200 {
         let sisa = n - 100;
         let sisa_str = if sisa > 0 {
@@ -161,7 +161,7 @@ fn angka_ke_terbilang(n: i64) -> String {
         } else {
             "".to_string()
         };
-        return format!("seratus{}", sisa_str);
+        format!("seratus{}", sisa_str)
     } else if n < 1000 {
         let ratusan = n / 100;
         let sisa = n % 100;
@@ -170,7 +170,7 @@ fn angka_ke_terbilang(n: i64) -> String {
         } else {
             "".to_string()
         };
-        return format!("{} ratus{}", satuan[ratusan as usize], sisa_str);
+        format!("{} ratus{}", satuan[ratusan as usize], sisa_str)
     } else if n < 2000 {
         let sisa = n - 1000;
         let sisa_str = if sisa > 0 {
@@ -178,7 +178,7 @@ fn angka_ke_terbilang(n: i64) -> String {
         } else {
             "".to_string()
         };
-        return format!("seribu{}", sisa_str);
+        format!("seribu{}", sisa_str)
     } else if n < 1_000_000 {
         let ribuan = n / 1000;
         let sisa = n % 1000;
@@ -187,7 +187,7 @@ fn angka_ke_terbilang(n: i64) -> String {
         } else {
             "".to_string()
         };
-        return format!("{} ribu{}", angka_ke_terbilang(ribuan), sisa_str);
+        format!("{} ribu{}", angka_ke_terbilang(ribuan), sisa_str)
     } else if n < 1_000_000_000 {
         let jutaan = n / 1_000_000;
         let sisa = n % 1_000_000;
@@ -196,7 +196,7 @@ fn angka_ke_terbilang(n: i64) -> String {
         } else {
             "".to_string()
         };
-        return format!("{} juta{}", angka_ke_terbilang(jutaan), sisa_str);
+        format!("{} juta{}", angka_ke_terbilang(jutaan), sisa_str)
     } else if n < 1_000_000_000_000 {
         let miliaran = n / 1_000_000_000;
         let sisa = n % 1_000_000_000;
@@ -205,7 +205,7 @@ fn angka_ke_terbilang(n: i64) -> String {
         } else {
             "".to_string()
         };
-        return format!("{} miliar{}", angka_ke_terbilang(miliaran), sisa_str);
+        format!("{} miliar{}", angka_ke_terbilang(miliaran), sisa_str)
     } else {
         let triliunan = n / 1_000_000_000_000;
         let sisa = n % 1_000_000_000_000;
@@ -214,7 +214,7 @@ fn angka_ke_terbilang(n: i64) -> String {
         } else {
             "".to_string()
         };
-        return format!("{} triliun{}", angka_ke_terbilang(triliunan), sisa_str);
+        format!("{} triliun{}", angka_ke_terbilang(triliunan), sisa_str)
     }
 }
 
@@ -230,13 +230,11 @@ fn format_rupiah_impl(args: &[NilaiRpl]) -> Result<NilaiRpl, String> {
 
             // Tambahkan titik setiap 3 digit
             let mut result = String::new();
-            let mut count = 0;
-            for c in s.chars().rev() {
+            for (count, c) in s.chars().rev().enumerate() {
                 if count > 0 && count % 3 == 0 {
                     result.insert(0, '.');
                 }
                 result.insert(0, c);
-                count += 1;
             }
             Ok(NilaiRpl::Teks(format!("Rp {}", result)))
         }

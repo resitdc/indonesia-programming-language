@@ -601,8 +601,8 @@ impl VM {
                 }
                 OpCode::IterNext => {
                     let offset = self.frames.last_mut().unwrap().read_short(&self.heap) as usize;
-                    let counter_val = self.stack.last().unwrap().clone();
-                    let koleksi_val = self.stack[self.stack.len() - 2].clone();
+                    let counter_val = *self.stack.last().unwrap();
+                    let koleksi_val = self.stack[self.stack.len() - 2];
 
                     let counter = if let Value::Angka(n) = counter_val {
                         n as usize
@@ -620,7 +620,7 @@ impl VM {
                             if counter < arr.len() {
                                 has_next = true;
                                 current_idx = Value::Angka(counter as f64);
-                                current_val = arr[counter].clone();
+                                current_val = arr[counter];
                             }
                         }
                         Value::String(idx) => {
@@ -649,7 +649,7 @@ impl VM {
                                 keys.sort();
                                 if counter < keys.len() {
                                     let key_s = keys[counter].clone();
-                                    let val_c = k[&key_s].clone();
+                                    let val_c = k[&key_s];
                                     (true, Some(key_s), Some(val_c))
                                 } else {
                                     (false, None, None)

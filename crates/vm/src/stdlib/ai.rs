@@ -72,12 +72,12 @@ pub fn register(vm: &mut VM) {
                 _ => return Err("Argumen kunci harus berupa teks.".to_string()),
             };
 
-            if let Some(vm) = ctx.as_any().downcast_mut::<VM>() {
-                if let Some(Value::Kamus(ai_idx)) = vm.environments[0].get("ai").cloned() {
-                    let key_idx = vm.heap.alloc(crate::heap::HeapData::String(key));
-                    let k = vm.heap.get_kamus_mut(ai_idx);
-                    k.insert("_kunci".to_string(), Value::String(key_idx));
-                }
+            if let Some(vm) = ctx.as_any().downcast_mut::<VM>()
+                && let Some(Value::Kamus(ai_idx)) = vm.environments[0].get("ai").cloned()
+            {
+                let key_idx = vm.heap.alloc(crate::heap::HeapData::String(key));
+                let k = vm.heap.get_kamus_mut(ai_idx);
+                k.insert("_kunci".to_string(), Value::String(key_idx));
             }
 
             Ok(Value::Kosong)
@@ -106,15 +106,15 @@ pub fn register(vm: &mut VM) {
             let mut provider = String::new();
             let mut key = String::new();
 
-            if let Some(vm) = ctx.as_any().downcast_mut::<VM>() {
-                if let Some(Value::Kamus(ai_idx)) = vm.environments[0].get("ai").cloned() {
-                    let k = vm.heap.get_kamus(ai_idx);
-                    if let Some(Value::String(p_idx)) = k.get("_penyedia") {
-                        provider = vm.heap.get_string(*p_idx).clone();
-                    }
-                    if let Some(Value::String(k_idx)) = k.get("_kunci") {
-                        key = vm.heap.get_string(*k_idx).clone();
-                    }
+            if let Some(vm) = ctx.as_any().downcast_mut::<VM>()
+                && let Some(Value::Kamus(ai_idx)) = vm.environments[0].get("ai").cloned()
+            {
+                let k = vm.heap.get_kamus(ai_idx);
+                if let Some(Value::String(p_idx)) = k.get("_penyedia") {
+                    provider = vm.heap.get_string(*p_idx).clone();
+                }
+                if let Some(Value::String(k_idx)) = k.get("_kunci") {
+                    key = vm.heap.get_string(*k_idx).clone();
                 }
             }
 
