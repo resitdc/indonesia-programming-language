@@ -2,6 +2,7 @@ import React, { useState, useEffect, type ReactNode } from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
 import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import Heading from '@theme/Heading';
@@ -133,7 +134,7 @@ const HomepageHeader = () => {
         <div className="row" style={{ alignItems: 'center' }}>
           <div className="col col--6" style={{ textAlign: 'left' }}>
             <img 
-              src="/img/rakoda-white.svg" 
+              src={useBaseUrl('/img/rakoda-white.svg')} 
               alt="Rakoda Logo" 
               className={styles.heroLogo}
             />
