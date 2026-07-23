@@ -100,9 +100,7 @@ fn kandung_impl(args: &[NilaiRpl]) -> Result<NilaiRpl, String> {
         return Err("string.kandung membutuhkan 2 argumen: teks, kata".to_string());
     }
     match (&args[0], &args[1]) {
-        (NilaiRpl::Teks(s), NilaiRpl::Teks(kata)) => {
-            Ok(NilaiRpl::Boolean(s.contains(kata)))
-        }
+        (NilaiRpl::Teks(s), NilaiRpl::Teks(kata)) => Ok(NilaiRpl::Boolean(s.contains(kata))),
         _ => Err("string.kandung: argumen harus teks dan teks".to_string()),
     }
 }
@@ -137,9 +135,12 @@ fn angka_ke_terbilang(n: i64) -> String {
     if n == 0 {
         return "nol".to_string();
     }
-    
-    let satuan = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
-    
+
+    let satuan = [
+        "", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan",
+        "sepuluh", "sebelas",
+    ];
+
     if n < 12 {
         return satuan[n as usize].to_string();
     } else if n < 20 {
@@ -147,40 +148,72 @@ fn angka_ke_terbilang(n: i64) -> String {
     } else if n < 100 {
         let puluhan = n / 10;
         let sisa = n % 10;
-        let sisa_str = if sisa > 0 { format!(" {}", satuan[sisa as usize]) } else { "".to_string() };
+        let sisa_str = if sisa > 0 {
+            format!(" {}", satuan[sisa as usize])
+        } else {
+            "".to_string()
+        };
         return format!("{} puluh{}", satuan[puluhan as usize], sisa_str);
     } else if n < 200 {
         let sisa = n - 100;
-        let sisa_str = if sisa > 0 { format!(" {}", angka_ke_terbilang(sisa)) } else { "".to_string() };
+        let sisa_str = if sisa > 0 {
+            format!(" {}", angka_ke_terbilang(sisa))
+        } else {
+            "".to_string()
+        };
         return format!("seratus{}", sisa_str);
     } else if n < 1000 {
         let ratusan = n / 100;
         let sisa = n % 100;
-        let sisa_str = if sisa > 0 { format!(" {}", angka_ke_terbilang(sisa)) } else { "".to_string() };
+        let sisa_str = if sisa > 0 {
+            format!(" {}", angka_ke_terbilang(sisa))
+        } else {
+            "".to_string()
+        };
         return format!("{} ratus{}", satuan[ratusan as usize], sisa_str);
     } else if n < 2000 {
         let sisa = n - 1000;
-        let sisa_str = if sisa > 0 { format!(" {}", angka_ke_terbilang(sisa)) } else { "".to_string() };
+        let sisa_str = if sisa > 0 {
+            format!(" {}", angka_ke_terbilang(sisa))
+        } else {
+            "".to_string()
+        };
         return format!("seribu{}", sisa_str);
     } else if n < 1_000_000 {
         let ribuan = n / 1000;
         let sisa = n % 1000;
-        let sisa_str = if sisa > 0 { format!(" {}", angka_ke_terbilang(sisa)) } else { "".to_string() };
+        let sisa_str = if sisa > 0 {
+            format!(" {}", angka_ke_terbilang(sisa))
+        } else {
+            "".to_string()
+        };
         return format!("{} ribu{}", angka_ke_terbilang(ribuan), sisa_str);
     } else if n < 1_000_000_000 {
         let jutaan = n / 1_000_000;
         let sisa = n % 1_000_000;
-        let sisa_str = if sisa > 0 { format!(" {}", angka_ke_terbilang(sisa)) } else { "".to_string() };
+        let sisa_str = if sisa > 0 {
+            format!(" {}", angka_ke_terbilang(sisa))
+        } else {
+            "".to_string()
+        };
         return format!("{} juta{}", angka_ke_terbilang(jutaan), sisa_str);
     } else if n < 1_000_000_000_000 {
         let miliaran = n / 1_000_000_000;
         let sisa = n % 1_000_000_000;
-        let sisa_str = if sisa > 0 { format!(" {}", angka_ke_terbilang(sisa)) } else { "".to_string() };
+        let sisa_str = if sisa > 0 {
+            format!(" {}", angka_ke_terbilang(sisa))
+        } else {
+            "".to_string()
+        };
         return format!("{} miliar{}", angka_ke_terbilang(miliaran), sisa_str);
     } else {
         let triliunan = n / 1_000_000_000_000;
         let sisa = n % 1_000_000_000_000;
-        let sisa_str = if sisa > 0 { format!(" {}", angka_ke_terbilang(sisa)) } else { "".to_string() };
+        let sisa_str = if sisa > 0 {
+            format!(" {}", angka_ke_terbilang(sisa))
+        } else {
+            "".to_string()
+        };
         return format!("{} triliun{}", angka_ke_terbilang(triliunan), sisa_str);
     }
 }
@@ -194,7 +227,7 @@ fn format_rupiah_impl(args: &[NilaiRpl]) -> Result<NilaiRpl, String> {
             let val = *val;
             let int_part = val.trunc() as i64;
             let s = int_part.to_string();
-            
+
             // Tambahkan titik setiap 3 digit
             let mut result = String::new();
             let mut count = 0;
@@ -218,12 +251,18 @@ fn alay_impl(args: &[NilaiRpl]) -> Result<NilaiRpl, String> {
     match &args[0] {
         NilaiRpl::Teks(s) => {
             let s_alay = s
-                .replace("a", "4").replace("A", "4")
-                .replace("i", "1").replace("I", "1")
-                .replace("e", "3").replace("E", "3")
-                .replace("s", "5").replace("S", "5")
-                .replace("g", "9").replace("G", "9")
-                .replace("o", "0").replace("O", "0");
+                .replace("a", "4")
+                .replace("A", "4")
+                .replace("i", "1")
+                .replace("I", "1")
+                .replace("e", "3")
+                .replace("E", "3")
+                .replace("s", "5")
+                .replace("S", "5")
+                .replace("g", "9")
+                .replace("G", "9")
+                .replace("o", "0")
+                .replace("O", "0");
             Ok(NilaiRpl::Teks(s_alay))
         }
         _ => Err("string.alay hanya menerima teks".to_string()),
@@ -238,7 +277,7 @@ fn sensor_impl(args: &[NilaiRpl]) -> Result<NilaiRpl, String> {
         NilaiRpl::Teks(s) => {
             // Sensor canggih mendeteksi kata-kata kasar dengan substitusi karakter (leetspeak)
             use regex::RegexBuilder;
-            
+
             // Kata kasar yang umum dengan huruf alternatif (contoh)
             // k -> k, c, q, dll. Tapi kita pakai pola umum untuk vokal leet.
             // A -> [aA4@], I -> [iI1!l|], E -> [eE3], O -> [oO0], S -> [sS5$]
@@ -251,13 +290,13 @@ fn sensor_impl(args: &[NilaiRpl]) -> Result<NilaiRpl, String> {
                 [tT][oO0][lL|1!][oO0][lL|1!]|
                 [jJ][aA4@][nN][cC][uU][kK]
             )\b";
-            
+
             // Hilangkan spasi dan newline multiline regex (kita hapus spasi/newline manual untuk membuat string regex-nya)
             let raw_pattern = pattern.replace(&['\n', ' ', '\t'][..], "");
-            
+
             if let Ok(re) = RegexBuilder::new(&raw_pattern)
                 .case_insensitive(true)
-                .build() 
+                .build()
             {
                 // Ganti kata-kata kasar dengan panjang '*' yang sesuai dengan panjang aslinya
                 let hasil = re.replace_all(s, |caps: &regex::Captures| {

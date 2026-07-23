@@ -199,15 +199,15 @@ impl<'a> Compiler<'a> {
             } => {
                 self.compile_expression(koleksi)?;
                 self.chunk.write_opcode(OpCode::IterInit, lokasi);
-                
+
                 let loop_start = self.chunk.code.len();
                 let jump_if_exhausted = self.emit_jump(OpCode::IterNext, lokasi);
-                
+
                 let name_idx = self.heap.alloc(crate::heap::HeapData::String(elemen));
                 let const_name_idx = self.chunk.write_constant(Value::String(name_idx));
                 self.chunk.write_opcode(OpCode::StoreVar, lokasi);
                 self.chunk.write_u16(const_name_idx, lokasi);
-                
+
                 if let Some(idx_name) = indeks {
                     let idx_name_id = self.heap.alloc(crate::heap::HeapData::String(idx_name));
                     let const_idx_name = self.chunk.write_constant(Value::String(idx_name_id));
@@ -220,12 +220,12 @@ impl<'a> Compiler<'a> {
                 for stmt in body {
                     self.compile_statement(stmt)?;
                 }
-                
+
                 let jump_back = self.emit_jump(OpCode::Jump, lokasi);
                 self.patch_jump_to(jump_back, loop_start);
-                
+
                 self.patch_jump(jump_if_exhausted);
-                
+
                 self.chunk.write_opcode(OpCode::Pop, lokasi);
                 self.chunk.write_opcode(OpCode::Pop, lokasi);
             }

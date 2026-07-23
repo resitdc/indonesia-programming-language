@@ -32,8 +32,8 @@ pub enum OpCode {
     Negate,
     LoadModule, // operand: 2 bytes (index to constant pool string for module path)
     Pop,
-    IterInit,   // No operand. Pops collection, pushes Iterator(idx).
-    IterNext,   // operand: 2 bytes (jump offset if exhausted). Pops nothing. Modifies Iterator at top of stack. Pushes key, then value, or jumps.
+    IterInit, // No operand. Pops collection, pushes Iterator(idx).
+    IterNext, // operand: 2 bytes (jump offset if exhausted). Pops nothing. Modifies Iterator at top of stack. Pushes key, then value, or jumps.
 }
 
 impl OpCode {
