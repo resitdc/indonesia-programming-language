@@ -112,7 +112,9 @@ pub fn register(vm: &mut VM) {
         if args.len() == 2 {
             if let (Value::Angka(min), Value::Angka(max)) = (args[0], args[1]) {
                 if min > max {
-                    return Err("acak: nilai minimum tidak boleh lebih besar dari maksimum".to_string());
+                    return Err(
+                        "acak: nilai minimum tidak boleh lebih besar dari maksimum".to_string()
+                    );
                 }
                 let is_integer = min.fract() == 0.0 && max.fract() == 0.0;
                 let res = if is_integer {
@@ -122,15 +124,24 @@ pub fn register(vm: &mut VM) {
                 };
                 return Ok(Value::Angka(res));
             }
-            
+
             if let (Value::String(tipe_idx), Value::Angka(len)) = (args[0], args[1]) {
                 let tipe = ctx.get_heap_mut().get_string(tipe_idx).clone();
                 let length = len as usize;
                 let chars: Vec<char> = match tipe.as_str() {
-                    "huruf" => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ".chars().collect(),
+                    "huruf" => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                        .chars()
+                        .collect(),
                     "angka" => "0123456789".chars().collect(),
-                    "campuran" => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".chars().collect(),
-                    _ => return Err("acak: tipe tidak valid. Gunakan 'huruf', 'angka', atau 'campuran'".to_string()),
+                    "campuran" => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                        .chars()
+                        .collect(),
+                    _ => {
+                        return Err(
+                            "acak: tipe tidak valid. Gunakan 'huruf', 'angka', atau 'campuran'"
+                                .to_string(),
+                        );
+                    }
                 };
                 let result: String = (0..length)
                     .map(|_| {
@@ -146,23 +157,113 @@ pub fn register(vm: &mut VM) {
                 let tipe = ctx.get_heap_mut().get_string(tipe_idx).clone();
                 let hasil = match tipe.as_str() {
                     "nama" => {
-                        let depan = ["Restu", "Salwa", "Bernandus", "Zidane", "Icksan", "Aji", "Aam", "Ilham", "Babaw", "Revin", "Teguh", "Hotma", "Brian", "Abim", "Encep", "Cae", "Cynthia", "Iza", "Gusti", "Ridho"];
-                        let belakang = ["Dwi Cahyo", "Nugraha", "Silaen", "Capah", "Aji", "Naibaho", "Fathur", "Reginal", "Agung", "Akmal", "Ihwan", "Azkia", "Rahayu", "Novia", "Arahman", "Al Sadawi"];
-                        format!("{} {}", depan[rng.gen_range(0..depan.len())], belakang[rng.gen_range(0..belakang.len())])
+                        let depan = [
+                            "Restu",
+                            "Salwa",
+                            "Bernandus",
+                            "Zidane",
+                            "Icksan",
+                            "Aji",
+                            "Aam",
+                            "Ilham",
+                            "Babaw",
+                            "Revin",
+                            "Teguh",
+                            "Hotma",
+                            "Brian",
+                            "Abim",
+                            "Encep",
+                            "Cae",
+                            "Cynthia",
+                            "Iza",
+                            "Gusti",
+                            "Ridho",
+                        ];
+                        let belakang = [
+                            "Dwi Cahyo",
+                            "Nugraha",
+                            "Silaen",
+                            "Capah",
+                            "Aji",
+                            "Naibaho",
+                            "Fathur",
+                            "Reginal",
+                            "Agung",
+                            "Akmal",
+                            "Ihwan",
+                            "Azkia",
+                            "Rahayu",
+                            "Novia",
+                            "Arahman",
+                            "Al Sadawi",
+                        ];
+                        format!(
+                            "{} {}",
+                            depan[rng.gen_range(0..depan.len())],
+                            belakang[rng.gen_range(0..belakang.len())]
+                        )
                     }
                     "alamat" => {
-                        let jalan = ["Jl. Sadang Serang", "Jl. Thamrin", "Jl. Melati", "Jl. Mawar", "Jl. Diponegoro", "Jl. Merdeka", "Jl. Gatot Subroto", "Jl. Pahlawan"];
-                        let kota = ["Jakarta", "Surabaya", "Bandung", "Medan", "Semarang", "Makassar", "Palembang", "Denpasar", "Yogyakarta", "Malang"];
-                        format!("{} No. {}, {}", jalan[rng.gen_range(0..jalan.len())], rng.gen_range(1..100), kota[rng.gen_range(0..kota.len())])
+                        let jalan = [
+                            "Jl. Sadang Serang",
+                            "Jl. Thamrin",
+                            "Jl. Melati",
+                            "Jl. Mawar",
+                            "Jl. Diponegoro",
+                            "Jl. Merdeka",
+                            "Jl. Gatot Subroto",
+                            "Jl. Pahlawan",
+                        ];
+                        let kota = [
+                            "Jakarta",
+                            "Surabaya",
+                            "Bandung",
+                            "Medan",
+                            "Semarang",
+                            "Makassar",
+                            "Palembang",
+                            "Denpasar",
+                            "Yogyakarta",
+                            "Malang",
+                        ];
+                        format!(
+                            "{} No. {}, {}",
+                            jalan[rng.gen_range(0..jalan.len())],
+                            rng.gen_range(1..100),
+                            kota[rng.gen_range(0..kota.len())]
+                        )
                     }
                     "kota" => {
-                        let kota = ["Jakarta", "Surabaya", "Bandung", "Medan", "Semarang", "Makassar", "Palembang", "Denpasar", "Yogyakarta", "Malang", "Balikpapan", "Samarinda", "Banjarmasin"];
+                        let kota = [
+                            "Jakarta",
+                            "Surabaya",
+                            "Bandung",
+                            "Medan",
+                            "Semarang",
+                            "Makassar",
+                            "Palembang",
+                            "Denpasar",
+                            "Yogyakarta",
+                            "Malang",
+                            "Balikpapan",
+                            "Samarinda",
+                            "Banjarmasin",
+                        ];
                         kota[rng.gen_range(0..kota.len())].to_string()
                     }
                     "telepon" => {
-                        format!("0812-{:04}-{:04}", rng.gen_range(1000..9999), rng.gen_range(1000..9999))
+                        format!(
+                            "0812-{:04}-{:04}",
+                            rng.gen_range(1000..9999),
+                            rng.gen_range(1000..9999)
+                        )
                     }
-                    _ => return Err(format!("acak: argumen '{}' tidak didukung untuk satu parameter", tipe)),
+                    _ => {
+                        return Err(format!(
+                            "acak: argumen '{}' tidak didukung untuk satu parameter",
+                            tipe
+                        ));
+                    }
                 };
                 let res_idx = ctx.get_heap_mut().alloc(HeapData::String(hasil));
                 return Ok(Value::String(res_idx));

@@ -459,7 +459,8 @@ impl VM {
                                         self.frames.truncate(handler.frame_index);
                                         self.stack.truncate(handler.stack_offset);
                                         self.frames.last_mut().unwrap().ip = handler.ip_offset;
-                                        let err_idx = self.heap.alloc(crate::heap::HeapData::String(e));
+                                        let err_idx =
+                                            self.heap.alloc(crate::heap::HeapData::String(e));
                                         self.stack.push(Value::String(err_idx));
                                         continue;
                                     } else {
@@ -602,13 +603,17 @@ impl VM {
                     let offset = self.frames.last_mut().unwrap().read_short(&self.heap) as usize;
                     let counter_val = self.stack.last().unwrap().clone();
                     let koleksi_val = self.stack[self.stack.len() - 2].clone();
-                    
-                    let counter = if let Value::Angka(n) = counter_val { n as usize } else { 0 };
-                    
+
+                    let counter = if let Value::Angka(n) = counter_val {
+                        n as usize
+                    } else {
+                        0
+                    };
+
                     let mut has_next = false;
                     let mut current_idx = Value::Kosong;
                     let mut current_val = Value::Kosong;
-                    
+
                     match koleksi_val {
                         Value::Array(idx) => {
                             let arr = self.heap.get_array(idx);
@@ -631,7 +636,9 @@ impl VM {
                             if has_n {
                                 has_next = true;
                                 current_idx = Value::Angka(counter as f64);
-                                let char_idx = self.heap.alloc(crate::heap::HeapData::String(char_s.unwrap()));
+                                let char_idx = self
+                                    .heap
+                                    .alloc(crate::heap::HeapData::String(char_s.unwrap()));
                                 current_val = Value::String(char_idx);
                             }
                         }
@@ -650,18 +657,20 @@ impl VM {
                             };
                             if has_n {
                                 has_next = true;
-                                let key_idx = self.heap.alloc(crate::heap::HeapData::String(key_str.unwrap()));
+                                let key_idx = self
+                                    .heap
+                                    .alloc(crate::heap::HeapData::String(key_str.unwrap()));
                                 current_idx = Value::String(key_idx);
                                 current_val = val.unwrap();
                             }
                         }
                         _ => {}
                     }
-                    
+
                     if has_next {
                         let top_idx = self.stack.len() - 1;
                         self.stack[top_idx] = Value::Angka((counter + 1) as f64);
-                        
+
                         self.stack.push(current_idx);
                         self.stack.push(current_val);
                     } else {

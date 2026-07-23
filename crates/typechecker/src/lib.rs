@@ -498,7 +498,7 @@ impl TypeChecker {
 
                 self.symbols.push_scope();
                 let _ = self.symbols.deklarasi(elemen, tipe_elemen, *lokasi);
-                
+
                 if let Some(idx_name) = indeks {
                     let tipe_indeks = match tipe_koleksi {
                         RplType::Array(_) | RplType::String => RplType::Angka,
