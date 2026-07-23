@@ -1,0 +1,39 @@
+buat config = {
+    "lembar": "Penjualan Juli",
+    "gabung_sel": ["A1:D1"],
+    "cell": {
+        "A1": { "teks": "LAPORAN PENJUALAN RAKODA", "tebal": benar, "warna_latar": "#1e3a8a", "warna_teks": "#ffffff" },
+        "A3": { "teks": "Nama Barang", "tebal": benar },
+        "B3": { "teks": "Harga Satuan", "tebal": benar },
+        "C3": { "teks": "Kuantitas", "tebal": benar },
+        "D3": { "teks": "Total Harga", "tebal": benar },
+        
+        "A4": { "teks": "Lisensi Rakoda Pro" },
+        "B4": { "angka": 500000 },
+        "C4": { "angka": 3 },
+        "D4": { "rumus": "=B4*C4" },
+        
+        "A5": { "teks": "Server Cloud" },
+        "B5": { "angka": 250000 },
+        "C5": { "angka": 2 },
+        "D5": { "rumus": "=B5*C5" },
+        
+        "C7": { "text": "TOTAL:", "tebal": benar },
+        "D7": { "rumus": "=SUM(D4:D5)", "tebal": benar, "bg_color": "#fbbf24" }
+    }
+}
+
+tampilkan("membuat file excel")
+
+dokumen.buat([
+    config,
+    {
+        "title": "Sample Sheet 2",
+        "merge_cell": ["A1:B1"],
+        "cell": {
+            "A1": { "text": "This is sheet 2", "bg_color": "#ff0000" }
+        }
+    }
+], "Laporan_Rakoda2", "excel")
+
+tampilkan("selesai")
