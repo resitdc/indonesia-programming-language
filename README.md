@@ -533,13 +533,13 @@ Example: adding a `crates/lsp/` for the Language Server.
 | 2 | Build Web Server | Done |
 | 3 | Build Package Manager | Done |
 | 4 | Add Stdlib | Done |
-| 5 | Add Language Server | Planned |
+| 5 | Add Language Server | On Progress |
 | 6 | Add VSCode Extention for RPL language | Done |
-| 7 | Build RPL Studio for Cross Platform using Flutter ( Desktop, Android, IOS ) | Planned |
-| 8 | Later when RPL Studio is done, We can separate Desktop app using Tauri | Planned |
+| 7 | Build RPL Studio for Cross Platform using Flutter ( Desktop, Android, IOS ) | On Progress |
+| 8 | Later when RPL Studio is done, We can separate Desktop app using Tauri | Done |
 | 9 | Create Logo for Rakoda | Done |
-| 10 | Create Documentation with Docusaurus | Planned |
-| 11 | Create Rakoda Website | Planned |
+| 10 | Create Documentation with Docusaurus | On Progress |
+| 11 | Create Rakoda Website | Done |
 | 12 | Create community | Planned |
 | 13 | Build Server SDK | Planned |
 | 14 | Introducing Rakoda to the public | Planned |

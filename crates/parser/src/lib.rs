@@ -84,13 +84,7 @@ impl Parser {
         &self.tokens[self.posisi]
     }
 
-    fn peek(&self) -> &SpannedToken {
-        if self.posisi + 1 < self.tokens.len() {
-            &self.tokens[self.posisi + 1]
-        } else {
-            &self.tokens[self.tokens.len() - 1]
-        }
-    }
+
 
     fn advance(&mut self) {
         if self.posisi < self.tokens.len() - 1 {
@@ -303,16 +297,6 @@ impl Parser {
         }
     }
 
-    fn parse_expression_statement(&mut self) -> Statement {
-        match self.parse_expression(Precedence::Lowest) {
-            Ok(expr) => Statement::Expression(expr),
-            Err(e) => {
-                self.errors.push(e);
-                self.sync();
-                Statement::Error(self.current_lokasi())
-            }
-        }
-    }
 
     fn parse_block(&mut self) -> Vec<Statement> {
         let is_maka = self.current().token == Token::Maka;

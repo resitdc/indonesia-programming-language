@@ -27,17 +27,15 @@ fn main() {
 </html>"##;
 
     let mut author_css = String::new();
-    if let Some(start) = html_content.find("<style>") {
-        if let Some(end) = html_content.find("</style>") {
-            if start < end {
-                author_css = html_content[start + 7..end].to_string();
-            }
-        }
+    if let (Some(start), Some(end)) = (html_content.find("<style>"), html_content.find("</style>")) 
+        && start < end 
+    {
+        author_css = html_content[start + 7..end].to_string();
     }
     
-    let (program, _diags) = compile(&html_content, &CompileOptions::default()).unwrap();
+    let (program, _diags) = compile(html_content, &CompileOptions::default()).unwrap();
     let data = serde_json::Value::Null;
-    let (nodes, _) = program.render_nodes(&data, Some(0)).unwrap();
+    let (_nodes, _) = program.render_nodes(&data, Some(0)).unwrap();
     
     let cascade = build_cascade(&author_css, "", TokenSet::default());
     let fonts = FontRegistry::new();

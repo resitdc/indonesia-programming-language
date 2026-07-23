@@ -114,12 +114,10 @@ pub fn register(vm: &mut VM) {
                     let data = serde_json::Value::Null;
                     
                     let mut author_css = String::new();
-                    if let Some(start) = html_content.find("<style>") {
-                        if let Some(end) = html_content.find("</style>") {
-                            if start < end {
-                                author_css = html_content[start + 7..end].to_string();
-                            }
-                        }
+                    if let (Some(start), Some(end)) = (html_content.find("<style>"), html_content.find("</style>")) 
+                        && start < end 
+                    {
+                        author_css = html_content[start + 7..end].to_string();
                     }
                     
                     let cascade = build_cascade(&author_css, "", TokenSet::default());
@@ -162,7 +160,7 @@ pub fn register(vm: &mut VM) {
 }
 
 fn build_excel(ctx: &mut dyn VmContext, sumber: &Value, final_filename: &str) -> Result<Value, String> {
-    use rust_xlsxwriter::{Workbook, Format, Color};
+    use rust_xlsxwriter::{Workbook, Format};
 
     let mut workbook = Workbook::new();
 
@@ -170,11 +168,9 @@ fn build_excel(ctx: &mut dyn VmContext, sumber: &Value, final_filename: &str) ->
         // Resolve sheet name
         let mut sheet_name = String::new();
         for key in &["lembar", "judul", "title"] {
-            if let Some(val) = sheet_data.get(*key) {
-                if let Value::String(idx) = val {
-                    sheet_name = ctx.get_heap_mut().get_string(*idx).clone();
-                    break;
-                }
+            if let Some(Value::String(idx)) = sheet_data.get(*key) {
+                sheet_name = ctx.get_heap_mut().get_string(*idx).clone();
+                break;
             }
         }
         
@@ -239,15 +235,14 @@ fn build_excel(ctx: &mut dyn VmContext, sumber: &Value, final_filename: &str) ->
                 let mut merge_c2 = col;
                 for merge_ref in &merges {
                     let parts: Vec<&str> = merge_ref.split(':').collect();
-                    if parts.len() == 2 {
-                        if let (Some((r1, c1)), Some((r2, c2))) = (parse_cell_ref(parts[0]), parse_cell_ref(parts[1])) {
-                            if row == r1 && col == c1 {
-                                is_merge_top_left = true;
-                                merge_r2 = r2;
-                                merge_c2 = c2;
-                                break;
-                            }
-                        }
+                    if parts.len() == 2
+                        && let (Some((r1, c1)), Some((r2, c2))) = (parse_cell_ref(parts[0]), parse_cell_ref(parts[1]))
+                        && row == r1 && col == c1 
+                    {
+                        is_merge_top_left = true;
+                        merge_r2 = r2;
+                        merge_c2 = c2;
+                        break;
                     }
                 }
 
