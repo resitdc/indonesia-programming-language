@@ -1,0 +1,139 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.heroBanner {
+  padding: 6rem 0;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--ifm-color-primary-darkest) 0%, var(--ifm-color-primary) 100%);
+  color: white;
+}
+
+.heroLogo {
+  height: 80px;
+  margin-bottom: 1.5rem;
+}
+
+.heroSubtitle {
+  font-size: 1.25rem;
+  opacity: 0.9;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  max-width: 600px;
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 3rem 1.5rem;
+    text-align: center;
+  }
+  .heroLogo {
+    height: 70px;
+  }
+  .heroSubtitle {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+@media screen and (max-width: 996px) {
+  .buttons {
+    justify-content: center;
+    flex-direction: column;
+    width: 100%;
+  }
+  .buttons a {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+}
+
+.codeWindow {
+  background: #1e1e1e;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  text-align: left;
+  margin-top: 1rem;
+}
+
+.codeHeader {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.macDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  display: inline-block;
+}
+
+.codeTitle {
+  flex: 1;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  font-family: var(--ifm-font-family-monospace);
+  margin-left: -50px;
+}
+
+.codeBlockContainer {
+  padding: 16px;
+}
+
+.codeBlockContainer :global(div[class*='codeBlockContainer']) {
+  margin-bottom: 0;
+  box-shadow: none;
+  background: transparent !important;
+  --prism-color: #f8f8f2 !important;
+  --prism-background-color: transparent !important;
+}
+
+.codeBlockContainer :global(pre) {
+  margin: 0;
+  background: transparent !important;
+  color: #f8f8f2 !important;
+}
+
+.codeBlockContainer :global(.token.keyword) { color: #ff79c6 !important; }
+.codeBlockContainer :global(.token.function) { color: #50fa7b !important; }
+.codeBlockContainer :global(.token.string) { color: #f1fa8c !important; }
+.codeBlockContainer :global(.token.number) { color: #bd93f9 !important; }
+.codeBlockContainer :global(.token.comment) { color: #6272a4 !important; }
+.codeBlockContainer :global(.token.operator) { color: #ff79c6 !important; }
+.codeBlockContainer :global(.token.punctuation) { color: #f8f8f2 !important; }
+
+/* Ensure the main blocks are transparent, but leave buttons alone */
+.codeBlockContainer :global(.theme-code-block),
+.codeBlockContainer :global(pre),
+.codeBlockContainer :global(td),
+.codeBlockContainer :global(th),
+.codeBlockContainer :global(tr),
+.codeBlockContainer :global(table),
+.codeBlockContainer :global(tbody) {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Ensure Docusaurus variables don't override our transparent background */
+:global([data-theme='light']) .codeBlockContainer,
+:global([data-theme='dark']) .codeBlockContainer,
+.codeBlockContainer {
+  --prism-color: #f8f8f2 !important;
+  --prism-background-color: transparent !important;
+}

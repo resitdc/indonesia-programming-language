@@ -1,0 +1,116 @@
+.features {
+  padding: 4rem 0;
+  width: 100%;
+}
+
+.featureCard {
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 16px;
+  padding: 2rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-theme='dark'] .featureCard {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.featureCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+}
+
+[data-theme='dark'] .featureCard:hover {
+  box-shadow: 0 12px 24px rgba(0,0,0,0.4);
+}
+
+.iconWrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: rgba(37, 104, 231, 0.1); /* Rakoda blue light */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  color: var(--ifm-color-primary);
+}
+
+.featureTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.featureDescription {
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.6;
+}
+
+.largeFeatureCard {
+  display: flex;
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 24px;
+  overflow: hidden;
+  margin-top: 2rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+}
+
+[data-theme='dark'] .largeFeatureCard {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.largeFeatureContent {
+  flex: 1;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.largeFeatureImage {
+  flex: 1;
+  background: var(--ifm-color-emphasis-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 300px;
+}
+
+[data-theme='dark'] .largeFeatureImage {
+  background: rgba(0,0,0,0.3);
+}
+
+.largeFeatureImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-left: 1px solid var(--ifm-color-emphasis-200);
+}
+
+[data-theme='dark'] .largeFeatureImage img {
+  border-color: rgba(255,255,255,0.1);
+}
+
+@media screen and (max-width: 996px) {
+  .largeFeatureCard {
+    flex-direction: column;
+  }
+  .largeFeatureContent {
+    padding: 2rem;
+  }
+  .largeFeatureImage img {
+    border-left: none;
+    border-top: 1px solid var(--ifm-color-emphasis-200);
+  }
+}
