@@ -19,6 +19,7 @@ pub mod waktu;
 pub mod web;
 
 pub mod regex;
+pub mod dokumen;
 
 use crate::machine::VM;
 
@@ -38,7 +39,8 @@ pub fn register_all(vm: &mut VM) {
     string::register(vm);
     db::register(vm);
     kripto::register(vm);
+    regex::register(vm);
     log::register(vm);
     ai::register(vm);
-    regex::register(vm);
+    dokumen::register(vm);
 }

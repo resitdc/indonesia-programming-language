@@ -1,0 +1,17 @@
+buat port = 8081
+
+web.get("/", fungsi(req) {
+    buat html = web.render("laporan.rpl.html")
+
+    dokumen.buat(html, "temp_laporan", "pdf")
+
+    kembalikan {
+        "file": "temp_laporan.pdf",
+        "headers": {
+            "Content-Type": "application/pdf"
+        }
+    }
+})
+
+tampilkan(`Server berjalan di http://localhost:${port} untuk melihat PDF secara live!`)
+web.jalankan(port)

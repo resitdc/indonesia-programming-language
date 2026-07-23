@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sertifikat Penghargaan</title>
+    <style>
+        /* Pengaturan agar kertas terlihat landscape di browser dan saat diprint via browser */
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+        .page-body {
+            font-family: 'Georgia', serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            width: 100%;
+        }
+        .certificate-container {
+            width: 297mm;
+            height: 210mm;
+            background: white;
+            border: 15px solid #1e3a8a;
+            box-sizing: border-box;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 50px;
+            text-align: center;
+            background-image: radial-gradient(circle, #ffffff, #f0f4f8);
+        }
+        .certificate-border {
+            border: 2px solid #bfdbfe;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .title {
+            font-size: 50px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+        .subtitle {
+            font-size: 24px;
+            color: #64748b;
+            margin-bottom: 40px;
+        }
+        .presented-to {
+            font-size: 20px;
+            color: #334155;
+            margin-bottom: 20px;
+        }
+        .name {
+            font-size: 48px;
+            font-style: italic;
+            color: #0f172a;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #94a3b8;
+            display: inline-block;
+            padding: 0 50px;
+        }
+        .description {
+            font-size: 18px;
+            color: #475569;
+            line-height: 1.6;
+            margin: 0 auto 50px auto;
+            max-width: 80%;
+        }
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 100px;
+            margin-top: 50px;
+        }
+        .signature-box {
+            text-align: center;
+            width: 200px;
+        }
+        .signature-line {
+            border-bottom: 1px solid #0f172a;
+            margin-bottom: 10px;
+            height: 40px;
+        }
+        .signature-title {
+            font-size: 16px;
+            color: #64748b;
+        }
+        .badge-wrapper {
+            position: absolute;
+            bottom: 60px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-body">
+    <?rpl
+        buat nama_peserta = "Restu"
+        buat acara = "Pelatihan Web Development dengan Rakoda"
+        buat tanggal = "23 Juli 2026"
+    ?>
+    <div class="certificate-container">
+        <div class="certificate-border">
+            <div class="title">Sertifikat Penghargaan</div>
+            <div class="subtitle">Diberikan dengan penuh kebanggaan kepada</div>
+            
+            <div class="presented-to">Tuan / Nyonya</div>
+            <div class="name">{{ nama_peserta }}</div>
+            
+            <div class="description">
+                Atas dedikasi, partisipasi aktif, dan kelulusannya dalam acara bergengsi 
+                <b>{{ acara }}</b> yang diselenggarakan pada <b>{{ tanggal }}</b>.
+            </div>
+            
+            <div class="footer">
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-title">CEO Rakoda</div>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-title">Instruktur Kepala</div>
+                </div>
+            </div>
+
+            <div class="badge-wrapper">
+                <svg width="110" height="110" viewBox="0 0 110 110">
+                    <circle cx="55" cy="55" r="45" fill="#fbbf24" stroke="#f59e0b" stroke-width="5" />
+                    <text x="55" y="48" font-family="Georgia, serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">LULUS</text>
+                    <text x="55" y="68" font-family="Georgia, serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">TERBAIK</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+</html>

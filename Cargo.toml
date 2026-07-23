@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "crates/*",
+    "crates/*", "scratch_pdf",
 ]
 resolver = "2"
 

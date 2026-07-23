@@ -519,25 +519,25 @@ pub fn register(vm: &mut VM) {
                                             }
                                         }
                                         let body_str = local_vm.heap.alloc(HeapData::String(String::new()));
-                                        req_map.insert("tubuh".to_string(), Value::String(body_str));
-                                        req_map.insert("tubuh_mentah".to_string(), Value::String(body_str));
+                                        req_map.insert("body".to_string(), Value::String(body_str));
+                                        req_map.insert("body_raw".to_string(), Value::String(body_str));
                                     } else {
                                         let body_string = String::from_utf8_lossy(&raw_body).to_string();
                                         let body_str = local_vm.heap.alloc(HeapData::String(body_string.clone()));
-                                        req_map.insert("tubuh_mentah".to_string(), Value::String(body_str));
+                                        req_map.insert("body_raw".to_string(), Value::String(body_str));
 
                                         if is_json && !body_string.is_empty()
                                             && let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_string) {
                                                 let rpl_val = crate::stdlib::json::convert_to_value(&mut local_vm, &json_val);
-                                                req_map.insert("tubuh".to_string(), rpl_val);
+                                                req_map.insert("body".to_string(), rpl_val);
                                                 req_map.insert("json".to_string(), rpl_val);
                                             } else {
-                                                req_map.insert("tubuh".to_string(), Value::String(body_str));
+                                                req_map.insert("body".to_string(), Value::String(body_str));
                                             }
                                     }
 
                                     let form_idx = local_vm.heap.alloc(HeapData::Kamus(form_map));
-                                    req_map.insert("form".to_string(), Value::Kamus(form_idx));
+                                    req_map.insert("post".to_string(), Value::Kamus(form_idx));
 
                                     let file_idx = local_vm.heap.alloc(HeapData::Kamus(file_map));
                                     req_map.insert("file".to_string(), Value::Kamus(file_idx));
@@ -548,7 +548,7 @@ pub fn register(vm: &mut VM) {
                                         kueri_map.insert(k.clone(), Value::String(v_idx));
                                     }
                                     let kueri_idx = local_vm.heap.alloc(HeapData::Kamus(kueri_map));
-                                    req_map.insert("kueri".to_string(), Value::Kamus(kueri_idx));
+                                    req_map.insert("get".to_string(), Value::Kamus(kueri_idx));
 
                                     if !params.is_empty() {
                                         let mut params_map = HashMap::new();
@@ -570,36 +570,81 @@ pub fn register(vm: &mut VM) {
                                     Ok(val) => {
                                         let mut response_status = 200;
                                         let mut val_string = String::new();
-                                        let mut content_type = "text/html";
+                                        let mut content_type = "text/html".to_string();
+                                        let mut extra_headers: HashMap<String, String> = HashMap::new();
+                                        let mut file_path: Option<String> = None;
 
                                         if let Value::Kamus(idx) = val {
                                             let dict = local_vm.heap.get_kamus(idx).clone();
-                                            if dict.contains_key("status") && (dict.contains_key("json") || dict.contains_key("tubuh")) {
+                                            if dict.contains_key("status") || dict.contains_key("json") || dict.contains_key("body") || dict.contains_key("file") {
                                                 if let Some(Value::Angka(s)) = dict.get("status") {
                                                     response_status = *s as u16;
                                                 }
-                                                if let Some(json_val) = dict.get("json") {
+                                                if let Some(Value::String(f_idx)) = dict.get("file") {
+                                                    file_path = Some(local_vm.heap.get_string(*f_idx).clone());
+                                                } else if let Some(json_val) = dict.get("json") {
                                                     val_string = value_to_json(json_val, &local_vm.heap).to_string();
-                                                    content_type = "application/json";
-                                                } else if let Some(Value::String(s_idx)) = dict.get("tubuh") {
+                                                    content_type = "application/json".to_string();
+                                                } else if let Some(Value::String(s_idx)) = dict.get("body") {
                                                     val_string = local_vm.heap.get_string(*s_idx).clone();
-                                                } else if let Some(v) = dict.get("tubuh") {
+                                                } else if let Some(v) = dict.get("body") {
                                                     val_string = v.to_string(&local_vm.heap);
+                                                }
+                                                
+                                                if let Some(Value::Kamus(h_idx)) = dict.get("headers") {
+                                                    let headers_dict = local_vm.heap.get_kamus(*h_idx).clone();
+                                                    for (k, v) in headers_dict {
+                                                        if let Value::String(s_idx) = v {
+                                                            extra_headers.insert(k.clone(), local_vm.heap.get_string(s_idx).clone());
+                                                        }
+                                                    }
                                                 }
                                             } else {
                                                 val_string = value_to_json(&val, &local_vm.heap).to_string();
-                                                content_type = "application/json";
+                                                content_type = "application/json".to_string();
                                             }
                                         } else if let Value::Array(_) = val {
                                             val_string = value_to_json(&val, &local_vm.heap).to_string();
-                                            content_type = "application/json";
+                                            content_type = "application/json".to_string();
                                         } else {
                                             val_string = val.to_string(&local_vm.heap);
                                         }
 
+                                        let body_bytes = if let Some(path) = file_path {
+                                            match std::fs::read(&path) {
+                                                Ok(bytes) => {
+                                                    if !extra_headers.contains_key("Content-Type") {
+                                                        if path.ends_with(".pdf") {
+                                                            content_type = "application/pdf".to_string();
+                                                        } else if path.ends_with(".png") {
+                                                            content_type = "image/png".to_string();
+                                                        } else if path.ends_with(".jpg") || path.ends_with(".jpeg") {
+                                                            content_type = "image/jpeg".to_string();
+                                                        } else if path.ends_with(".docx") {
+                                                            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document".to_string();
+                                                        } else {
+                                                            content_type = "application/octet-stream".to_string();
+                                                        }
+                                                    }
+                                                    bytes
+                                                },
+                                                Err(_) => {
+                                                    response_status = 404;
+                                                    content_type = "text/plain".to_string();
+                                                    "File not found".to_string().into_bytes()
+                                                }
+                                            }
+                                        } else {
+                                            val_string.into_bytes()
+                                        };
+
                                         let mut builder = axum::response::Response::builder()
                                             .status(response_status)
-                                            .header("Content-Type", content_type);
+                                            .header("Content-Type", &content_type);
+                                            
+                                        for (k, v) in &extra_headers {
+                                            builder = builder.header(k, v);
+                                        }
 
                                         let cookies_to_set = local_vm.heap.web_state.cookies_to_set.clone();
                                         for cookie in cookies_to_set {
@@ -608,7 +653,7 @@ pub fn register(vm: &mut VM) {
 
                                         let duration_ms = start.elapsed().as_secs_f64() * 1000.0;
                                         let memory_used_kb = (local_vm.heap.allocated_count * 1024) / 1000;
-                                        let response_size = val_string.len();
+                                        let response_size = body_bytes.len();
 
                                         let telemetry = crate::stdlib::dev_dashboard::RequestTelemetry {
                                             id: uuid::Uuid::new_v4().to_string(),
@@ -625,6 +670,9 @@ pub fn register(vm: &mut VM) {
                                             response_headers: {
                                                 let mut m = HashMap::new();
                                                 m.insert("Content-Type".to_string(), content_type.to_string());
+                                                for (k, v) in &extra_headers {
+                                                    m.insert(k.clone(), v.clone());
+                                                }
                                                 m
                                             },
                                             raw_body: String::from_utf8_lossy(&raw_body).to_string(),
@@ -650,7 +698,7 @@ pub fn register(vm: &mut VM) {
                                         };
                                         crate::stdlib::dev_dashboard::record_request(telemetry);
 
-                                        Ok(builder.body(axum::body::Body::from(val_string)).unwrap())
+                                        Ok(builder.body(axum::body::Body::from(body_bytes)).unwrap())
                                     }
                                     Err(e) => {
                                         let html = format!(r#"<!DOCTYPE html>

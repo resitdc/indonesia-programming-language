@@ -32,3 +32,6 @@ axum = { version = "0.7.9", features = ["ws"] }
 bytes = "1.9.0"
 futures-util = "0.3.31"
 regex = "1.13.1"
+docx-rs = "0.4.22"
+printpdf = "0.3.4"
+turbo-html2pdf-core = "0.2.14"

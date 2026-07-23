@@ -1,0 +1,12 @@
+[package]
+name = "scratch_pdf"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+turbo-html2pdf-core = "0.2.14"
