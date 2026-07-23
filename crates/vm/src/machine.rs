@@ -564,6 +564,38 @@ impl VM {
                         _ => return Err(self.err("Operasi index tidak didukung untuk tipe ini")),
                     }
                 }
+                OpCode::SetIndex => {
+                    let nilai = self.stack.pop().unwrap();
+                    let indeks = self.stack.pop().unwrap();
+                    let target = self.stack.pop().unwrap();
+                    
+                    match target {
+                        Value::Kamus(k_idx) => {
+                            if let Value::String(key_idx) = indeks {
+                                let key_str = self.heap.get_string(key_idx).clone();
+                                self.heap.get_kamus_mut(k_idx).insert(key_str, nilai);
+                            } else {
+                                return Err(self.err("Indeks kamus harus berupa teks"));
+                            }
+                        }
+                        Value::Array(a_idx) => {
+                            if let Value::Angka(idx) = indeks {
+                                let i = idx as usize;
+                                let arr = self.heap.get_array_mut(a_idx);
+                                if i < arr.len() {
+                                    arr[i] = nilai;
+                                } else if i == arr.len() {
+                                    arr.push(nilai);
+                                } else {
+                                    return Err(self.err("Indeks array di luar batas untuk penugasan"));
+                                }
+                            } else {
+                                return Err(self.err("Indeks array harus berupa angka"));
+                            }
+                        }
+                        _ => return Err(self.err("Operasi penugasan index tidak didukung untuk tipe ini")),
+                    }
+                }
                 OpCode::MakeArray => {
                     let count = self.frames.last_mut().unwrap().read_short(&self.heap) as usize;
                     let mut elements = Vec::with_capacity(count);

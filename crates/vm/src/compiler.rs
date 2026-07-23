@@ -132,6 +132,17 @@ impl<'a> Compiler<'a> {
                 self.chunk.write_opcode(OpCode::StoreVar, lokasi);
                 self.chunk.write_u16(const_idx, lokasi);
             }
+            Statement::IndexAssignment {
+                kiri,
+                indeks,
+                nilai,
+                lokasi,
+            } => {
+                self.compile_expression(kiri)?;
+                self.compile_expression(indeks)?;
+                self.compile_expression(nilai)?;
+                self.chunk.write_opcode(OpCode::SetIndex, lokasi);
+            }
             Statement::Tampilkan { nilai, lokasi } => {
                 for expr in nilai {
                     self.compile_expression(expr)?;

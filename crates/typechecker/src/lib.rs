@@ -354,12 +354,30 @@ impl TypeChecker {
                     }
                     None => {
                         self.error(
-                            format!("Variabel '{}' belum dibuat sebelum digunakan", nama),
+                            format!("Variabel '{}' belum ada, tidak bisa diubah nilainya", nama),
                             *lokasi,
                             Some(format!(
-                                "Buat variabel '{}' terlebih dahulu dengan 'buat {} = ...'",
-                                nama, nama
+                                "Gunakan 'buat {} = ...' untuk membuat variabel baru",
+                                nama
                             )),
+                        );
+                    }
+                }
+            }
+            Statement::IndexAssignment { kiri, indeks, nilai, lokasi } => {
+                let tipe_kiri = self.infer_expression(kiri);
+                let _tipe_indeks = self.infer_expression(indeks);
+                let _tipe_nilai = self.infer_expression(nilai);
+                
+                match tipe_kiri {
+                    RplType::Array(_) | RplType::Kamus(_) | RplType::TidakDiketahui => {
+                        // Di masa depan bisa diperiksa tipe indeks secara mendetail
+                    }
+                    _ => {
+                        self.error(
+                            format!("Tidak dapat menggunakan indeks/property pada tipe {}", tipe_kiri),
+                            *lokasi,
+                            Some("Pastikan nilai sebelumnya adalah Array atau Kamus".to_string()),
                         );
                     }
                 }

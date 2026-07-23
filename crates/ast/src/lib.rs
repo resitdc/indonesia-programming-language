@@ -49,6 +49,12 @@ pub enum Statement {
         nilai: Expression,
         lokasi: Lokasi,
     },
+    IndexAssignment {
+        kiri: Expression,
+        indeks: Expression,
+        nilai: Expression,
+        lokasi: Lokasi,
+    },
     Tampilkan {
         nilai: Vec<Expression>,
         lokasi: Lokasi,

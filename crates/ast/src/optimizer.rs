@@ -29,6 +29,17 @@ fn optimize_statement(stmt: Statement) -> Vec<Statement> {
             nilai: optimize_expression(nilai),
             lokasi,
         }],
+        Statement::IndexAssignment {
+            kiri,
+            indeks,
+            nilai,
+            lokasi,
+        } => vec![Statement::IndexAssignment {
+            kiri: optimize_expression(kiri),
+            indeks: optimize_expression(indeks),
+            nilai: optimize_expression(nilai),
+            lokasi,
+        }],
         Statement::Tampilkan { nilai, lokasi } => {
             let nilai = nilai.into_iter().map(optimize_expression).collect();
             vec![Statement::Tampilkan { nilai, lokasi }]

@@ -413,7 +413,11 @@ pub fn register(vm: &mut VM) {
                         for (prefix, folder) in &static_dirs {
                             if url.starts_with(prefix) {
                                 let file_path = url[prefix.len()..].trim_start_matches('/');
-                                let full_path = std::path::Path::new(folder).join(file_path);
+                                let mut full_path = std::path::Path::new(folder).join(file_path);
+                                
+                                if full_path.is_dir() {
+                                    full_path = full_path.join("index.html");
+                                }
 
                                 if full_path.exists() && full_path.is_file() {
                                     let path_str = full_path.to_string_lossy().to_string();
@@ -701,7 +705,14 @@ pub fn register(vm: &mut VM) {
                                         Ok(builder.body(axum::body::Body::from(body_bytes)).unwrap())
                                     }
                                     Err(e) => {
-                                        let html = format!(r#"<!DOCTYPE html>
+                                        let is_api = url.starts_with("/api/") || headers_map.get("accept").map(|s| s.contains("application/json")).unwrap_or(false);
+                                        
+                                        if is_api {
+                                            let escaped_e = e.replace("\"", "\\\"").replace("\n", "\\n");
+                                            let json = format!(r#"{{"pesan": "{}"}}"#, escaped_e);
+                                            Ok(axum::response::Response::builder().status(500).header("Content-Type", "application/json").body(axum::body::Body::from(json)).unwrap())
+                                        } else {
+                                            let html = format!(r#"<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -731,7 +742,8 @@ pub fn register(vm: &mut VM) {
     </div>
 </body>
 </html>"#, method, url, e);
-                                        Ok(axum::response::Response::builder().status(500).header("Content-Type", "text/html").body(axum::body::Body::from(html)).unwrap())
+                                            Ok(axum::response::Response::builder().status(500).header("Content-Type", "text/html").body(axum::body::Body::from(html)).unwrap())
+                                        }
                                     }
                                 }
                             }

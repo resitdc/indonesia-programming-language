@@ -1,7 +1,0 @@
-buat nama = "Restu"
-
-jika nama isinya "Abim" maka
-  tampilkan "Kamu jelek"
-jika tidak
-  tampilkan "Kamu ganteng"
-selesai

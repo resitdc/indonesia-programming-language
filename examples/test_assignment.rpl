@@ -1,0 +1,32 @@
+buat kamus = {
+    "nama": "Rakoda",
+    "versi": 1.0
+}
+
+tampilkan "Kamus awal:"
+tampilkan kamus
+
+// Test Index Assignment (String key)
+kamus["versi"] = 2.0
+kamus["baru"] = "nilai baru"
+
+tampilkan "Setelah Index Assignment:"
+tampilkan kamus
+
+// Test Property Assignment (Dot notation)
+kamus.keren = benar
+kamus.nama = "Rakoda Sakti"
+
+tampilkan "Setelah Property Assignment:"
+tampilkan kamus
+
+buat daftar = [10, 20, 30]
+tampilkan "Daftar awal:"
+tampilkan daftar
+
+// Test Array Index Assignment
+daftar[1] = 99
+daftar[3] = 40 // Push to end (panjang = 3, indeks = 3)
+
+tampilkan "Setelah Array Assignment:"
+tampilkan daftar

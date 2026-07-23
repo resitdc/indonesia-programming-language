@@ -166,14 +166,7 @@ impl Parser {
             Token::Cetak => self.parse_tampilkan_statement(true),
             Token::Coba => self.parse_coba(),
             Token::Lempar => self.parse_lempar(),
-            Token::Identifier(_) => {
-                if self.peek().token == Token::Assign {
-                    self.parse_assignment()
-                } else {
-                    self.parse_expression_statement()
-                }
-            }
-            _ => self.parse_expression_statement(),
+            _ => self.parse_expression_or_assignment(),
         }
     }
 
@@ -216,31 +209,6 @@ impl Parser {
         }
     }
 
-    fn parse_assignment(&mut self) -> Statement {
-        let lokasi = self.current_lokasi();
-        let nama = match &self.current().token {
-            Token::Identifier(n) => n.clone(),
-            _ => unreachable!(),
-        };
-        self.advance();
-        if !self.expect(Token::Assign) {
-            return Statement::Error(lokasi);
-        }
-
-        let nilai = match self.parse_expression(Precedence::Lowest) {
-            Ok(e) => e,
-            Err(e) => {
-                self.errors.push(e);
-                return Statement::Error(lokasi);
-            }
-        };
-
-        Statement::Assignment {
-            nama,
-            nilai,
-            lokasi,
-        }
-    }
 
     fn parse_kembalikan(&mut self) -> Statement {
         let lokasi = self.current_lokasi();
@@ -289,6 +257,49 @@ impl Parser {
             Statement::Cetak { nilai, lokasi }
         } else {
             Statement::Tampilkan { nilai, lokasi }
+        }
+    }
+
+    fn parse_expression_or_assignment(&mut self) -> Statement {
+        let lokasi = self.current_lokasi();
+        match self.parse_expression(Precedence::Lowest) {
+            Ok(expr) => {
+                if self.current().token == Token::Assign {
+                    self.advance(); // lewati '='
+                    
+                    let nilai = match self.parse_expression(Precedence::Lowest) {
+                        Ok(e) => e,
+                        Err(e) => {
+                            self.errors.push(e);
+                            return Statement::Error(lokasi);
+                        }
+                    };
+                    
+                    match expr {
+                        Expression::Identifier(nama, _) => {
+                            Statement::Assignment { nama, nilai, lokasi }
+                        }
+                        Expression::Index { kiri, indeks, .. } => {
+                            Statement::IndexAssignment { kiri: *kiri, indeks: *indeks, nilai, lokasi }
+                        }
+                        _ => {
+                            self.push_error(
+                                "Sisi kiri assignment tidak valid".to_string(),
+                                lokasi,
+                                Some("Assignment hanya dapat dilakukan pada variabel atau indeks properti (contoh: a = 1, atau obj.kunci = 1)".to_string()),
+                            );
+                            Statement::Error(lokasi)
+                        }
+                    }
+                } else {
+                    Statement::Expression(expr)
+                }
+            }
+            Err(e) => {
+                self.errors.push(e);
+                self.sync();
+                Statement::Error(lokasi)
+            }
         }
     }
 
