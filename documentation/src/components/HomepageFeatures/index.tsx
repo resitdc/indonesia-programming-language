@@ -1,6 +1,7 @@
 import type {ReactNode} from 'react';
 import clsx from 'clsx';
 import Heading from '@theme/Heading';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
 
 const GlobeIcon = () => (
@@ -75,7 +76,7 @@ export default function HomepageFeatures(): ReactNode {
                   TODO: Replace this .png with a .gif if you prefer a moving mockup. 
                   Currently using a high-quality screenshot from your studio. 
                 */}
-                <img src="/img/rpl-studio-demo.png" alt="RPL Studio Demo" />
+                <img src={useBaseUrl('/img/rpl-studio-demo.png')} alt="RPL Studio Demo" />
               </div>
             </div>
           </div>
