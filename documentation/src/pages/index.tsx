@@ -7,6 +7,8 @@ import HomepageFeatures from '@site/src/components/HomepageFeatures';
 import Heading from '@theme/Heading';
 import styles from './index.module.css';
 
+// test to trigger pipeline
+
 let firstCode = `buat nama = "Restu"\n`;
 firstCode += "buat umur = 26\n\n";
 firstCode += "jika umur minimal 17 maka\n";
